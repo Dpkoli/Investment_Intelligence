@@ -9,7 +9,6 @@ from typing import Optional
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 
 from .data import THEMATIC_REGISTRY, ThematicProduct, ALL_SECTORS, ALL_SUB_THEMES, fetch_prices
@@ -476,44 +475,11 @@ def render() -> None:
 
     treemap_sel = st.session_state["thematic_treemap_sel"]
 
-    # ── Treemap (visual display — Plotly treemap navigation clicks fire
-    #   plotly_treemapclick, not plotly_click, so on_select never fires;
-    #   sector/sub-theme buttons below are the reliable filter mechanism) ────
+    # ── Sector/sub-theme counts ───────────────────────────────────────────────
     theme_counts: dict[str, dict] = {}
     for p in THEMATIC_REGISTRY:
         theme_counts.setdefault(p.sector, {})
         theme_counts[p.sector][p.sub_theme] = theme_counts[p.sector].get(p.sub_theme, 0) + 1
-
-    tm_labels, tm_parents, tm_values = [], [], []
-    for sector, themes in theme_counts.items():
-        tm_labels.append(sector)
-        tm_parents.append("")
-        tm_values.append(sum(themes.values()))
-        for theme, cnt in themes.items():
-            tm_labels.append(theme)
-            tm_parents.append(sector)
-            tm_values.append(cnt)
-
-    fig = go.Figure(go.Treemap(
-        labels=tm_labels,
-        parents=tm_parents,
-        values=tm_values,
-        branchvalues="total",
-        hovertemplate="<b>%{label}</b><br>%{value} instruments<extra></extra>",
-        marker=dict(
-            colorscale=[[0, "#1A2A3A"], [0.5, "#00896B"], [1, "#00D4AA"]],
-            showscale=False,
-            line=dict(width=0.5, color="#0E1117"),
-        ),
-        pathbar=dict(visible=True, thickness=18),
-        textfont=dict(size=12),
-    ))
-    fig.update_layout(
-        height=330, margin={"t": 10, "b": 10, "l": 0, "r": 0},
-        paper_bgcolor="rgba(0,0,0,0)",
-        font={"color": "#ddd"},
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     # ── Sector filter chips ───────────────────────────────────────────────────
     st.markdown(
