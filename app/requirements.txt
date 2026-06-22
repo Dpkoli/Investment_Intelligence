@@ -10,6 +10,9 @@ plotly>=5.22.0
 # Data
 pandas>=2.2.0
 
+# Live market data
+yfinance>=0.2.40
+
 # Core ETL / analytics (from repo root)
 pydantic>=2.5.0
 requests>=2.31.0
