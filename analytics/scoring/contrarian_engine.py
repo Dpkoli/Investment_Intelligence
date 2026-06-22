@@ -30,6 +30,7 @@ ownership remains thin — the classic "early institutional accumulation" setup.
 
 from __future__ import annotations
 
+import functools
 import logging
 import time
 from typing import Optional
@@ -43,6 +44,30 @@ from analytics.scoring.models import (
 from analytics.scoring.signal_aggregator import SignalAggregator
 
 log = logging.getLogger(__name__)
+
+# ── Module-level TTL cache (safe in both Streamlit and plain Python) ──────────
+# Streamlit's @st.cache_data is unavailable outside the Streamlit runtime.
+# This lightweight in-process TTL cache prevents redundant Supabase round-trips
+# in the Vercel serverless context where multiple requests share a warm lambda.
+
+_CACHE_TTL_SECONDS = 300   # 5 minutes — matches Streamlit cache TTL
+
+def _ttl_cache(ttl: int = _CACHE_TTL_SECONDS):
+    """Decorator: caches return value for `ttl` seconds using a simple dict."""
+    def decorator(fn):
+        _store: dict = {}
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            key = (args, tuple(sorted(kwargs.items())))
+            entry = _store.get(key)
+            if entry and (time.monotonic() - entry["ts"]) < ttl:
+                return entry["val"]
+            result = fn(*args, **kwargs)
+            _store[key] = {"val": result, "ts": time.monotonic()}
+            return result
+        wrapper.cache_clear = lambda: _store.clear()
+        return wrapper
+    return decorator
 
 # ── Tunable thresholds ────────────────────────────────────────────────────────
 
@@ -94,10 +119,13 @@ class ContrаrianScoringEngine:
 
     # ── Public API ────────────────────────────────────────────────────────────
 
+    @_ttl_cache(ttl=_CACHE_TTL_SECONDS)
     def score_asset(self, asset_id: int) -> Optional[ContrарianScoreResult]:
         """
         Compute CS for a single asset.
 
+        Result is cached for _CACHE_TTL_SECONDS to prevent redundant
+        Supabase round-trips on warm Vercel lambda invocations.
         Returns None if the asset cannot be found in the database.
         """
         components = self._aggregator.fetch(asset_id)
@@ -113,9 +141,14 @@ class ContrаrianScoringEngine:
         """
         return self._compute(components)
 
+    @_ttl_cache(ttl=_CACHE_TTL_SECONDS)
     def score_all(self, suppress_noise: bool = True) -> CSRankedBatch:
         """
         Score and rank the full tracked universe.
+
+        Result is cached for _CACHE_TTL_SECONDS.  On Vercel this prevents the
+        multi-table Supabase join from running on every request, keeping
+        response times well inside the 60-second Pro function timeout.
 
         Args:
             suppress_noise: If True, assets with CS < CS_NOISE_FLOOR are

@@ -1,0 +1,26 @@
+# ── Contrarian Radar — root requirements.txt (Vercel reads this file) ─────────
+# All transitive dependencies for Phase 2 ETL + Phase 3 analytics + Phase 4 UI
+
+# ── UI ─────────────────────────────────────────────────────────────────────────
+streamlit>=1.35.0
+plotly>=5.22.0
+pandas>=2.2.0
+
+# ── HTTP / retry ───────────────────────────────────────────────────────────────
+requests>=2.31.0
+urllib3>=2.0.0
+
+# ── Data validation ────────────────────────────────────────────────────────────
+pydantic>=2.5.0
+
+# ── HTML scraping (Cassandra pipeline) ────────────────────────────────────────
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# ── Serverless WSGI / proxy layer ─────────────────────────────────────────────
+flask>=3.0.0
+werkzeug>=3.0.0
+gunicorn>=22.0.0
+
+# ── Environment ───────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0
