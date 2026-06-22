@@ -1,9 +1,10 @@
 """
 Centralised configuration for the Contrarian Radar ETL pipeline.
 
-All secrets are read from environment variables so no credentials
-appear in source code.  The only value baked in is the project URL
-and the publishable (anon) key, which are not sensitive.
+Secret resolution order (highest priority first):
+  1. Streamlit Cloud secrets  — st.secrets["KEY"]  (injected as env vars)
+  2. Environment variables    — os.getenv("KEY")
+  3. Hard-coded defaults      — only for non-sensitive public values
 """
 
 from __future__ import annotations
@@ -14,19 +15,37 @@ from dataclasses import dataclass, field
 from typing import Final
 
 
+def _secret(key: str, default: str = "") -> str:
+    """
+    Read a secret from Streamlit Cloud or the environment.
+
+    Streamlit Community Cloud injects secrets.toml entries as both
+    st.secrets["KEY"] and os.environ["KEY"], so os.getenv() is
+    sufficient here — no streamlit import required at config load time.
+    """
+    return os.getenv(key, default)
+
+
 # ── Supabase coordinates ──────────────────────────────────────────────────────
 
-SUPABASE_URL: Final[str] = "https://axvpzbdlfbuighvaussx.supabase.co"
-
-# Publishable key (anon-equivalent).  Safe to ship in code / CI vars.
-SUPABASE_PUBLISHABLE_KEY: Final[str] = (
-    "sb_publishable_FkSLNsqTl97OF6c-e-LTmA_X7ibl4FI"
+SUPABASE_URL: Final[str] = _secret(
+    "SUPABASE_URL",
+    "https://axvpzbdlfbuighvaussx.supabase.co",
 )
 
-# Service-role key is required for direct table writes (bypasses RLS).
-# Must be set in environment; pipeline will warn if absent and fall back
-# to publishable key (which will fail on RLS-protected inserts).
-SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+# Anon / publishable key.
+# Accepted under either name: SUPABASE_ANON_KEY (Streamlit secrets template)
+# or the legacy SUPABASE_PUBLISHABLE_KEY env var.  Falls back to the
+# hardcoded public key which is safe to ship in source.
+SUPABASE_PUBLISHABLE_KEY: Final[str] = (
+    _secret("SUPABASE_ANON_KEY")
+    or _secret("SUPABASE_PUBLISHABLE_KEY")
+    or "sb_publishable_FkSLNsqTl97OF6c-e-LTmA_X7ibl4FI"
+)
+
+# Service-role key — bypasses RLS for ETL writes.
+# Set via Streamlit Cloud secrets or SUPABASE_SERVICE_ROLE_KEY env var.
+SUPABASE_SERVICE_ROLE_KEY: str = _secret("SUPABASE_SERVICE_ROLE_KEY", "")
 
 
 # ── HTTP / retry settings ─────────────────────────────────────────────────────

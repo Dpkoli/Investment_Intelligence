@@ -1,27 +1,11 @@
 [server]
-headless            = true
-enableCORS          = false
+headless             = true
+enableCORS           = false
 enableXsrfProtection = false
-port                = 8080
-address             = "0.0.0.0"
-
-# Keep the WebSocket alive; critical on Vercel where cold starts add latency
-maxUploadSize       = 10
-maxMessageSize      = 200
-
-[browser]
-gatherUsageStats = false
-serverAddress    = "0.0.0.0"
-serverPort       = 8080
-
-[runner]
-# Prevent Streamlit from reloading on file changes inside Vercel read-only FS
-fastReruns = false
 
 [theme]
-base                    = "dark"
-primaryColor            = "#00D4AA"
-backgroundColor         = "#0E1117"
-secondaryBackgroundColor = "#1A1D24"
-textColor               = "#FAFAFA"
+primaryColor            = "#ff4b4b"
+backgroundColor         = "#0e1117"
+secondaryBackgroundColor = "#262730"
+textColor               = "#fafafa"
 font                    = "sans serif"
