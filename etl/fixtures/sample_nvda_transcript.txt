@@ -1,0 +1,35 @@
+NVIDIA Corporation
+Q1 FY2026 Earnings Call Transcript
+May 28, 2025
+
+Jensen Huang — President and Chief Executive Officer:
+
+Good afternoon, everyone. We delivered another exceptional quarter. Revenue reached $44 billion, up 69% year-over-year, driven entirely by data centre demand that continues to outpace our most optimistic projections.
+
+I want to spend a moment on our silicon supply chain because I think investors underestimate how structural these relationships are. Marvell Technology is our primary custom ASIC partner for network interface silicon. We have co-developed the ConnectX series together, and Marvell supplies sole-source components that underpin more than 60% of our InfiniBand fabric deployments. That dependency is not going away — if anything it deepens as we scale Blackwell.
+
+On the optical interconnect side, Coherent continues to ramp 800G transceivers specifically qualified for our NVLink 4 topology. We see no viable alternative supplier at the volume and latency specifications we require. Coherent is a strategic partner in the truest sense.
+
+Our EDA toolchain is another area of hidden dependency. Cadence Design Systems and Synopsys together handle 100% of our chip verification flows. The Kingmaker here is really our silicon complexity: Blackwell is the most complex chip ever taped out, and the verification capacity we have reserved with Cadence alone represents a primary spend relationship — I would estimate in excess of $500 million annually.
+
+Arista Networks deserves a mention. We have an exclusive arrangement for the switching fabric in our DGX SuperPOD reference architecture. Arista is not just a vendor — we co-design configurations with their engineering team. That is a JV-style collaboration in all but name.
+
+Jensen Huang — continued:
+
+We are also deepening our relationship with Taiwan Semiconductor. TSMC manufactures 100% of our leading-edge compute silicon on their 4N and 3N nodes. C.C. Wei and I speak quarterly to review capacity allocation. This is a sole-source foundry relationship for the products that matter most.
+
+Finally, I want to flag Super Micro Computer. SuperMicro is our primary server integration partner for the HGX platform. They integrate our GPU baseboard modules and ship directly to hyperscaler customers. Their share of our system revenue is significant — roughly 35% of HGX unit shipments go through SuperMicro.
+
+Colette Kress — Executive Vice President and Chief Financial Officer:
+
+Thank you Jensen. I will add a few numbers around the Marvell relationship. In FY2025, our payments to Marvell for custom silicon and network semiconductor components totalled approximately $2.1 billion, representing a 120% increase year-on-year. We expect that to grow materially as we scale GB200 NVL72 rack deployments.
+
+The Cadence EDA licences are structured as a three-year enterprise agreement. We increased headcount dedicated to Cadence-based verification by 40% last year, which is a proxy for how seriously we treat that relationship.
+
+Questions & Answers
+
+Analyst Question (Stacy Rasgon, Bernstein):
+Jensen, can you talk more about the Marvell dependency? Is there a risk of supply constraint?
+
+Jensen Huang:
+Marvell is a sole-source supplier for certain components, yes. We have multi-year supply agreements in place and I am comfortable with their capacity roadmap. We have co-invested in their manufacturing expansion alongside the contract.
