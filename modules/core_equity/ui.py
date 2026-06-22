@@ -23,6 +23,40 @@ def _on_ce_search_change() -> None:
     st.session_state["ce_selected"] = None
 
 
+def _inject_live_search() -> None:
+    """Simulate Enter on each keystroke so Streamlit reruns while typing."""
+    import streamlit.components.v1 as components
+    components.html(
+        """<script>
+(function(){
+  var t=null;
+  function attach(){
+    var els=window.parent.document.querySelectorAll('[data-testid="stTextInput"] input');
+    els.forEach(function(el){
+      if(el._liveSearch)return;
+      el._liveSearch=true;
+      el.addEventListener('input',function(){
+        clearTimeout(t);
+        t=setTimeout(function(){
+          el.dispatchEvent(new KeyboardEvent('keydown',{
+            key:'Enter',code:'Enter',keyCode:13,which:13,
+            bubbles:true,cancelable:true
+          }));
+        },200);
+      });
+    });
+  }
+  attach();
+  new MutationObserver(attach).observe(
+    window.parent.document.body,{childList:true,subtree:true}
+  );
+})();
+</script>""",
+        height=0,
+        scrolling=False,
+    )
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _safe_num(v) -> Optional[float]:
@@ -438,6 +472,7 @@ def render() -> None:
         key="ce_search",
         on_change=_on_ce_search_change,
     )
+    _inject_live_search()
 
     # ── Apply filters ─────────────────────────────────────────────────────────
     filtered = list(CORE_EQUITY_REGISTRY)

@@ -476,6 +476,40 @@ def _on_th_search_change() -> None:
     st.session_state["thematic_selected_ticker"] = None
 
 
+def _inject_live_search() -> None:
+    """Simulate Enter on each keystroke so Streamlit reruns while typing."""
+    import streamlit.components.v1 as components
+    components.html(
+        """<script>
+(function(){
+  var t=null;
+  function attach(){
+    var els=window.parent.document.querySelectorAll('[data-testid="stTextInput"] input');
+    els.forEach(function(el){
+      if(el._liveSearch)return;
+      el._liveSearch=true;
+      el.addEventListener('input',function(){
+        clearTimeout(t);
+        t=setTimeout(function(){
+          el.dispatchEvent(new KeyboardEvent('keydown',{
+            key:'Enter',code:'Enter',keyCode:13,which:13,
+            bubbles:true,cancelable:true
+          }));
+        },200);
+      });
+    });
+  }
+  attach();
+  new MutationObserver(attach).observe(
+    window.parent.document.body,{childList:true,subtree:true}
+  );
+})();
+</script>""",
+        height=0,
+        scrolling=False,
+    )
+
+
 def _apply_treemap_sel(new_sel: dict) -> None:
     """Commit a new treemap selection to session state and rerun."""
     st.session_state["thematic_treemap_sel"] = new_sel
@@ -617,6 +651,7 @@ def render() -> None:
         key="th_search",
         on_change=_on_th_search_change,
     )
+    _inject_live_search()
 
     # Build filtered list — sector button chips take priority; dropdowns can
     # further narrow or override when the user explicitly selects something
