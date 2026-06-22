@@ -41,7 +41,7 @@ class MetalProduct:
 METALS_REGISTRY: list[MetalProduct] = [
     # ── Gold Spot / Futures ────────────────────────────────────────────────────
     MetalProduct("XAU/USD", "Gold Spot (LBMA Fix)",      MetalType.GOLD,  "Spot/Futures","OTC","USD", yf_ticker="GC=F",  notes="LBMA AM/PM benchmark; troy oz USD"),
-    MetalProduct("GC=F",    "COMEX Gold Futures (front)","MetalType.GOLD","Spot/Futures","COMEX","USD", yf_ticker="GC=F"),
+    MetalProduct("GC=F",    "COMEX Gold Futures (front)", MetalType.GOLD,  "Spot/Futures","COMEX","USD", yf_ticker="GC=F"),
     MetalProduct("MGC=F",   "COMEX Micro Gold Futures",  MetalType.GOLD,  "Spot/Futures","COMEX","USD", yf_ticker="MGC=F", notes="1/10 oz contract"),
 
     # ── Gold Physical ETPs (US) ────────────────────────────────────────────────
@@ -61,14 +61,14 @@ METALS_REGISTRY: list[MetalProduct] = [
 
     # ── Gold Leveraged ETPs ───────────────────────────────────────────────────
     MetalProduct("UGL",  "ProShares Ultra Gold (2×)",      MetalType.GOLD, "Physical ETP","NYSE", "USD", expense_ratio=0.95, leverage=2.0, issuer="ProShares"),
-    MetalProduct("GLL",  "ProShares UltraShort Gold (−2×)","MetalType.GOLD","Physical ETP","NYSE","USD", expense_ratio=0.95, leverage=-2.0, issuer="ProShares"),
+    MetalProduct("GLL",  "ProShares UltraShort Gold (−2×)", MetalType.GOLD,  "Physical ETP","NYSE","USD", expense_ratio=0.95, leverage=-2.0, issuer="ProShares"),
     MetalProduct("3GOL.L","WisdomTree Gold 3× Daily ETP",  MetalType.GOLD, "Physical ETP","LSE", "USD", expense_ratio=0.99, leverage=3.0, issuer="WisdomTree",    notes="Daily-reset leveraged exposure"),
     MetalProduct("3GOS.L","WisdomTree Gold -3× Daily ETP", MetalType.GOLD, "Physical ETP","LSE", "USD", expense_ratio=0.99, leverage=-3.0, issuer="WisdomTree"),
 
     # ── Gold Mining Equity ETFs ────────────────────────────────────────────────
     MetalProduct("GDX",  "VanEck Gold Miners ETF",         MetalType.GOLD, "Mining ETF", "NYSE", "USD", expense_ratio=0.51, aum_bn=13.2, issuer="VanEck"),
     MetalProduct("GDXJ", "VanEck Junior Gold Miners",      MetalType.GOLD, "Mining ETF", "NYSE", "USD", expense_ratio=0.52, aum_bn=4.8,  issuer="VanEck"),
-    MetalProduct("RING", "iShares MSCI Global Gold Miners","MetalType.GOLD","Mining ETF","NASDAQ","USD", expense_ratio=0.39, aum_bn=0.6,  issuer="BlackRock"),
+    MetalProduct("RING", "iShares MSCI Global Gold Miners", MetalType.GOLD,  "Mining ETF","NASDAQ","USD", expense_ratio=0.39, aum_bn=0.6,  issuer="BlackRock"),
     MetalProduct("SGDM", "Sprott Gold Miners ETF",         MetalType.GOLD, "Mining ETF", "NYSE", "USD", expense_ratio=0.50, aum_bn=0.3,  issuer="Sprott"),
     MetalProduct("SGDJ", "Sprott Junior Gold Miners",      MetalType.GOLD, "Mining ETF", "NYSE", "USD", expense_ratio=0.50,              issuer="Sprott"),
     MetalProduct("GOEX", "Global X Gold Explorers ETF",    MetalType.GOLD, "Mining ETF", "NYSE", "USD", expense_ratio=0.65,              issuer="Global X"),
@@ -103,16 +103,16 @@ METALS_REGISTRY: list[MetalProduct] = [
 
     # ── Platinum ──────────────────────────────────────────────────────────────
     MetalProduct("PPLT",   "abrdn Physical Platinum",     MetalType.PLATINUM,"Physical ETP","NYSE","USD", expense_ratio=0.60, issuer="abrdn", physically_backed=True),
-    MetalProduct("PHPT.L", "WisdomTree Physical Platinum","MetalType.PLATINUM","Physical ETP","LSE","USD", expense_ratio=0.49, issuer="WisdomTree", physically_backed=True),
+    MetalProduct("PHPT.L", "WisdomTree Physical Platinum",  MetalType.PLATINUM, "Physical ETP","LSE","USD", expense_ratio=0.49, issuer="WisdomTree", physically_backed=True),
 
     # ── Palladium ─────────────────────────────────────────────────────────────
     MetalProduct("PALL",   "abrdn Physical Palladium",    MetalType.PALLADIUM,"Physical ETP","NYSE","USD", expense_ratio=0.60, issuer="abrdn", physically_backed=True),
     MetalProduct("PHPD.L", "WisdomTree Physical Palladium",MetalType.PALLADIUM,"Physical ETP","LSE","USD", expense_ratio=0.49, issuer="WisdomTree", physically_backed=True),
 
     # ── Broad Precious Metals ─────────────────────────────────────────────────
-    MetalProduct("GLTR",   "abrdn Physical Precious Metals Basket","MetalType.GOLD","Physical ETP","NYSE","USD",
+    MetalProduct("GLTR",   "abrdn Physical Precious Metals Basket", MetalType.GOLD, "Physical ETP","NYSE","USD",
                 expense_ratio=0.60, issuer="abrdn", physically_backed=True, notes="Gold+Silver+Platinum+Palladium basket"),
-    MetalProduct("WITE",   "WisdomTree Physical Precious Metals","MetalType.GOLD","Physical ETP","NYSE","USD",
+    MetalProduct("WITE",   "WisdomTree Physical Precious Metals",   MetalType.GOLD, "Physical ETP","NYSE","USD",
                 expense_ratio=0.55, issuer="WisdomTree", physically_backed=True),
 ]
 

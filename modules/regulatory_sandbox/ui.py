@@ -78,7 +78,7 @@ def render() -> None:
             <span style="color:{phase_color};font-weight:700;font-size:0.85rem;letter-spacing:0.1em">
             CURRENT REGULATORY PHASE: {phase.replace('_',' ')}
             </span><br>
-            <span style="color:#aaa;font-size:0.82rem">{phase_narrative(today)}</span>
+            <span style="color:#aaa;font-size:0.82rem">{phase_narrative(phase)}</span>
         </div>""",
         unsafe_allow_html=True,
     )
@@ -87,8 +87,8 @@ def render() -> None:
     t1, t2, t3 = st.columns(3)
     with t1:
         d = days_to_gateway_open(today)
-        color = "#4A7C59" if d > 0 else "#888"
-        label = f"{d}d" if d > 0 else "OPEN"
+        color = "#4A7C59" if (d is not None and d > 0) else "#888"
+        label = f"{d}d" if (d is not None and d > 0) else "OPEN"
         st.markdown(
             f"""<div style="background:#1A1D24;border:1px solid #2E3140;border-top:3px solid {color};
                 border-radius:8px;padding:0.75rem;text-align:center">
@@ -101,8 +101,10 @@ def render() -> None:
         )
     with t2:
         d = days_to_gateway_close(today)
-        color = "#FFA500" if d > 30 else "#FF6B6B" if d > 0 else "#888"
-        label = f"{d}d" if d > 0 else "CLOSED"
+        color = ("#FFA500" if (d is not None and d > 30)
+                 else "#FF6B6B" if (d is not None and d > 0)
+                 else "#888")
+        label = f"{d}d" if (d is not None and d > 0) else "CLOSED"
         st.markdown(
             f"""<div style="background:#1A1D24;border:1px solid #2E3140;border-top:3px solid {color};
                 border-radius:8px;padding:0.75rem;text-align:center">
@@ -115,8 +117,11 @@ def render() -> None:
         )
     with t3:
         d = days_to_enforcement(today)
-        color = "#CC0000" if d <= 90 else "#FF6B6B" if d <= 180 else "#FFA500"
-        label = f"{d}d" if d > 0 else "ACTIVE"
+        color = ("#CC0000" if (d is not None and d <= 90)
+                 else "#FF6B6B" if (d is not None and d <= 180)
+                 else "#FFA500" if d is not None
+                 else "#CC0000")
+        label = f"{d}d" if (d is not None and d > 0) else "ACTIVE"
         st.markdown(
             f"""<div style="background:#1A1D24;border:1px solid #2E3140;border-top:3px solid {color};
                 border-radius:8px;padding:0.75rem;text-align:center">

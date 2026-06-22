@@ -98,12 +98,15 @@ def render() -> None:
             chg     = px_data.get("chg_pct")
             color   = _METAL_COLOR.get(etp.metal, "#FFD700")
             with col:
+                price_str = f"${price:,.2f}" if price is not None else "—"
+                chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
+                chg_color = "#00D4AA" if (chg or 0) >= 0 else "#FF4B4B"
                 st.markdown(
                     f"""<div style="background:#1A1D24;border:1px solid {color}33;border-top:2px solid {color};
                         border-radius:6px;padding:0.5rem;text-align:center">
                         <div style="font-size:0.7rem;color:{color};font-weight:700">{etp.ticker}</div>
-                        <div style="font-weight:700">${price:,.2f}</div>
-                        <div style="font-size:0.75rem;color:{'#00D4AA' if (chg or 0) >= 0 else '#FF4B4B'}">{f'{chg:+.2f}%' if chg is not None else '—'}</div>
+                        <div style="font-weight:700">{price_str}</div>
+                        <div style="font-size:0.75rem;color:{chg_color}">{chg_str}</div>
                         <div style="font-size:0.65rem;color:#888">{etp.issuer}</div>
                     </div>""",
                     unsafe_allow_html=True,

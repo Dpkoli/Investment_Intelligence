@@ -40,7 +40,7 @@ def get_phase_summary(ref: Optional[date] = None) -> dict:
     return {
         "today": today,
         "phase": current_phase(today),
-        "phase_narrative": phase_narrative(today),
+        "phase_narrative": phase_narrative(current_phase(today)),
         "days_to_gateway_open":  days_to_gateway_open(today),
         "days_to_gateway_close": days_to_gateway_close(today),
         "days_to_enforcement":   days_to_enforcement(today),
