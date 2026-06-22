@@ -73,11 +73,31 @@ METALS_REGISTRY: list[MetalProduct] = [
     MetalProduct("SGDJ", "Sprott Junior Gold Miners",      MetalType.GOLD, "Mining ETF", "NYSE", "USD", expense_ratio=0.50,              issuer="Sprott"),
     MetalProduct("GOEX", "Global X Gold Explorers ETF",    MetalType.GOLD, "Mining ETF", "NYSE", "USD", expense_ratio=0.65,              issuer="Global X"),
 
+    # ── Gold Leveraged Mining ETFs ────────────────────────────────────────────
+    MetalProduct("NUGT",  "Direxion Daily Gold Miners Bull 2×",  MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=1.02, leverage=2.0,  issuer="Direxion", notes="2× daily leveraged GDX"),
+    MetalProduct("DUST",  "Direxion Daily Gold Miners Bear 2×",  MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=1.02, leverage=-2.0, issuer="Direxion", notes="−2× daily inverse GDX"),
+    MetalProduct("JNUG",  "Direxion Daily Jr Gold Miners Bull 2×",MetalType.GOLD,"Mining ETF","NYSE","USD", expense_ratio=1.16, leverage=2.0,  issuer="Direxion", notes="2× daily leveraged GDXJ"),
+    MetalProduct("JDST",  "Direxion Daily Jr Gold Miners Bear 2×",MetalType.GOLD,"Mining ETF","NYSE","USD", expense_ratio=1.16, leverage=-2.0, issuer="Direxion", notes="−2× daily inverse GDXJ"),
+
+    # ── Additional Gold Mining ETFs ───────────────────────────────────────────
+    MetalProduct("GOAU",  "US Global GO GOLD & Precious Metal",  MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=0.60, issuer="US Global Investors", notes="Royalty-focused gold miners"),
+    MetalProduct("BGLD",  "GraniteShares Gold Miners ETF",       MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=0.75, issuer="GraniteShares",       notes="Equally-weighted gold miners"),
+    MetalProduct("GDMN",  "WisdomTree Gold Miners Quality Divid",MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=0.45, issuer="WisdomTree"),
+    MetalProduct("MNRS",  "Gabelli Gold Fund (ETF share class)", MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=1.53, issuer="Gabelli",             notes="Active gold miners fund"),
+    MetalProduct("RING",  "iShares MSCI Global Gold Miners ETF", MetalType.GOLD, "Mining ETF","NASDAQ","USD",expense_ratio=0.39, aum_bn=0.6, issuer="BlackRock"),
+
+    # ── Broad Metals & Mining ─────────────────────────────────────────────────
+    MetalProduct("PICK",  "iShares MSCI Global Met & Mining ETF",MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=0.39, aum_bn=1.1, issuer="BlackRock", notes="Diversified metals & mining; includes gold, copper, iron ore"),
+    MetalProduct("XME",   "SPDR S&P Metals & Mining ETF",        MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=0.35, aum_bn=2.2, issuer="State Street", notes="Equal-weight US metals & mining"),
+    MetalProduct("COPX",  "Global X Copper Miners ETF",          MetalType.GOLD, "Mining ETF","NYSE","USD", expense_ratio=0.65, aum_bn=1.8, issuer="Global X",    notes="Copper miners; benefit from EV/renewable demand"),
+
     # ── Gold Royalty / Streaming ──────────────────────────────────────────────
     MetalProduct("WPM",  "Wheaton Precious Metals",        MetalType.GOLD, "Streaming Equity","NYSE","USD",               notes="World's largest precious metals streamer"),
     MetalProduct("FNV",  "Franco-Nevada",                  MetalType.GOLD, "Streaming Equity","NYSE","USD",               notes="Diversified royalty company; gold-dominant"),
     MetalProduct("RGLD", "Royal Gold",                     MetalType.GOLD, "Streaming Equity","NASDAQ","USD",             notes="Royalties on gold mines globally"),
     MetalProduct("SAND", "Sandstorm Gold Royalties",       MetalType.GOLD, "Streaming Equity","NYSE","USD",               notes="Junior streaming company"),
+    MetalProduct("OR",   "Osisko Gold Royalties",          MetalType.GOLD, "Streaming Equity","NYSE","USD",               notes="Canadian royalties; strong NAV/share growth"),
+    MetalProduct("MAG",  "MAG Silver Corp",                MetalType.SILVER,"Streaming Equity","NYSE","USD",              notes="High-grade Mexican silver developer"),
 
     # ── Silver Spot / Futures ─────────────────────────────────────────────────
     MetalProduct("XAG/USD","Silver Spot (LBMA Fix)",       MetalType.SILVER,"Spot/Futures","OTC","USD", yf_ticker="SI=F"),

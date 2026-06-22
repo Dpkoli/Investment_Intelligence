@@ -558,9 +558,12 @@ def render() -> None:
             border_style = f"border:2px solid {accent}" if is_active else "border:1px solid #2E3140"
 
             with col:
+                card_id = f"cr_card_{yf_t.replace('-', '_')}"
+                active_border = f"2px solid {accent}" if is_active else f"1px solid #2E3140"
                 st.markdown(
-                    f"""<div style="background:#1A1D24;{border_style};border-radius:10px;
-  padding:0.9rem 1.1rem;margin-bottom:0.5rem">
+                    f"""<div id="{card_id}"
+  style="background:#1A1D24;border:{active_border};border-radius:10px;
+         padding:0.9rem 1.1rem;margin-bottom:0.3rem;cursor:pointer">
   <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">
     <span style="font-size:1.4rem">{icon}</span>
     <span style="font-weight:700;font-size:1rem;color:{accent}">{sym}</span>
@@ -571,11 +574,43 @@ def render() -> None:
 </div>""",
                     unsafe_allow_html=True,
                 )
-                btn_label = f"{'▼ Hide' if is_active else '▶ Explore'} {sym}"
-                if st.button(btn_label, key=f"cr_btn_{yf_t}", use_container_width=True,
+                if st.button("▼" if is_active else "▶", key=f"cr_btn_{yf_t}",
+                             use_container_width=True,
                              type="primary" if is_active else "secondary"):
                     st.session_state["cr_selected"] = None if is_active else yf_t
                     st.rerun()
+
+    # ── Make cards clickable via JS (hides small trigger buttons) ───────────
+    import streamlit.components.v1 as components
+    components.html("""<script>
+(function(){
+  function setup(){
+    var cards=window.parent.document.querySelectorAll('[id^="cr_card_"]');
+    cards.forEach(function(card){
+      if(card._crReady)return;
+      card._crReady=true;
+      // Hide the trigger button directly below the card
+      var mc=card.closest('[data-testid="stMarkdownContainer"]');
+      var vb=mc&&mc.parentElement;
+      if(vb){
+        var bd=vb.querySelector('[data-testid="stButton"]');
+        if(bd){bd.style.height='0';bd.style.overflow='hidden';bd.style.margin='0';bd.style.padding='0';}
+      }
+      card.addEventListener('mouseenter',function(){card.style.opacity='0.82';});
+      card.addEventListener('mouseleave',function(){card.style.opacity='1';});
+      card.addEventListener('click',function(){
+        var mc2=card.closest('[data-testid="stMarkdownContainer"]');
+        var vb2=mc2&&mc2.parentElement;
+        if(!vb2)return;
+        var btn=vb2.querySelector('button');
+        if(btn)btn.click();
+      });
+    });
+  }
+  setup();
+  new MutationObserver(setup).observe(window.parent.document.body,{childList:true,subtree:true});
+})();
+</script>""", height=0, scrolling=False)
 
     # ── Detail panel ──────────────────────────────────────────────────────────
     if selected:
