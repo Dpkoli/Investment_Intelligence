@@ -1,0 +1,21 @@
+# Contrarian Radar — Streamlit app dependencies
+# Install: pip install -r app/requirements.txt
+
+# UI
+streamlit>=1.35.0
+
+# Charting
+plotly>=5.22.0
+
+# Data
+pandas>=2.2.0
+
+# Core ETL / analytics (from repo root)
+pydantic>=2.5.0
+requests>=2.31.0
+urllib3>=2.0.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# Dev / env
+python-dotenv>=1.0.0
