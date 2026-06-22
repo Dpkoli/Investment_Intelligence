@@ -582,7 +582,7 @@ def render() -> None:
 
     st.divider()
 
-    # ── Additional dropdown filters (region / exchange / override sector) ────
+    # ── Filters + search ─────────────────────────────────────────────────────
     col_s, col_t, col_r, col_ex = st.columns(4)
     with col_s:
         sel_sectors = st.multiselect(
@@ -605,6 +605,13 @@ def render() -> None:
             placeholder="All exchanges", key="th_exchange",
         )
 
+    search_q = st.text_input(
+        "🔍 Search instruments",
+        value="",
+        placeholder="Ticker, name, issuer…",
+        key="th_search",
+    )
+
     # Build filtered list — sector button chips take priority; dropdowns can
     # further narrow or override when the user explicitly selects something
     filtered = list(THEMATIC_REGISTRY)
@@ -622,6 +629,13 @@ def render() -> None:
         filtered = [p for p in filtered if p.region in sel_regions]
     if sel_exchange:
         filtered = [p for p in filtered if p.exchange in sel_exchange]
+    if search_q:
+        q = search_q.lower()
+        filtered = [
+            p for p in filtered
+            if q in p.ticker.lower() or q in p.name.lower()
+            or q in (p.issuer or "").lower() or q in p.sub_theme.lower()
+        ]
 
     st.caption(f"**{len(filtered)}** products — select a row to view holdings, performance, and news")
 

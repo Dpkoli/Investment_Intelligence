@@ -170,6 +170,56 @@ CORE_EQUITY_REGISTRY: list[IndexProduct] = [
     IndexProduct("ESGV",   "Vanguard ESG US Stock ETF",         "US", "FTSE US All Cap Choice","USD","NYSE","ETF", expense_ratio=0.09, issuer="Vanguard"),
     IndexProduct("SUSL",   "iShares MSCI USA ESG Select",       "US", "MSCI USA ESG Select","USD","NASDAQ","ETF", expense_ratio=0.25, issuer="BlackRock"),
     IndexProduct("ESGE",   "iShares MSCI EM ESG Optimized",     "EM", "MSCI EM ESG Focus","USD","NYSE","ETF", expense_ratio=0.25, issuer="BlackRock"),
+
+    # ── Total Market (US-listed) ──────────────────────────────────────────────
+    IndexProduct("VTI",  "Vanguard Total Stock Market ETF",     "US", "CRSP US Total Market","USD","NYSE","ETF", aum_bn=441.2, expense_ratio=0.03, issuer="Vanguard"),
+    IndexProduct("ITOT", "iShares Core S&P Total US Stock",     "US", "S&P Total Market","USD","NASDAQ","ETF", aum_bn=60.8, expense_ratio=0.03, issuer="BlackRock"),
+    IndexProduct("SCHB", "Schwab US Broad Market ETF",          "US", "Dow Jones US Broad Market","USD","NYSE","ETF", aum_bn=28.3, expense_ratio=0.03, issuer="Schwab"),
+
+    # ── Global (US-listed) ────────────────────────────────────────────────────
+    IndexProduct("VT",   "Vanguard Total World Stock ETF",      "Global","FTSE Global All Cap","USD","NYSE","ETF", aum_bn=47.8, expense_ratio=0.07, issuer="Vanguard"),
+    IndexProduct("ACWI", "iShares MSCI ACWI ETF",               "Global","MSCI ACWI","USD","NASDAQ","ETF", aum_bn=22.1, expense_ratio=0.32, issuer="BlackRock"),
+    IndexProduct("ACWX", "iShares MSCI ACWI ex US ETF",         "Global","MSCI ACWI ex USA","USD","NASDAQ","ETF", aum_bn=4.8, expense_ratio=0.32, issuer="BlackRock"),
+    IndexProduct("URTH", "iShares MSCI World ETF",               "Global","MSCI World","USD","NYSE","ETF", aum_bn=5.2, expense_ratio=0.24, issuer="BlackRock"),
+
+    # ── LSE — S&P 500 ETFs ───────────────────────────────────────────────────
+    IndexProduct("VUSA.L",  "Vanguard S&P 500 UCITS ETF (USD Dist)",    "US", "S&P 500", "USD", "LSE", "ETF", aum_bn=42.1, expense_ratio=0.07, issuer="Vanguard", isin="IE00B3XXRP09"),
+    IndexProduct("VUAG.L",  "Vanguard S&P 500 UCITS ETF (GBP Acc)",     "US", "S&P 500", "GBP", "LSE", "ETF", aum_bn=35.6, expense_ratio=0.07, issuer="Vanguard", isin="IE00BFMXXD54"),
+    IndexProduct("CSPX.L",  "iShares Core S&P 500 UCITS ETF USD Acc",   "US", "S&P 500", "USD", "LSE", "ETF", aum_bn=88.4, expense_ratio=0.07, issuer="BlackRock", isin="IE00B5BMR087"),
+    IndexProduct("IUSA.L",  "iShares Core S&P 500 UCITS ETF USD Dist",  "US", "S&P 500", "USD", "LSE", "ETF", aum_bn=12.3, expense_ratio=0.07, issuer="BlackRock", isin="IE0031442068"),
+    IndexProduct("SPXP.L",  "Invesco S&P 500 UCITS ETF Acc",            "US", "S&P 500", "USD", "LSE", "ETF", aum_bn=8.2,  expense_ratio=0.05, issuer="Invesco",   isin="IE00B3YCGJ38"),
+    IndexProduct("SPYL.L",  "SPDR S&P 500 UCITS ETF",                   "US", "S&P 500", "USD", "LSE", "ETF", aum_bn=6.1,  expense_ratio=0.03, issuer="State Street", isin="IE00BJYDH287"),
+    IndexProduct("XSPS.L",  "Xtrackers S&P 500 Swap UCITS ETF",         "US", "S&P 500", "GBP", "LSE", "ETF", aum_bn=5.8,  expense_ratio=0.15, issuer="DWS",       isin="IE00BJYDH287"),
+
+    # ── LSE — MSCI World / Global ETFs ───────────────────────────────────────
+    IndexProduct("SWDA.L",  "iShares Core MSCI World UCITS ETF",        "Global", "MSCI World", "USD", "LSE", "ETF", aum_bn=72.8, expense_ratio=0.20, issuer="BlackRock", isin="IE00B4L5Y983"),
+    IndexProduct("IWDG.L",  "iShares Core MSCI World GBP Hedged ETF",   "Global", "MSCI World", "GBP", "LSE", "ETF", aum_bn=9.4,  expense_ratio=0.30, issuer="BlackRock", isin="IE00B4L5YX21"),
+    IndexProduct("HMWO.L",  "HSBC MSCI World UCITS ETF",                "Global", "MSCI World", "USD", "LSE", "ETF", aum_bn=6.2,  expense_ratio=0.15, issuer="HSBC",      isin="IE00B4X9L533"),
+    IndexProduct("VEVE.L",  "Vanguard FTSE Developed World UCITS ETF",  "Global", "FTSE Dev World","USD","LSE","ETF", aum_bn=8.9,  expense_ratio=0.12, issuer="Vanguard",  isin="IE00BKX55R35"),
+    IndexProduct("ISAC.L",  "iShares MSCI ACWI UCITS ETF",              "Global", "MSCI ACWI",  "USD", "LSE", "ETF", aum_bn=14.6, expense_ratio=0.20, issuer="BlackRock", isin="IE00B6R52259"),
+    IndexProduct("XDWD.L",  "Xtrackers MSCI World Swap UCITS ETF",      "Global", "MSCI World", "USD", "LSE", "ETF", aum_bn=10.1, expense_ratio=0.19, issuer="DWS",       isin="IE00BJ0KDQ92"),
+    IndexProduct("HMCX.L",  "HSBC MSCI World GBP Hedged UCITS ETF",     "Global", "MSCI World", "GBP", "LSE", "ETF", aum_bn=4.1,  expense_ratio=0.15, issuer="HSBC",      isin="IE00BMCZMD63"),
+
+    # ── LSE — Emerging Markets (GBP accessible) ───────────────────────────────
+    IndexProduct("VFEM.L",  "Vanguard FTSE Emerging Markets UCITS ETF", "EM", "FTSE EM",    "USD", "LSE", "ETF", aum_bn=4.8,  expense_ratio=0.22, issuer="Vanguard",  isin="IE00B3VVMM84"),
+    IndexProduct("EMIM.L",  "iShares Core MSCI EM IMI UCITS ETF",       "EM", "MSCI EM IMI","USD", "LSE", "ETF", aum_bn=18.4, expense_ratio=0.18, issuer="BlackRock", isin="IE00BKM4GZ66"),
+    IndexProduct("XMEM.L",  "Xtrackers MSCI EM Swap UCITS ETF",         "EM", "MSCI EM",    "USD", "LSE", "ETF", aum_bn=5.1,  expense_ratio=0.20, issuer="DWS",       isin="IE00BTJRMP35"),
+    IndexProduct("HMEM.L",  "HSBC MSCI Emerging Markets UCITS ETF",     "EM", "MSCI EM",    "USD", "LSE", "ETF", aum_bn=3.6,  expense_ratio=0.15, issuer="HSBC",      isin="IE00B3VVMM84"),
+
+    # ── LSE — Regional ETFs ───────────────────────────────────────────────────
+    IndexProduct("VHYL.L",  "Vanguard FTSE All-World High Div Yield",   "Global", "FTSE AW High Div","USD","LSE","ETF", aum_bn=5.6, expense_ratio=0.29, issuer="Vanguard",  isin="IE00B8GKDB10"),
+    IndexProduct("VJPN.L",  "Vanguard FTSE Japan UCITS ETF",            "Asia",   "FTSE Japan", "JPY", "LSE", "ETF", aum_bn=1.2, expense_ratio=0.15, issuer="Vanguard",  isin="IE00B95PGT31"),
+    IndexProduct("VERX.L",  "Vanguard FTSE Dev Europe ex UK UCITS ETF", "Europe", "FTSE Dev Europe ex UK","EUR","LSE","ETF", aum_bn=2.8, expense_ratio=0.10, issuer="Vanguard", isin="IE00B945VV12"),
+    IndexProduct("VAPX.L",  "Vanguard FTSE Dev Asia Pacific ex JP ETF", "Pacific","FTSE Dev Asia Pacific","USD","LSE","ETF", aum_bn=1.1, expense_ratio=0.15, issuer="Vanguard", isin="IE00B9F5YL18"),
+    IndexProduct("IDJG.L",  "iShares Core MSCI Japan IMI UCITS ETF",    "Asia",   "MSCI Japan IMI","JPY","LSE","ETF", aum_bn=4.1, expense_ratio=0.12, issuer="BlackRock", isin="IE00B4L5YC18"),
+    IndexProduct("IBTS.L",  "iShares $ Treasury Bond 1-3yr ETF",        "US",     "ICE US Treasury 1-3Y","USD","LSE","ETF", aum_bn=8.2, expense_ratio=0.07, issuer="BlackRock", isin="IE00B14X4S71"),
+
+    # ── LSE — Leverage / Inverse ─────────────────────────────────────────────
+    IndexProduct("3USL.L",  "Leverage Shares 3× US 500 ETP",            "US", "S&P 500",    "GBP", "LSE", "ETP", leverage=3.0, expense_ratio=0.75, issuer="Leverage Shares"),
+    IndexProduct("3USS.L",  "Leverage Shares -3× US 500 ETP",           "US", "S&P 500",    "GBP", "LSE", "ETP", leverage=-3.0, is_inverse=True, expense_ratio=0.75, issuer="Leverage Shares"),
+    IndexProduct("3NQL.L",  "Leverage Shares 3× Nasdaq 100 ETP",        "US", "NASDAQ-100", "GBP", "LSE", "ETP", leverage=3.0, expense_ratio=0.75, issuer="Leverage Shares"),
+    IndexProduct("QQQ3.L",  "WisdomTree NASDAQ 100 3× Daily ETP",       "US", "NASDAQ-100", "USD", "LSE", "ETP", leverage=3.0, expense_ratio=0.75, issuer="WisdomTree"),
+    IndexProduct("SP3L.L",  "WisdomTree S&P 500 3× Daily ETP",          "US", "S&P 500",    "USD", "LSE", "ETP", leverage=3.0, expense_ratio=0.75, issuer="WisdomTree"),
 ]
 
 
