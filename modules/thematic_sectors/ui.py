@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Optional
 
@@ -272,11 +273,19 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
     )
 
     # ── 2. Holdings  ‖  Performance ──────────────────────────────────────────
+    # Fetch all three data sources in parallel to minimise wall-clock latency
+    with ThreadPoolExecutor(max_workers=3) as _pool:
+        _fh = _pool.submit(_fetch_holdings, p.ticker)
+        _fp = _pool.submit(_fetch_performance, p.ticker)
+        _fn = _pool.submit(_fetch_news, p.ticker)
+        holdings = _fh.result()
+        perf     = _fp.result()
+        news     = _fn.result()
+
     col_h, col_p = st.columns([1, 1], gap="medium")
 
     with col_h:
         st.markdown("##### 🏦 Top Holdings")
-        holdings = _fetch_holdings(p.ticker)
         if holdings:
             h_df = pd.DataFrame(holdings).head(10)
             fig_h = go.Figure(go.Bar(
@@ -307,7 +316,6 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
 
     with col_p:
         st.markdown("##### 📈 Performance")
-        perf = _fetch_performance(p.ticker)
         if perf and perf.get("dates"):
             # Sparkline price chart
             fig_p = go.Figure(go.Scatter(
@@ -359,7 +367,6 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
 
     # ── 3. News ───────────────────────────────────────────────────────────────
     st.markdown("##### 📰 Recent News & Market Impact")
-    news = _fetch_news(p.ticker)
     if news:
         for article in news:
             title     = article["title"]
@@ -463,24 +470,27 @@ def render() -> None:
         theme_counts.setdefault(p.sector, {})
         theme_counts[p.sector][p.sub_theme] = theme_counts[p.sector].get(p.sub_theme, 0) + 1
 
-    # Store sector+sub-theme in customdata for reliable event parsing
-    tm_labels, tm_parents, tm_values, tm_ids = [], [], [], []
+    # Build parallel arrays; customdata=[sector, sub_theme|""] for 100%-reliable event parsing
+    tm_labels, tm_parents, tm_values, tm_ids, tm_custom = [], [], [], [], []
     for sector, themes in theme_counts.items():
         tm_labels.append(sector)
         tm_parents.append("")
         tm_values.append(sum(themes.values()))
         tm_ids.append(sector)
+        tm_custom.append([sector, ""])
         for theme, cnt in themes.items():
             tm_labels.append(theme)
             tm_parents.append(sector)
             tm_values.append(cnt)
             tm_ids.append(f"{sector}/{theme}")
+            tm_custom.append([sector, theme])
 
     fig = go.Figure(go.Treemap(
         ids=tm_ids,
         labels=tm_labels,
         parents=tm_parents,
         values=tm_values,
+        customdata=tm_custom,
         branchvalues="total",
         hovertemplate="<b>%{label}</b><br>%{value} instruments — click to filter<extra></extra>",
         marker=dict(
@@ -512,28 +522,35 @@ def render() -> None:
     if treemap_event and treemap_event.selection:
         pts = treemap_event.selection.get("points") or []
         if pts:
-            pt     = pts[0]
-            # Use the stable 'id' field ("Sector" or "Sector/Sub-Theme")
-            id_val = str(pt.get("id", "") or "").strip()
-            label  = str(pt.get("label", "") or "").strip()
-            parent = str(pt.get("parent", "") or "").strip()
+            pt = pts[0]
 
-            # Determine click target from id (most reliable)
-            if "/" in id_val:
-                parts = id_val.split("/", 1)
-                click_sector, click_sub = parts[0], parts[1]
-            elif id_val in ALL_SECTORS:
-                click_sector, click_sub = id_val, None
-            elif label in ALL_SECTORS:
-                click_sector, click_sub = label, None
-            elif parent in ALL_SECTORS:
-                click_sector, click_sub = parent, label
+            # --- Parse click target -----------------------------------------
+            # Priority 1: customdata=[sector, sub_theme] — always present
+            cd = pt.get("customdata") or []
+            if cd and len(cd) >= 2:
+                click_sector = str(cd[0] or "").strip() or None
+                click_sub    = str(cd[1] or "").strip() or None
             else:
-                click_sector, click_sub = None, None
+                # Priority 2: explicit id field ("Sector" or "Sector/Sub-Theme")
+                id_val = str(pt.get("id", "") or "").strip()
+                label  = str(pt.get("label", "") or "").strip()
+                parent = str(pt.get("parent", "") or "").strip()
+
+                if "/" in id_val:
+                    parts = id_val.split("/", 1)
+                    click_sector, click_sub = parts[0], parts[1]
+                elif id_val in ALL_SECTORS:
+                    click_sector, click_sub = id_val, None
+                elif label in ALL_SECTORS:
+                    click_sector, click_sub = label, None
+                elif parent in ALL_SECTORS:
+                    click_sector, click_sub = parent, label
+                else:
+                    click_sector, click_sub = None, None
+            # ----------------------------------------------------------------
 
             if click_sub:
                 candidate = {"sector": click_sector, "sub_theme": click_sub}
-                # Toggle: same sub-theme → step up to sector
                 new_sel = (
                     {"sector": click_sector, "sub_theme": None}
                     if prev_sel == candidate
@@ -541,23 +558,23 @@ def render() -> None:
                 )
             elif click_sector:
                 candidate = {"sector": click_sector, "sub_theme": None}
-                # Toggle: same sector → clear all
                 new_sel = (
                     {"sector": None, "sub_theme": None}
                     if prev_sel == candidate
                     else candidate
                 )
             else:
-                # Root / unknown → clear
                 new_sel = {"sector": None, "sub_theme": None}
         else:
-            # Empty selection (click on blank canvas) → clear
             new_sel = {"sector": None, "sub_theme": None}
 
         if new_sel is not None and new_sel != prev_sel:
             st.session_state["thematic_treemap_sel"] = new_sel
             st.session_state["thematic_page"] = 0
             st.session_state["thematic_selected_ticker"] = None
+            # Clear dropdown keys so their defaults reflect new treemap state
+            st.session_state.pop("th_sectors", None)
+            st.session_state.pop("th_themes", None)
             st.rerun()
 
     treemap_sel = st.session_state["thematic_treemap_sel"]
