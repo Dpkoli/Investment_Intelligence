@@ -448,12 +448,22 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
 
 # ── Main render ───────────────────────────────────────────────────────────────
 
+def _apply_treemap_sel(new_sel: dict) -> None:
+    """Commit a new treemap selection to session state and rerun."""
+    st.session_state["thematic_treemap_sel"] = new_sel
+    st.session_state["thematic_page"] = 0
+    st.session_state["thematic_selected_ticker"] = None
+    st.session_state.pop("th_sectors", None)
+    st.session_state.pop("th_themes", None)
+    st.rerun()
+
+
 def render() -> None:
     st.markdown("## 📊 Thematic Sectors — Global Sector & Thematic ETF Grid")
     st.caption(
         f"{len(THEMATIC_REGISTRY)} products across {len(ALL_SECTORS)} sectors "
         f"and {len(ALL_SUB_THEMES)} sub-themes — "
-        "**click a tile** to filter · **click again to clear** · **click a row** to explore"
+        "**click a sector button** to filter · **click sub-theme** to narrow · **click a row** to explore"
     )
 
     # ── Session state init ────────────────────────────────────────────────────
@@ -464,35 +474,32 @@ def render() -> None:
     if "thematic_page" not in st.session_state:
         st.session_state["thematic_page"] = 0
 
-    # ── Build treemap ─────────────────────────────────────────────────────────
+    treemap_sel = st.session_state["thematic_treemap_sel"]
+
+    # ── Treemap (visual display — Plotly treemap navigation clicks fire
+    #   plotly_treemapclick, not plotly_click, so on_select never fires;
+    #   sector/sub-theme buttons below are the reliable filter mechanism) ────
     theme_counts: dict[str, dict] = {}
     for p in THEMATIC_REGISTRY:
         theme_counts.setdefault(p.sector, {})
         theme_counts[p.sector][p.sub_theme] = theme_counts[p.sector].get(p.sub_theme, 0) + 1
 
-    # Build parallel arrays; customdata=[sector, sub_theme|""] for 100%-reliable event parsing
-    tm_labels, tm_parents, tm_values, tm_ids, tm_custom = [], [], [], [], []
+    tm_labels, tm_parents, tm_values = [], [], []
     for sector, themes in theme_counts.items():
         tm_labels.append(sector)
         tm_parents.append("")
         tm_values.append(sum(themes.values()))
-        tm_ids.append(sector)
-        tm_custom.append([sector, ""])
         for theme, cnt in themes.items():
             tm_labels.append(theme)
             tm_parents.append(sector)
             tm_values.append(cnt)
-            tm_ids.append(f"{sector}/{theme}")
-            tm_custom.append([sector, theme])
 
     fig = go.Figure(go.Treemap(
-        ids=tm_ids,
         labels=tm_labels,
         parents=tm_parents,
         values=tm_values,
-        customdata=tm_custom,
         branchvalues="total",
-        hovertemplate="<b>%{label}</b><br>%{value} instruments — click to filter<extra></extra>",
+        hovertemplate="<b>%{label}</b><br>%{value} instruments<extra></extra>",
         marker=dict(
             colorscale=[[0, "#1A2A3A"], [0.5, "#00896B"], [1, "#00D4AA"]],
             showscale=False,
@@ -502,123 +509,99 @@ def render() -> None:
         textfont=dict(size=12),
     ))
     fig.update_layout(
-        height=380, margin={"t": 10, "b": 10, "l": 0, "r": 0},
+        height=330, margin={"t": 10, "b": 10, "l": 0, "r": 0},
         paper_bgcolor="rgba(0,0,0,0)",
         font={"color": "#ddd"},
     )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-    treemap_event = st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-        on_select="rerun",
-        key="thematic_treemap",
+    # ── Sector filter chips ───────────────────────────────────────────────────
+    st.markdown(
+        '<div style="font-size:0.72rem;color:#888;margin-bottom:0.25rem">'
+        '&#x25BC; Click a sector to filter the table below</div>',
+        unsafe_allow_html=True,
     )
+    sector_list = sorted(ALL_SECTORS)
+    _CHIP_ROW = 5  # sectors per row
+    for row_start in range(0, len(sector_list), _CHIP_ROW):
+        row_sectors = sector_list[row_start : row_start + _CHIP_ROW]
+        cols = st.columns(len(row_sectors))
+        for col, sector in zip(cols, row_sectors):
+            active = treemap_sel["sector"] == sector
+            count  = sum(theme_counts.get(sector, {}).values())
+            with col:
+                if st.button(
+                    f"{'✓ ' if active else ''}{sector} ({count})",
+                    key=f"sec_btn_{sector}",
+                    use_container_width=True,
+                    type="primary" if active else "secondary",
+                ):
+                    _apply_treemap_sel(
+                        {"sector": None, "sub_theme": None}
+                        if active
+                        else {"sector": sector, "sub_theme": None}
+                    )
 
-    # ── Process treemap click ─────────────────────────────────────────────────
-    prev_sel = dict(st.session_state["thematic_treemap_sel"])
-    new_sel  = None
+    # ── Sub-theme chips (expand when a sector is active) ─────────────────────
+    if treemap_sel["sector"]:
+        sub_themes = sorted(
+            set(p.sub_theme for p in THEMATIC_REGISTRY
+                if p.sector == treemap_sel["sector"])
+        )
+        st.markdown(
+            f'<div style="font-size:0.72rem;color:#888;margin:0.35rem 0 0.2rem 0">'
+            f'Sub-themes in <b style="color:#00D4AA">{treemap_sel["sector"]}</b>:</div>',
+            unsafe_allow_html=True,
+        )
+        _THEME_ROW = 6
+        for row_start in range(0, len(sub_themes), _THEME_ROW):
+            row_themes = sub_themes[row_start : row_start + _THEME_ROW]
+            cols = st.columns(len(row_themes))
+            for col, theme in zip(cols, row_themes):
+                active = treemap_sel["sub_theme"] == theme
+                cnt    = theme_counts.get(treemap_sel["sector"], {}).get(theme, 0)
+                with col:
+                    if st.button(
+                        f"{'✓ ' if active else ''}{theme} ({cnt})",
+                        key=f"theme_btn_{theme}",
+                        use_container_width=True,
+                        type="primary" if active else "secondary",
+                    ):
+                        _apply_treemap_sel(
+                            {"sector": treemap_sel["sector"], "sub_theme": None}
+                            if active
+                            else {"sector": treemap_sel["sector"], "sub_theme": theme}
+                        )
 
-    if treemap_event and treemap_event.selection:
-        pts = treemap_event.selection.get("points") or []
-        if pts:
-            pt = pts[0]
-
-            # --- Parse click target -----------------------------------------
-            # Priority 1: customdata=[sector, sub_theme] — always present
-            cd = pt.get("customdata") or []
-            if cd and len(cd) >= 2:
-                click_sector = str(cd[0] or "").strip() or None
-                click_sub    = str(cd[1] or "").strip() or None
-            else:
-                # Priority 2: explicit id field ("Sector" or "Sector/Sub-Theme")
-                id_val = str(pt.get("id", "") or "").strip()
-                label  = str(pt.get("label", "") or "").strip()
-                parent = str(pt.get("parent", "") or "").strip()
-
-                if "/" in id_val:
-                    parts = id_val.split("/", 1)
-                    click_sector, click_sub = parts[0], parts[1]
-                elif id_val in ALL_SECTORS:
-                    click_sector, click_sub = id_val, None
-                elif label in ALL_SECTORS:
-                    click_sector, click_sub = label, None
-                elif parent in ALL_SECTORS:
-                    click_sector, click_sub = parent, label
-                else:
-                    click_sector, click_sub = None, None
-            # ----------------------------------------------------------------
-
-            if click_sub:
-                candidate = {"sector": click_sector, "sub_theme": click_sub}
-                new_sel = (
-                    {"sector": click_sector, "sub_theme": None}
-                    if prev_sel == candidate
-                    else candidate
-                )
-            elif click_sector:
-                candidate = {"sector": click_sector, "sub_theme": None}
-                new_sel = (
-                    {"sector": None, "sub_theme": None}
-                    if prev_sel == candidate
-                    else candidate
-                )
-            else:
-                new_sel = {"sector": None, "sub_theme": None}
-        else:
-            new_sel = {"sector": None, "sub_theme": None}
-
-        if new_sel is not None and new_sel != prev_sel:
-            st.session_state["thematic_treemap_sel"] = new_sel
-            st.session_state["thematic_page"] = 0
-            st.session_state["thematic_selected_ticker"] = None
-            # Clear dropdown keys so their defaults reflect new treemap state
-            st.session_state.pop("th_sectors", None)
-            st.session_state.pop("th_themes", None)
-            st.rerun()
-
-    treemap_sel = st.session_state["thematic_treemap_sel"]
-
-    # Active filter banner
+    # Active filter breadcrumb
     if treemap_sel["sector"]:
         crumb = (
-            f"{treemap_sel['sector']} &rsaquo; {treemap_sel['sub_theme']}"
+            f"{treemap_sel['sector']} › {treemap_sel['sub_theme']}"
             if treemap_sel["sub_theme"]
             else treemap_sel["sector"]
         )
-        col_banner, col_clear = st.columns([6, 1])
-        with col_banner:
-            st.markdown(
-                f'<div style="background:#1a3d2e;border:1px solid #00D4AA;border-radius:6px;'
-                f'padding:0.4rem 0.9rem;font-size:0.81rem;margin-top:0.25rem">'
-                f'&#x1F5C2; <b style="color:#00D4AA">Filter:</b> '
-                f'<span style="color:#ddd">{crumb}</span>'
-                f'<span style="color:#666;font-size:0.7rem"> — click same tile to clear</span>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        with col_clear:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("✕ Clear", key="clear_treemap"):
-                st.session_state["thematic_treemap_sel"] = {"sector": None, "sub_theme": None}
-                st.session_state["thematic_page"] = 0
-                st.session_state["thematic_selected_ticker"] = None
-                st.rerun()
+        st.markdown(
+            f'<div style="background:#1a3d2e;border:1px solid #00D4AA;border-radius:6px;'
+            f'padding:0.35rem 0.9rem;font-size:0.79rem;margin-top:0.4rem">'
+            f'&#x1F5C2; <b style="color:#00D4AA">Active filter:</b> '
+            f'<span style="color:#ddd">{crumb}</span> — '
+            f'<span style="color:#888;font-size:0.7rem">click ✓ button above to clear</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     st.divider()
 
-    # ── Manual dropdown filters ───────────────────────────────────────────────
+    # ── Additional dropdown filters (region / exchange / override sector) ────
     col_s, col_t, col_r, col_ex = st.columns(4)
     with col_s:
-        default_sectors = [treemap_sel["sector"]] if treemap_sel["sector"] else []
         sel_sectors = st.multiselect(
-            "Sector", ALL_SECTORS, default=default_sectors,
+            "Sector", ALL_SECTORS,
             placeholder="All sectors", key="th_sectors",
         )
     with col_t:
-        default_themes = [treemap_sel["sub_theme"]] if treemap_sel["sub_theme"] else []
         sel_themes = st.multiselect(
-            "Sub-Theme", ALL_SUB_THEMES, default=default_themes,
+            "Sub-Theme", ALL_SUB_THEMES,
             placeholder="All themes", key="th_themes",
         )
     with col_r:
@@ -632,12 +615,15 @@ def render() -> None:
             placeholder="All exchanges", key="th_exchange",
         )
 
-    # Build filtered list
+    # Build filtered list — sector button chips take priority; dropdowns can
+    # further narrow or override when the user explicitly selects something
     filtered = list(THEMATIC_REGISTRY)
-    if not sel_sectors and treemap_sel["sector"]:
-        filtered = [p for p in filtered if p.sector == treemap_sel["sector"]]
-    if not sel_themes and treemap_sel["sub_theme"]:
-        filtered = [p for p in filtered if p.sub_theme == treemap_sel["sub_theme"]]
+    active_sector = sel_sectors[0] if len(sel_sectors) == 1 else treemap_sel["sector"]
+    active_sub    = sel_themes[0]  if len(sel_themes)  == 1 else treemap_sel["sub_theme"]
+    if active_sector and not sel_sectors:
+        filtered = [p for p in filtered if p.sector == active_sector]
+    if active_sub and not sel_themes:
+        filtered = [p for p in filtered if p.sub_theme == active_sub]
     if sel_sectors:
         filtered = [p for p in filtered if p.sector in sel_sectors]
     if sel_themes:
