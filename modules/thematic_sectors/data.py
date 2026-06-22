@@ -203,11 +203,17 @@ def fetch_prices(tickers: list[str]) -> dict[str, dict]:
             return data
         last  = closes.iloc[-1]
         prev  = closes.iloc[-2] if len(closes) >= 2 else closes.iloc[-1]
+        import math
         for t in tickers:
             try:
                 p  = float(last[t]) if t in last.index else None
                 p0 = float(prev[t]) if t in prev.index else None
-                pct = round((p - p0) / p0 * 100, 2) if p and p0 and p0 != 0 else None
+                # Guard against NaN values that yfinance returns for illiquid tickers
+                if p is not None and math.isnan(p):
+                    p = None
+                if p0 is not None and math.isnan(p0):
+                    p0 = None
+                pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
                 data[t] = {"price": round(p, 4) if p else None, "chg_pct": pct}
             except Exception:
                 pass
