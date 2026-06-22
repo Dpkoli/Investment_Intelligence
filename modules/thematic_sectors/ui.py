@@ -125,7 +125,7 @@ def _fetch_holdings(ticker: str) -> list[dict]:
 def _fetch_performance(ticker: str) -> dict:
     try:
         import yfinance as yf
-        hist = yf.Ticker(ticker).history(period="1y", auto_adjust=True)
+        hist = yf.Ticker(ticker).history(period="max", auto_adjust=True)
         if hist.empty or "Close" not in hist.columns:
             return {}
         closes = hist["Close"].dropna()
@@ -143,7 +143,6 @@ def _fetch_performance(ticker: str) -> dict:
                 return round((current - past) / past * 100, 2)
             return None
 
-        # YTD: first trading day of current year
         cur_year = closes.index[-1].year
         ytd_series = closes[closes.index.year == cur_year]
         ytd: Optional[float] = None
@@ -160,6 +159,7 @@ def _fetch_performance(ticker: str) -> dict:
             "6M":  _ret(126),
             "YTD": ytd,
             "1Y":  _ret(252),
+            "5Y":  _ret(1260),
         }
     except Exception:
         return {}
@@ -220,7 +220,7 @@ def _fetch_news(ticker: str) -> list[dict]:
 
 # ── Detail panel ──────────────────────────────────────────────────────────────
 
-def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
+def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
     """Fund deep-dive: header → holdings → performance → news → action buttons."""
     yf_key  = p.yf_ticker or p.ticker
     px_data = prices.get(yf_key, {})
@@ -290,11 +290,12 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
             fig_h = go.Figure(go.Bar(
                 x=h_df["pct"],
                 y=h_df["symbol"],
+                customdata=h_df["name"],
                 orientation="h",
                 marker_color="#00D4AA",
                 text=[f"{v:.1f}%" for v in h_df["pct"]],
                 textposition="outside",
-                hovertemplate="%{y}: %{x:.2f}%<extra></extra>",
+                hovertemplate="<b>%{customdata}</b> (%{y})<br>%{x:.2f}%<extra></extra>",
             ))
             fig_h.update_layout(
                 height=max(180, len(h_df) * 28),
@@ -316,49 +317,77 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
     with col_p:
         st.markdown("##### 📈 Performance")
         if perf and perf.get("dates"):
-            # Sparkline price chart
+            # Timeframe selector
+            _TF_DAYS = {"1M": 21, "3M": 63, "6M": 126, "1Y": 252, "5Y": 1260, "All": None}
+            tf = st.radio(
+                "",
+                list(_TF_DAYS.keys()),
+                index=3,          # default: 1Y
+                horizontal=True,
+                key=f"perf_tf_{p.ticker}",
+            )
+            n_days = _TF_DAYS[tf]
+            all_dates  = perf["dates"]
+            all_prices = perf["prices"]
+            vis_dates  = all_dates[-n_days:]  if n_days else all_dates
+            vis_prices = all_prices[-n_days:] if n_days else all_prices
+
+            # Price chart for selected window
+            line_color = "#00D4AA"
+            if len(vis_prices) >= 2:
+                p0 = next((v for v in vis_prices if v is not None), None)
+                p1 = next((v for v in reversed(vis_prices) if v is not None), None)
+                if p0 and p1 and p1 < p0:
+                    line_color = "#FF4B4B"
+
             fig_p = go.Figure(go.Scatter(
-                x=perf["dates"],
-                y=perf["prices"],
+                x=vis_dates,
+                y=vis_prices,
                 mode="lines",
-                line={"color": "#00D4AA", "width": 1.8},
+                line={"color": line_color, "width": 1.8},
                 fill="tozeroy",
-                fillcolor="rgba(0,212,170,0.07)",
+                fillcolor=f"rgba({'0,212,170' if line_color == '#00D4AA' else '255,75,75'},0.07)",
                 hovertemplate="%{x}<br>$%{y:,.2f}<extra></extra>",
             ))
             fig_p.update_layout(
-                height=160,
+                height=150,
                 margin={"t": 5, "b": 5, "l": 0, "r": 0},
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 xaxis={"visible": False},
-                yaxis={"color": "#666", "gridcolor": "#2E3140",
-                       "tickformat": "$,.0f"},
+                yaxis={"color": "#666", "gridcolor": "#2E3140", "tickformat": "$,.0f"},
                 showlegend=False,
             )
             st.plotly_chart(fig_p, use_container_width=True,
                             config={"displayModeBar": False})
 
-            # Return metrics row
-            periods = [("1M", perf.get("1M")), ("3M", perf.get("3M")),
-                       ("6M", perf.get("6M")), ("YTD", perf.get("YTD")),
-                       ("1Y", perf.get("1Y"))]
+            # Return metrics row (all periods for quick reference)
+            periods = [
+                ("1M",  perf.get("1M")),
+                ("3M",  perf.get("3M")),
+                ("6M",  perf.get("6M")),
+                ("YTD", perf.get("YTD")),
+                ("1Y",  perf.get("1Y")),
+                ("5Y",  perf.get("5Y")),
+            ]
             cells = ""
-            for label, val in periods:
+            for lbl, val in periods:
+                is_active = lbl == tf
                 if val is not None:
-                    color = "#00D4AA" if val >= 0 else "#FF4B4B"
+                    color   = "#00D4AA" if val >= 0 else "#FF4B4B"
                     val_str = f"{val:+.1f}%"
                 else:
-                    color = "#666"
+                    color   = "#555"
                     val_str = "—"
+                border = "border-bottom:2px solid #00D4AA;" if is_active else ""
                 cells += (
-                    f'<div style="text-align:center;flex:1">'
-                    f'<div style="font-size:0.65rem;color:#888">{label}</div>'
-                    f'<div style="font-size:0.82rem;font-weight:700;color:{color}">{val_str}</div>'
+                    f'<div style="text-align:center;flex:1;{border}">'
+                    f'<div style="font-size:0.62rem;color:#888">{lbl}</div>'
+                    f'<div style="font-size:0.8rem;font-weight:700;color:{color}">{val_str}</div>'
                     f'</div>'
                 )
             st.markdown(
-                f'<div style="display:flex;gap:0.3rem;margin-top:0.3rem">{cells}</div>',
+                f'<div style="display:flex;gap:0.25rem;margin-top:0.15rem">{cells}</div>',
                 unsafe_allow_html=True,
             )
         else:
@@ -425,7 +454,7 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
 
     # ── 4. Action buttons (bottom) ────────────────────────────────────────────
     st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-    btn1, btn2, btn3 = st.columns([2, 2, 1])
+    btn1, btn2 = st.columns(2)
     with btn1:
         st.link_button(
             f"🌐 {p.issuer or 'Fund'} Website →",
@@ -438,11 +467,6 @@ def _render_detail_panel(p: ThematicProduct, prices: dict, page: int) -> None:
             yahoo_url,
             use_container_width=True,
         )
-    with btn3:
-        if st.button("✕ Close", key=f"desel_{p.ticker}_p{page}",
-                     use_container_width=True):
-            st.session_state["thematic_selected_ticker"] = None
-            st.rerun()
 
 
 # ── Main render ───────────────────────────────────────────────────────────────
@@ -664,19 +688,18 @@ def render() -> None:
         },
     )
 
-    # Update selected ticker from row click
+    # Sync selection — always reflect current table state so unchecking hides the panel
     sel_rows = (
         table_event.selection.rows
         if table_event and table_event.selection
         else []
     )
     if sel_rows and 0 <= sel_rows[0] < len(page_items):
-        new_ticker = page_items[sel_rows[0]].ticker
-        if st.session_state["thematic_selected_ticker"] != new_ticker:
-            st.session_state["thematic_selected_ticker"] = new_ticker
+        st.session_state["thematic_selected_ticker"] = page_items[sel_rows[0]].ticker
+    else:
+        st.session_state["thematic_selected_ticker"] = None
 
-    # Resolve selected ticker to product on current page
-    sel_ticker = st.session_state.get("thematic_selected_ticker")
+    sel_ticker = st.session_state["thematic_selected_ticker"]
     selected_product = next(
         (p for p in page_items if p.ticker == sel_ticker), None
     ) if sel_ticker else None
@@ -684,4 +707,4 @@ def render() -> None:
     if selected_product:
         st.markdown("---")
         st.markdown(f"#### 🔍 {selected_product.ticker} — Fund Intelligence")
-        _render_detail_panel(selected_product, prices, page)
+        _render_detail_panel(selected_product, prices)
