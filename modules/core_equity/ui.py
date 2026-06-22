@@ -16,6 +16,13 @@ from .data import CORE_EQUITY_REGISTRY, IndexProduct, fetch_prices
 _PAGE_SIZE = 20
 
 
+# ── Search callbacks ──────────────────────────────────────────────────────────
+
+def _on_ce_search_change() -> None:
+    st.session_state["ce_page"] = 0
+    st.session_state["ce_selected"] = None
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _safe_num(v) -> Optional[float]:
@@ -429,6 +436,7 @@ def render() -> None:
         value="",
         placeholder="Ticker, name, index…",
         key="ce_search",
+        on_change=_on_ce_search_change,
     )
 
     # ── Apply filters ─────────────────────────────────────────────────────────

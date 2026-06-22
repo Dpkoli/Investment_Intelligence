@@ -471,6 +471,11 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
 
 # ── Main render ───────────────────────────────────────────────────────────────
 
+def _on_th_search_change() -> None:
+    st.session_state["thematic_page"] = 0
+    st.session_state["thematic_selected_ticker"] = None
+
+
 def _apply_treemap_sel(new_sel: dict) -> None:
     """Commit a new treemap selection to session state and rerun."""
     st.session_state["thematic_treemap_sel"] = new_sel
@@ -610,6 +615,7 @@ def render() -> None:
         value="",
         placeholder="Ticker, name, issuer…",
         key="th_search",
+        on_change=_on_th_search_change,
     )
 
     # Build filtered list — sector button chips take priority; dropdowns can
