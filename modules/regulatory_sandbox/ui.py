@@ -1,16 +1,16 @@
 """
-Regulatory Sandbox — UK FSMA 2026/2027 FCA countdown matrix renderer.
-Moved from Zone 3 of the monolithic app into a self-contained module.
+Regulatory Sandbox — UK FSMA 2026/2027 FCA Compliance Intelligence Hub.
+Comprehensive view of FCA authorisation requirements for all instrument types:
+LSE ETPs, spot crypto, stablecoins, and asset managers.
 """
 from __future__ import annotations
 
 import sys
 import os
 from datetime import date
-from typing import Any
+from typing import Any, Optional
 
 import streamlit as st
-import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 
@@ -23,7 +23,7 @@ from analytics.compliance.fca_checkpoints import (
     current_phase, phase_narrative, upcoming_milestones,
     days_to_gateway_open, days_to_gateway_close, days_to_enforcement,
 )
-from analytics.compliance.uk_crypto_matrix import UKCryptoComplianceMatrix
+from analytics.compliance.uk_crypto_matrix import UKCryptoComplianceMatrix, _INSTRUMENT_REGISTRY
 
 _PHASE_COLOR = {
     "PRE_GATEWAY":       "#4A7C59",
@@ -37,24 +37,34 @@ _SURVIVAL_COLOR = {
     "RED":      "#FF6B6B",
     "CRITICAL": "#FF2222",
 }
-
-
-def _badge(flag: str) -> str:
-    cls_map = {"GREEN": "badge-green", "AMBER": "badge-amber",
-               "RED": "badge-red", "CRITICAL": "badge-critical"}
-    cls = cls_map.get(flag, "badge-amber")
-    return f'<span class="{cls}">{flag}</span>'
-
-
-def _countdown(target: date, ref: date) -> str:
-    delta = (target - ref).days
-    if delta < 0:
-        return f"<span style='color:#FF4B4B'>PASSED {abs(delta)}d ago</span>"
-    if delta <= 30:
-        return f"<span style='color:#FF4B4B;font-weight:700'>{delta}d</span>"
-    if delta <= 90:
-        return f"<span style='color:#FFA500'>{delta}d</span>"
-    return f"<span style='color:#00D4AA'>{delta}d</span>"
+_CAT_COLOR = {
+    "LSE_ETP":      "#5B8FD4",
+    "Spot_Crypto":  "#9B59B6",
+    "Stablecoin":   "#2ECC71",
+    "Asset_Manager":"#E67E22",
+}
+_CAT_LABEL = {
+    "LSE_ETP":      "LSE ETP",
+    "Spot_Crypto":  "Spot Crypto",
+    "Stablecoin":   "Stablecoin",
+    "Asset_Manager":"Asset Manager",
+}
+_AUTH_LABEL = {
+    "Fully_Authorised":   "Fully Authorised",
+    "Registered_Only":    "Registered Only",
+    "Application_Pending":"Application Pending",
+    "Not_Started":        "Not Started",
+    "Withdrawn":          "Withdrawn",
+    "Grandfathered":      "Grandfathered",
+}
+_AUTH_COLOR = {
+    "Fully_Authorised":   "#00D4AA",
+    "Registered_Only":    "#FFA500",
+    "Application_Pending":"#5B8FD4",
+    "Not_Started":        "#FF6B6B",
+    "Withdrawn":          "#FF2222",
+    "Grandfathered":      "#9B59B6",
+}
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -64,14 +74,63 @@ def _compliance_matrix(ref_str: str) -> Any:
     return m.generate(reference_date=ref)
 
 
-def render() -> None:
-    today = date.today()
-    phase = current_phase(today)
-    phase_color = _PHASE_COLOR.get(phase, "#666")
+@st.cache_data(ttl=600, show_spinner=False)
+def _timeline_projection(instrument_id: str) -> list:
+    m = UKCryptoComplianceMatrix()
+    return m.timeline_projection(instrument_id)
 
-    st.markdown("## 🏛️ Regulatory Sandbox — UK FSMA 2026/2027 FCA Countdown Matrix")
 
-    # ── Phase Banner ──────────────────────────────────────────────────────────
+def _flag_badge(flag: str, size: str = "0.75rem") -> str:
+    color = _SURVIVAL_COLOR.get(flag, "#888")
+    return (
+        f'<span style="background:{color}22;border:1px solid {color};color:{color};'
+        f'border-radius:4px;padding:0.1rem 0.45rem;font-size:{size};font-weight:700">'
+        f'{flag}</span>'
+    )
+
+
+def _auth_badge(status: str) -> str:
+    label = _AUTH_LABEL.get(status, status.replace("_", " "))
+    color = _AUTH_COLOR.get(status, "#888")
+    return (
+        f'<span style="background:{color}22;border:1px solid {color};color:{color};'
+        f'border-radius:4px;padding:0.1rem 0.45rem;font-size:0.72rem;font-weight:600">'
+        f'{label}</span>'
+    )
+
+
+def _countdown_chip(target: date, ref: date) -> str:
+    delta = (target - ref).days
+    if delta < 0:
+        return f"<span style='color:#FF4B4B;font-size:0.75rem'>PASSED {abs(delta)}d ago</span>"
+    if delta <= 30:
+        return f"<span style='color:#FF4B4B;font-weight:700;font-size:0.75rem'>{delta}d</span>"
+    if delta <= 90:
+        return f"<span style='color:#FFA500;font-size:0.75rem'>{delta}d</span>"
+    return f"<span style='color:#00D4AA;font-size:0.75rem'>{delta}d</span>"
+
+
+def _section_header(text: str, color: str = "#5B8FD4") -> None:
+    st.markdown(
+        f'<div style="border-left:3px solid {color};padding-left:0.7rem;margin:1rem 0 0.5rem 0">'
+        f'<span style="color:{color};font-weight:700;font-size:0.9rem;letter-spacing:0.05em">'
+        f'{text}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _info_card(title: str, body: str, color: str = "#2E3140") -> None:
+    st.markdown(
+        f'<div style="background:#1A1D24;border:1px solid {color};border-radius:8px;'
+        f'padding:0.8rem 1rem;margin-bottom:0.5rem">'
+        f'<div style="color:#ccc;font-weight:600;font-size:0.82rem;margin-bottom:0.3rem">{title}</div>'
+        f'<div style="color:#aaa;font-size:0.78rem;line-height:1.5">{body}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_overview(today: date, phase: str, phase_color: str) -> None:
+    # Phase banner
     st.markdown(
         f"""<div style="background:linear-gradient(90deg,{phase_color}22,transparent);
             border:1px solid {phase_color};border-radius:8px;padding:0.75rem 1.2rem;margin-bottom:1rem">
@@ -83,7 +142,7 @@ def render() -> None:
         unsafe_allow_html=True,
     )
 
-    # ── Countdown clocks ──────────────────────────────────────────────────────
+    # Countdown clocks
     t1, t2, t3 = st.columns(3)
     with t1:
         d = days_to_gateway_open(today)
@@ -135,22 +194,397 @@ def render() -> None:
 
     st.divider()
 
-    # ── Reference date slider ─────────────────────────────────────────────────
-    st.markdown("**Simulate regulatory timeline at a specific reference date:**")
-    col_date, col_go = st.columns([3, 1])
+    # Live compliance snapshot
+    matrix = _compliance_matrix(today.isoformat())
+    reports = matrix.reports if hasattr(matrix, "reports") else matrix.get("reports", [])
+
+    _section_header("LIVE COMPLIANCE SNAPSHOT — 19 Tracked Instruments")
+
+    col_g, col_a, col_r, col_c = st.columns(4)
+    for col, flag, count in [
+        (col_g, "GREEN",    matrix.green_count    if hasattr(matrix, "green_count")    else 0),
+        (col_a, "AMBER",    matrix.amber_count    if hasattr(matrix, "amber_count")    else 0),
+        (col_r, "RED",      matrix.red_count      if hasattr(matrix, "red_count")      else 0),
+        (col_c, "CRITICAL", matrix.critical_count if hasattr(matrix, "critical_count") else 0),
+    ]:
+        color = _SURVIVAL_COLOR[flag]
+        with col:
+            st.markdown(
+                f'<div style="background:{color}11;border:1px solid {color};border-radius:8px;'
+                f'padding:0.7rem;text-align:center"><div style="color:{color};font-size:2rem;font-weight:700">'
+                f'{count}</div><div style="color:#888;font-size:0.72rem;letter-spacing:0.08em">{flag}</div></div>',
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Category breakdown
+    if reports:
+        cats: dict[str, dict] = {}
+        for r in reports:
+            cat = getattr(r, "category", None) or "Unknown"
+            cat = str(cat.value) if hasattr(cat, "value") else str(cat)
+            flag = str(r.survival_flag.value) if hasattr(r.survival_flag, "value") else str(r.survival_flag)
+            if cat not in cats:
+                cats[cat] = {"GREEN": 0, "AMBER": 0, "RED": 0, "CRITICAL": 0, "total": 0}
+            cats[cat][flag] = cats[cat].get(flag, 0) + 1
+            cats[cat]["total"] += 1
+
+        _section_header("COMPLIANCE BY INSTRUMENT CATEGORY")
+        cat_cols = st.columns(len(cats))
+        for col, (cat, counts) in zip(cat_cols, cats.items()):
+            label = _CAT_LABEL.get(cat, cat.replace("_", " "))
+            cat_color = _CAT_COLOR.get(cat, "#888")
+            worst = ("CRITICAL" if counts["CRITICAL"] > 0 else
+                     "RED"      if counts["RED"]      > 0 else
+                     "AMBER"    if counts["AMBER"]    > 0 else "GREEN")
+            worst_color = _SURVIVAL_COLOR[worst]
+            with col:
+                st.markdown(
+                    f'<div style="background:#1A1D24;border:1px solid {cat_color};border-top:3px solid {cat_color};'
+                    f'border-radius:8px;padding:0.65rem;text-align:center">'
+                    f'<div style="color:{cat_color};font-size:0.7rem;font-weight:700;letter-spacing:0.08em">{label}</div>'
+                    f'<div style="color:#ccc;font-size:1.4rem;font-weight:700;margin:0.2rem 0">{counts["total"]}</div>'
+                    f'<div style="color:#666;font-size:0.65rem">instruments</div>'
+                    f'<div style="margin-top:0.4rem">{_flag_badge(worst, "0.65rem")}</div>'
+                    f'<div style="color:#777;font-size:0.62rem;margin-top:0.3rem">'
+                    f'🟢{counts["GREEN"]} 🟡{counts["AMBER"]} 🔴{counts["RED"]} ⛔{counts["CRITICAL"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+    st.divider()
+
+    # Key risks + upcoming milestones side by side
+    col_risks, col_ms = st.columns([1, 1])
+
+    with col_risks:
+        _section_header("KEY IMMEDIATE RISKS")
+        critical_reports = [r for r in reports if str(getattr(r, "survival_flag", "")).replace("SurvivalFlag.", "") in ("CRITICAL", "RED")]
+        for r in critical_reports[:6]:
+            flag = str(r.survival_flag.value) if hasattr(r.survival_flag, "value") else str(r.survival_flag)
+            color = _SURVIVAL_COLOR.get(flag, "#888")
+            cat = getattr(r, "category", None)
+            cat_str = str(cat.value) if hasattr(cat, "value") else str(cat or "")
+            cat_color = _CAT_COLOR.get(cat_str, "#666")
+            inst_id = getattr(r, "instrument_id", "—")
+            inst_name = getattr(r, "instrument_name", "—")
+            next_action = getattr(r, "next_action", "—")
+            st.markdown(
+                f'<div style="background:#1A1D24;border:1px solid {color};border-left:3px solid {color};'
+                f'border-radius:6px;padding:0.5rem 0.8rem;margin-bottom:0.3rem">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                f'<span style="color:{color};font-weight:700;font-size:0.8rem">{inst_id}</span>'
+                f'<span style="color:{cat_color};font-size:0.65rem">{_CAT_LABEL.get(cat_str,cat_str)}</span></div>'
+                f'<div style="color:#bbb;font-size:0.75rem">{inst_name}</div>'
+                f'<div style="color:#888;font-size:0.72rem;margin-top:0.2rem">⚡ {next_action}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+    with col_ms:
+        _section_header("UPCOMING MILESTONES")
+        milestones = upcoming_milestones(today)
+        for m in milestones[:5]:
+            label = m.get("label", "—")
+            dt    = m.get("date") or m.get("deadline") or "—"
+            detail = m.get("detail") or m.get("description", "")
+            delta = (dt - today).days if isinstance(dt, date) else None
+            urgency = "#FF4B4B" if "ENFORCEMENT" in label.upper() else "#FFA500" if "GATEWAY" in label.upper() else "#00D4AA"
+            delta_str = f"{delta}d" if delta is not None else ""
+            detail_html = f'<div style="color:#777;font-size:0.7rem;margin-top:0.15rem">{detail}</div>' if detail else ""
+            st.markdown(
+                f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {urgency};'
+                f'border-radius:6px;padding:0.5rem 0.9rem;margin-bottom:0.3rem">'
+                f'<div style="display:flex;justify-content:space-between">'
+                f'<span style="color:{urgency};font-weight:700;font-size:0.78rem">{label}</span>'
+                f'<span style="color:#FF6B6B;font-size:0.72rem;font-weight:600">{delta_str}</span></div>'
+                f'<div style="color:#888;font-size:0.72rem">{dt}</div>'
+                f'{detail_html}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+
+def _render_fca_requirements() -> None:
+    st.markdown("### FCA Authorisation Requirements by Instrument Type")
+    st.markdown(
+        '<div style="color:#aaa;font-size:0.82rem;margin-bottom:1rem">'
+        'Under FSMA 2023, the FCA\'s cryptoasset perimeter expanded to cover all '
+        'crypto activities in the UK. Requirements differ significantly by instrument type '
+        'and legal structure.</div>',
+        unsafe_allow_html=True,
+    )
+
+    # LSE ETPs
+    with st.expander("🏛️ LSE-Listed Crypto ETPs (Exchange-Traded Products)", expanded=True):
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            _section_header("REGULATORY PATHWAY", _CAT_COLOR["LSE_ETP"])
+            st.markdown("""
+**Primary Regime:** FCA Part 4A FSMA Authorisation (Cryptoasset Activities)
+
+**Key Requirements:**
+- **Part 4A Authorisation** or Variation of Permission (VoP) to add cryptoasset dealing/arranging
+- **Approved Prospectus** under UK Prospectus Regulation (FCA-reviewed)
+- **UCITS-equivalent** investor protection standards (diversification, liquidity, NAV reporting)
+- **FCA-approved Custodian** for physical backing (cold storage, proof-of-reserves)
+- **Anti-Money Laundering (AML)** registration under Money Laundering Regulations 2017
+- **Market Abuse Regulation (MAR)** compliance — UK-MAR post-Brexit
+- **MiFID-equivalent** best execution, order management, and trade reporting
+""")
+        with col2:
+            _section_header("CURRENT STATUS & RISKS", _CAT_COLOR["LSE_ETP"])
+            st.markdown("""
+**Current Instruments:** IB1T (BlackRock), BITB, ETHE (CoinShares), WBTC, WETH, SOLW, XRPL (WisdomTree)
+
+**Status as of June 2026:** All hold legacy FCA registration; full Part 4A authorisation not yet obtained
+
+**Key Risks:**
+- ⚠️ Retail access at risk if Part 4A not secured before enforcement cliff
+- ⚠️ SOLW and XRPL — no FCA authorisation process initiated (Not Started status)
+- ⚠️ VoP applications must be submitted during gateway window (Sep 2026 – Feb 2027)
+- 🔴 Failure to secure Part 4A = mandatory ETP wind-down (criminal liability under s.23 FSMA)
+
+**Positive Note:**
+- Physically-backed ETPs listed on LSE benefit from existing UCITS-equivalent oversight
+- BlackRock (FCA ref: 119030), CoinShares (928067), WisdomTree (707137), Invesco (119223) all registered
+""")
+
+        st.divider()
+        _section_header("FCA AUTHORISATION PATHWAY STEPS", _CAT_COLOR["LSE_ETP"])
+        steps = [
+            ("1. Scope Assessment", "Map all cryptoasset activities — dealing, arranging, custody, advising — to FSMA Schedule 2/RAO regulated activities.", "#4A7C59"),
+            ("2. Pre-Application Engagement", "Request early FCA interaction (EFI) to discuss application before gateway opens.", "#4A7C59"),
+            ("3. Part 4A Application / VoP", "Submit full application via Connect portal with business plan, compliance manual, SMF appointments, and financial projections.", "#FFA500"),
+            ("4. FCA Review (target 6–12m)", "FCA may issue Section 165 notices requesting further information. All queries must be answered within deadlines.", "#FFA500"),
+            ("5. Authorisation Grant", "Firm receives Part 4A permission. Must comply with ongoing reporting: GABRIEL, transaction reports, senior manager accountability (SMCR).", "#00D4AA"),
+        ]
+        for title, desc, color in steps:
+            st.markdown(
+                f'<div style="background:#1A1D24;border-left:3px solid {color};border-radius:0 6px 6px 0;'
+                f'padding:0.5rem 0.8rem;margin-bottom:0.35rem">'
+                f'<span style="color:{color};font-weight:700;font-size:0.8rem">{title}</span><br>'
+                f'<span style="color:#aaa;font-size:0.76rem">{desc}</span></div>',
+                unsafe_allow_html=True,
+            )
+
+    # Spot Crypto
+    with st.expander("₿ Spot Cryptoassets (BTC, ETH, SOL, XRP)", expanded=False):
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            _section_header("REGULATORY PATHWAY", _CAT_COLOR["Spot_Crypto"])
+            st.markdown("""
+**Primary Regime:** FCA Cryptoasset Exchange Provider / Custodian Wallet Provider Registration
+
+**For Exchanges & Brokers Dealing Spot:**
+- **FCA MLR Registration** (Money Laundering Regulations 2017, Reg 12A)
+- **Part 4A FSMA Authorisation** for any regulated activities (e.g., operating MTF, dealing as principal)
+- **Travel Rule Compliance** (FATF Recommendation 16 — UK implementation via The Money Laundering and Terrorist Financing Regulations 2023)
+- **Client Asset Protection (CASS)** rules for custodied crypto
+- **Risk Warnings** and appropriateness tests for retail clients (FCA PS22/10)
+
+**For Underlying Networks (BTC, ETH, SOL, XRP):**
+- The network itself is not regulated — regulation applies to intermediaries/service providers
+- Exchanges, brokers, custodians offering access must be FCA-authorised
+""")
+        with col2:
+            _section_header("COMPLIANCE CONSIDERATIONS", _CAT_COLOR["Spot_Crypto"])
+            st.markdown("""
+**Current Registry Status:** BTC, ETH, SOL, XRP all listed as Not_Started (no direct FCA entity)
+
+**Why They Appear in Matrix:**
+- These represent the spot market exposure; FCA compliance risk flows to issuers/platforms
+- UK retail platforms offering spot BTC/ETH require full MLR registration + FCA authorisation
+
+**Key Regulatory Distinctions:**
+- 🟣 **BTC & ETH**: Classified as exchange tokens; no issuer, decentralised — platforms regulated
+- 🟣 **SOL & XRP**: Potential "transferable securities" classification under FCA review
+- ⚠️ **XRP (Ripple)**: Ongoing SEC litigation in US has UK regulatory contagion risk
+- ⚠️ **Privacy coins** (XMR, ZEC): Likely de facto prohibition under JMLSG guidance
+
+**Post-Enforcement Risk:**
+- UK platforms not FCA-authorised after Oct 2027 face criminal prosecution
+- Overseas exchanges serving UK clients without authorisation also liable
+""")
+
+        st.divider()
+        _section_header("RETAIL ACCESS RESTRICTIONS", _CAT_COLOR["Spot_Crypto"])
+        st.markdown("""
+Under **FCA PS22/10** (effective October 2023), firms marketing cryptoassets to UK retail must:
+- Classify clients and apply **appropriateness tests** (ensure client understands risks)
+- Display **mandatory risk warnings**: *"Don't invest unless you're prepared to lose all the money you invest. This is a high-risk investment and you are unlikely to be protected if something goes wrong."*
+- Implement **24-hour cooling-off period** for first-time crypto buyers
+- Prohibit **refer-a-friend bonuses** and similar inducements
+- Ensure all financial promotions are **approved by an FCA-authorised person**
+""")
+
+    # Stablecoins
+    with st.expander("💵 Stablecoins (USDT, USDC, GBPT)", expanded=False):
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            _section_header("REGULATORY PATHWAY", _CAT_COLOR["Stablecoin"])
+            st.markdown("""
+**Primary Regime:** FCA Stablecoin Issuer Regime (FSMA 2023, Part 5A) + EMI Licensing
+
+**Fiat-Backed Stablecoins (USDT, USDC, GBPT):**
+- **E-Money Institution (EMI) Authorisation** for GBP-pegged coins
+- **Part 5A FSMA Authorisation** (expected implementation: Jan 2026)
+- **1:1 Reserve Backing** with high-quality liquid assets (gilts/cash)
+- **Daily Proof-of-Reserves** attestation requirement
+- **Redemption Rights**: Holders must be able to redeem at par within 1 business day
+- **Systemic Stablecoin Rules** apply if coin exceeds £10bn daily transaction volume
+
+**Foreign-Issued Stablecoins (USDT/USDC — USD-pegged):**
+- Must obtain UK recognition or partner with FCA-authorised arranger
+- Cannot be actively marketed to UK retail without FCA approval
+""")
+        with col2:
+            _section_header("ISSUER STATUS & RISKS", _CAT_COLOR["Stablecoin"])
+            st.markdown("""
+**USDT (Tether Operations Ltd, BVI):**
+- ⛔ No FCA registration; no UK EMI authorisation
+- ⚠️ Continued UK retail availability at risk post-enforcement
+- Reserves historically non-transparent; regulatory scrutiny ongoing
+
+**USDC (Circle Internet Financial, US):**
+- 🟡 US-regulated (NYDFS), exploring EU/UK licences
+- Better reserve transparency (monthly attestations by Deloitte)
+- UK authorisation path likely via PRA/FCA EMI application
+
+**GBPT (Tether GBP — Tether Operations Ltd, BVI):**
+- ⛔ No EMI authorisation; directly in scope of FCA stablecoin regime
+- GBP-pegged coin operated by non-UK entity without UK licence
+- Highest risk profile: likely prohibited from UK circulation post-cliff
+
+**Timeline:**
+- Stablecoin regime expected: Jan 2026
+- Hard enforcement: Oct 2027
+""")
+
+        st.divider()
+        _section_header("EMI AUTHORISATION REQUIREMENTS", _CAT_COLOR["Stablecoin"])
+        reqs = [
+            ("Reserve Management", "Stablecoins must hold 100% reserves in high-quality liquid assets (gilts, BoE deposits, or insured cash). No co-mingling with operational funds."),
+            ("Safeguarding", "Client funds must be safeguarded under FCA CASS rules — held separately from firm assets, with daily reconciliation."),
+            ("Capital Requirements", "Minimum initial capital of €350,000 for full EMI authorisation (PSD2-equivalent UK rules)."),
+            ("Governance", "Fit & Proper assessment of directors, senior managers under SMCR. At least one UK-based executive with FCA-approved function."),
+            ("Reporting", "Quarterly prudential returns to FCA; transaction volume reporting; suspicious activity reports (SARs) to NCA."),
+        ]
+        for title, body in reqs:
+            _info_card(title, body, _CAT_COLOR["Stablecoin"])
+
+    # Asset Managers
+    with st.expander("🏢 Asset Managers (BlackRock, CoinShares, WisdomTree, Invesco, 21Shares)", expanded=False):
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            _section_header("REGULATORY PATHWAY", _CAT_COLOR["Asset_Manager"])
+            st.markdown("""
+**Primary Regime:** FSMA Part 4A Authorisation — Investment Management + Cryptoasset Permissions
+
+**Entity-Level Requirements:**
+- **Part 4A Permission** for cryptoasset dealing, arranging, and/or managing investments
+- **Senior Managers & Certification Regime (SMCR)**: All Senior Management Functions (SMFs) FCA-approved
+- **ICARA Process** (Internal Capital Adequacy & Risk Assessment) under MIFIDPRU
+- **Operational Resilience** standards (FCA PS21/3): Critical business services mapped; tolerances set
+- **Consumer Duty** (FCA PS22/9): Retail-facing products must deliver good outcomes
+- **Annual Compliance Certificate** and regulatory reporting to FCA (GABRIEL system)
+
+**For Crypto-Specific Activities (VoP):**
+- Variation of Permission to add cryptoasset dealing/arranging as new regulated activity
+- Submit via Connect portal; FCA targets 6-month determination
+""")
+        with col2:
+            _section_header("CURRENT STATUS", _CAT_COLOR["Asset_Manager"])
+            managers = [
+                ("BlackRock",   "119030", "Registered Only", "IB1T (£3.2bn AUM). Largest UK crypto ETP. Part 4A VoP required."),
+                ("CoinShares",  "928067", "Registered Only", "BITB, ETHE. Jersey domicile adds complexity. VoP in preparation."),
+                ("WisdomTree",  "707137", "Registered Only", "WBTC, WETH, SOLW, XRPL. SOLW and XRPL auth not yet started."),
+                ("Invesco",     "119223", "Registered Only", "Physical crypto range. VoP submission required before Feb 2027."),
+                ("21Shares AG", "N/A",    "Not Started",     "Swiss domicile; no UK FCA registration. Highest entity-level risk."),
+            ]
+            for name, fca_ref, status, note in managers:
+                auth_color = _AUTH_COLOR.get(status.replace(" ", "_"), "#888")
+                status_key = status.replace(" ", "_")
+                st.markdown(
+                    f'<div style="background:#1A1D24;border:1px solid #2E3140;border-radius:6px;'
+                    f'padding:0.5rem 0.8rem;margin-bottom:0.3rem">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                    f'<span style="color:#ccc;font-weight:700;font-size:0.8rem">{name}</span>'
+                    f'<span style="color:#666;font-size:0.68rem">FCA: {fca_ref}</span></div>'
+                    f'{_auth_badge(status_key)}'
+                    f'<div style="color:#888;font-size:0.72rem;margin-top:0.25rem">{note}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+        st.divider()
+        _section_header("SMCR REQUIREMENTS FOR CRYPTO FIRMS", _CAT_COLOR["Asset_Manager"])
+        st.markdown("""
+Under the **Senior Managers & Certification Regime (SMCR)**, all FCA-authorised firms managing crypto ETPs must:
+
+| Requirement | Detail |
+|-------------|--------|
+| **SMF16 — Compliance Oversight** | Designated Senior Manager responsible for FCA compliance |
+| **SMF17 — Money Laundering Reporting** | Nominated MLRO with direct FCA accountability |
+| **SMF3 — Executive Director** | Board-level accountability for crypto strategy and risk |
+| **Certification Regime** | Annual certification of fitness and propriety for key staff |
+| **Conduct Rules** | All staff must understand and abide by FCA Conduct Rules (COCON) |
+| **Regulatory References** | Must obtain/provide regulatory references for all certified persons |
+""")
+
+    # Cross-cutting: Financial Promotions
+    with st.expander("📢 Financial Promotions & Marketing Rules (All Instruments)", expanded=False):
+        st.markdown("""
+**FCA PS22/10 — Cryptoasset Financial Promotions Regime (live: 8 October 2023)**
+
+All firms communicating or approving crypto financial promotions to UK persons must comply:
+
+#### Who Must Comply
+- UK-authorised firms promoting their own crypto products
+- Firms approving promotions for unauthorised businesses (Section 21 FSMA gateway)
+- Overseas firms directly marketing to UK consumers (extra-territorial reach)
+
+#### Mandatory Requirements
+
+| Rule | Requirement |
+|------|-------------|
+| **Risk Warning** | Standard FCA risk warning on all promotions |
+| **Personalised Risk Warning** | On first engagement with each retail client |
+| **24-Hour Cooling-Off** | Mandatory for first-time investors before purchase |
+| **Appropriateness Test** | Client must demonstrate sufficient knowledge/experience |
+| **No Inducements** | Refer-a-friend bonuses, free crypto, sign-up rewards prohibited |
+| **Approval Chain** | Each promotion must be approved by FCA-authorised person |
+
+#### Penalties for Non-Compliance
+- FCA can require immediate withdrawal of promotions
+- Financial penalties up to **£1 million or 10% of annual revenue** (whichever higher)
+- Criminal liability under s.25 FSMA for communicating unapproved promotions
+- Director personal liability under SMCR
+
+#### ETF/ETP-Specific
+- **Professional-client-only restrictions** lifted for FCA-authorised ETPs (since Jan 2021)
+- Physically-backed ETPs listed on LSE may be sold to retail with appropriate risk warnings
+- Synthetic or leveraged crypto ETPs face stricter retail access controls
+""")
+
+
+def _render_compliance_matrix(today: date) -> None:
+    st.markdown("### Compliance Matrix — 19 Tracked Instruments")
+
+    col_date, _ = st.columns([2, 2])
     with col_date:
         ref_date = st.date_input(
-            "Reference date",
+            "Simulate regulatory state at date:",
             value=today,
             min_value=date(2026, 1, 1),
             max_value=date(2028, 12, 31),
         )
-    with col_go:
-        st.markdown("<br>", unsafe_allow_html=True)
 
     matrix_data = _compliance_matrix(ref_date.isoformat())
+    reports = matrix_data.reports if hasattr(matrix_data, "reports") else matrix_data.get("reports", [])
 
-    # ── FCA Gantt chart ───────────────────────────────────────────────────────
+    # Gantt chart
     phases = [
         {"Phase": "PRE_GATEWAY",       "Start": "2025-01-01", "End": "2026-09-29", "Color": "#4A7C59"},
         {"Phase": "GATEWAY OPEN",      "Start": "2026-09-30", "End": "2027-02-28", "Color": "#FFA500"},
@@ -170,7 +604,7 @@ def render() -> None:
     fig_gantt.add_vline(
         x=str(ref_date), line_dash="dot",
         line_color="#00D4AA", line_width=2,
-        annotation_text=f"Today {ref_date}",
+        annotation_text=f"Ref: {ref_date}",
         annotation_font_color="#00D4AA",
     )
     fig_gantt.update_layout(
@@ -183,122 +617,422 @@ def render() -> None:
     )
     st.plotly_chart(fig_gantt, use_container_width=True, config={"displayModeBar": False})
 
-    # ── Compliance matrix table ───────────────────────────────────────────────
-    st.markdown(f"### {len(reports) if hasattr(matrix_data, 'reports') else 19}-Instrument Compliance Matrix")
-    if hasattr(matrix_data, "reports"):
-        reports = matrix_data.reports
-    elif isinstance(matrix_data, dict):
-        reports = matrix_data.get("reports", [])
-    else:
-        reports = []
+    if not reports:
+        st.warning("No compliance reports generated.")
+        return
 
-    if reports:
-        summary_counts: dict = {}
-        table_rows = []
-        d_enforcement = days_to_enforcement(ref_date)
-        for r in reports:
-            # survival_flag is a plain string ("RED", "AMBER", "GREEN", "CRITICAL")
-            flag = str(r.survival_flag.value) if hasattr(r.survival_flag, "value") else str(r.survival_flag)
-            summary_counts[flag] = summary_counts.get(flag, 0) + 1
-            # category and auth_status are plain strings with underscores → prettify
-            cat       = getattr(r, "category", None) or "—"
-            cat       = str(cat.value) if hasattr(cat, "value") else str(cat).replace("_", " ")
-            auth      = getattr(r, "auth_status", None) or "—"
-            auth      = str(auth.value) if hasattr(auth, "value") else str(auth).replace("_", " ")
-            phase_val = getattr(r, "current_phase", None) or getattr(r, "phase", None) or "—"
-            phase_val = str(phase_val.value) if hasattr(phase_val, "value") else str(phase_val).replace("_", " ")
-            table_rows.append({
-                "ID":          getattr(r, "instrument_id", None) or getattr(r, "ticker", "—"),
-                "Name":        getattr(r, "instrument_name", None) or getattr(r, "name", "—"),
-                "Category":    cat,
-                "Auth Status": auth,
-                "Phase":       phase_val,
-                "Survival":    flag,
-                "Days Left":   str(d_enforcement) if d_enforcement is not None else "ACTIVE",
-                "Action Required": getattr(r, "next_action", None) or getattr(r, "action_required", "—"),
-            })
-
-        # Summary badges
-        badge_cols = st.columns(4)
-        for col, (flag, count) in zip(badge_cols, [("GREEN",    summary_counts.get("GREEN", 0)),
-                                                    ("AMBER",    summary_counts.get("AMBER", 0)),
-                                                    ("RED",      summary_counts.get("RED", 0)),
-                                                    ("CRITICAL", summary_counts.get("CRITICAL", 0))]):
-            color = _SURVIVAL_COLOR.get(flag, "#888")
-            with col:
-                st.markdown(
-                    f'<div style="background:{color}22;border:1px solid {color};border-radius:6px;'
-                    f'padding:0.5rem;text-align:center"><span style="color:{color};font-size:1.2rem;font-weight:700">'
-                    f'{count}</span><br><span style="color:#888;font-size:0.72rem">{flag}</span></div>',
-                    unsafe_allow_html=True,
-                )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        df_matrix = pd.DataFrame(table_rows)
-        st.dataframe(
-            df_matrix,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Survival":         st.column_config.TextColumn("Survival Flag"),
-                "Days Left":        st.column_config.TextColumn("Days to Enforcement"),
-                "Action Required":  st.column_config.TextColumn("Action Required"),
-            },
-        )
-
-        # Critical instruments deep-dive
-        critical_items = [r for r in table_rows if r["Survival"] in ("CRITICAL", "RED")]
-        if critical_items:
-            with st.expander(f"🚨 Critical & Red Instruments ({len(critical_items)}) — Immediate Action Required", expanded=True):
-                for item in critical_items:
-                    color = "#FF2222" if item["Survival"] == "CRITICAL" else "#FF6B6B"
-                    st.markdown(
-                        f"""<div style="background:#2A1A1A;border:1px solid {color};border-radius:6px;padding:0.65rem;margin-bottom:0.4rem">
-                            <span style="color:{color};font-weight:700">{item['ID']} — {item['Name']}</span>
-                            <span style="color:#888;font-size:0.78rem;margin-left:1rem">{item['Category']} · {item['Auth Status']}</span><br>
-                            <span style="color:#aaa;font-size:0.78rem">⚡ {item['Action Required']}</span>
-                        </div>""",
-                        unsafe_allow_html=True,
-                    )
-
-    # ── Upcoming milestones ───────────────────────────────────────────────────
-    milestones = upcoming_milestones(ref_date)
-    if milestones:
-        st.divider()
-        st.markdown("### ⏰ Upcoming Regulatory Milestones")
-        for m in milestones[:5]:
-            label = m.get("label", "—")
-            dt    = m.get("date") or m.get("deadline") or "—"
-            desc  = m.get("detail") or m.get("description", "")
-            urgency_color = "#FF4B4B" if "ENFORCEMENT" in label.upper() else "#FFA500" if "GATEWAY" in label.upper() else "#00D4AA"
+    # Summary badges
+    badge_cols = st.columns(4)
+    counts = {
+        "GREEN":    matrix_data.green_count    if hasattr(matrix_data, "green_count")    else 0,
+        "AMBER":    matrix_data.amber_count    if hasattr(matrix_data, "amber_count")    else 0,
+        "RED":      matrix_data.red_count      if hasattr(matrix_data, "red_count")      else 0,
+        "CRITICAL": matrix_data.critical_count if hasattr(matrix_data, "critical_count") else 0,
+    }
+    for col, flag in zip(badge_cols, ["GREEN", "AMBER", "RED", "CRITICAL"]):
+        color = _SURVIVAL_COLOR[flag]
+        with col:
             st.markdown(
-                f"""<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {urgency_color};
-                    border-radius:6px;padding:0.5rem 0.9rem;margin-bottom:0.3rem">
-                    <span style="color:{urgency_color};font-weight:700;font-size:0.8rem">{label}</span>
-                    <span style="color:#888;font-size:0.78rem;margin-left:0.5rem">{dt}</span>
-                    {"<br>" + f'<span style="color:#aaa;font-size:0.75rem">{desc}</span>' if desc else ""}
-                </div>""",
+                f'<div style="background:{color}22;border:1px solid {color};border-radius:6px;'
+                f'padding:0.5rem;text-align:center"><span style="color:{color};font-size:1.2rem;font-weight:700">'
+                f'{counts[flag]}</span><br><span style="color:#888;font-size:0.72rem">{flag}</span></div>',
                 unsafe_allow_html=True,
             )
 
-    # ── Regulatory intelligence explainer ─────────────────────────────────────
-    with st.expander("📖 UK Crypto Regulatory Framework — What This Means", expanded=False):
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Full matrix table
+    d_enforcement = days_to_enforcement(ref_date)
+    table_rows = []
+    for r in reports:
+        flag = str(r.survival_flag.value) if hasattr(r.survival_flag, "value") else str(r.survival_flag)
+        cat  = getattr(r, "category", None) or "—"
+        cat  = str(cat.value) if hasattr(cat, "value") else str(cat).replace("_", " ")
+        auth = getattr(r, "auth_status", None) or "—"
+        auth = str(auth.value) if hasattr(auth, "value") else str(auth).replace("_", " ")
+        ph   = getattr(r, "current_phase", None) or getattr(r, "phase", None) or "—"
+        ph   = str(ph.value) if hasattr(ph, "value") else str(ph).replace("_", " ")
+        fca_ref = getattr(r, "fca_ref", None) or "—"
+        retail_risk = "Yes" if getattr(r, "retail_access_at_risk", False) else "No"
+        wind_down   = "Yes" if getattr(r, "estimated_wind_down_risk", False) else "No"
+        req_vop     = "Yes" if getattr(r, "requires_vop", False) else "No"
+        table_rows.append({
+            "ID":              getattr(r, "instrument_id", None) or getattr(r, "ticker", "—"),
+            "Name":            getattr(r, "instrument_name", None) or getattr(r, "name", "—"),
+            "Category":        cat,
+            "Auth Status":     auth,
+            "FCA Ref":         fca_ref,
+            "Phase":           ph,
+            "Survival":        flag,
+            "Retail at Risk":  retail_risk,
+            "VoP Required":    req_vop,
+            "Wind-Down Risk":  wind_down,
+            "Days to Enforce": str(d_enforcement) if d_enforcement is not None else "ACTIVE",
+            "Action Required": getattr(r, "next_action", None) or getattr(r, "action_required", "—"),
+        })
+
+    df_matrix = pd.DataFrame(table_rows)
+
+    # Filter controls
+    fc1, fc2, fc3 = st.columns(3)
+    with fc1:
+        sel_flags = st.multiselect(
+            "Filter by Survival Flag",
+            ["GREEN", "AMBER", "RED", "CRITICAL"],
+            default=["GREEN", "AMBER", "RED", "CRITICAL"],
+            key="rsb_flag_filter",
+        )
+    with fc2:
+        sel_cats = st.multiselect(
+            "Filter by Category",
+            ["LSE ETP", "Spot Crypto", "Stablecoin", "Asset Manager"],
+            default=["LSE ETP", "Spot Crypto", "Stablecoin", "Asset Manager"],
+            key="rsb_cat_filter",
+        )
+    with fc3:
+        sel_auth = st.multiselect(
+            "Filter by Auth Status",
+            ["Fully Authorised", "Registered Only", "Application Pending", "Not Started", "Withdrawn"],
+            default=["Fully Authorised", "Registered Only", "Application Pending", "Not Started", "Withdrawn"],
+            key="rsb_auth_filter",
+        )
+
+    df_filtered = df_matrix[
+        df_matrix["Survival"].isin(sel_flags) &
+        df_matrix["Category"].isin(sel_cats) &
+        df_matrix["Auth Status"].isin(sel_auth)
+    ]
+
+    st.dataframe(
+        df_filtered,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Survival":        st.column_config.TextColumn("Survival Flag"),
+            "Retail at Risk":  st.column_config.TextColumn("Retail Risk"),
+            "VoP Required":    st.column_config.TextColumn("VoP Req."),
+            "Wind-Down Risk":  st.column_config.TextColumn("Wind-Down"),
+            "Days to Enforce": st.column_config.TextColumn("Days to Enforcement"),
+            "Action Required": st.column_config.TextColumn("Required Action"),
+        },
+    )
+
+    # Critical deep-dive
+    critical_items = [r for r in table_rows if r["Survival"] in ("CRITICAL", "RED")]
+    if critical_items:
+        with st.expander(f"🚨 Critical & Red Instruments ({len(critical_items)}) — Immediate Action Required", expanded=True):
+            for item in critical_items:
+                color = "#FF2222" if item["Survival"] == "CRITICAL" else "#FF6B6B"
+                retail_warn = " · ⚠️ Retail Access at Risk" if item["Retail at Risk"] == "Yes" else ""
+                wind_warn   = " · ☠️ Wind-Down Risk" if item["Wind-Down Risk"] == "Yes" else ""
+                st.markdown(
+                    f"""<div style="background:#2A1A1A;border:1px solid {color};border-radius:6px;padding:0.65rem;margin-bottom:0.4rem">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:{color};font-weight:700">{item['ID']} — {item['Name']}</span>
+                            {_flag_badge(item['Survival'])}
+                        </div>
+                        <span style="color:#888;font-size:0.78rem">{item['Category']} · {item['Auth Status']}{retail_warn}{wind_warn}</span><br>
+                        <span style="color:#aaa;font-size:0.78rem">⚡ {item['Action Required']}</span>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
+
+    # Individual instrument timeline projection
+    st.divider()
+    _section_header("INSTRUMENT TIMELINE PROJECTION")
+    inst_ids = [r["ID"] for r in table_rows]
+    selected_inst = st.selectbox("Select instrument to project across regulatory checkpoints:", inst_ids, key="rsb_proj_select")
+    if selected_inst:
+        projection = _timeline_projection(selected_inst)
+        if projection:
+            proj_cols = st.columns(len(projection))
+            checkpoint_labels = ["Today", "Gateway Opens", "Gateway Closes", "Enforcement Cliff"]
+            for col, (proj_date, proj_flag, proj_phase), cp_label in zip(proj_cols, projection, checkpoint_labels):
+                flag_color = _SURVIVAL_COLOR.get(str(proj_flag), "#888")
+                phase_color = _PHASE_COLOR.get(str(proj_phase), "#666")
+                with col:
+                    st.markdown(
+                        f'<div style="background:#1A1D24;border:1px solid #2E3140;border-top:3px solid {flag_color};'
+                        f'border-radius:8px;padding:0.6rem;text-align:center">'
+                        f'<div style="font-size:0.65rem;color:#888;letter-spacing:0.08em">{cp_label}</div>'
+                        f'<div style="font-size:0.75rem;color:#aaa">{proj_date}</div>'
+                        f'<div style="margin:0.3rem 0">{_flag_badge(str(proj_flag))}</div>'
+                        f'<div style="font-size:0.62rem;color:{phase_color}">{str(proj_phase).replace("_"," ")}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+        # Risk narrative for selected instrument
+        for r in reports:
+            if getattr(r, "instrument_id", None) == selected_inst:
+                narrative = getattr(r, "risk_narrative", "")
+                if narrative:
+                    st.markdown(
+                        f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid #5B8FD4;'
+                        f'border-radius:0 6px 6px 0;padding:0.6rem 1rem;margin-top:0.5rem">'
+                        f'<div style="color:#5B8FD4;font-size:0.72rem;font-weight:700;margin-bottom:0.25rem">RISK NARRATIVE</div>'
+                        f'<div style="color:#aaa;font-size:0.78rem;line-height:1.5">{narrative}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                deadline = getattr(r, "deadline", None)
+                deadline_label = getattr(r, "deadline_label", "")
+                next_action = getattr(r, "next_action", "")
+                if deadline:
+                    days_left = (deadline - ref_date).days
+                    dl_color = "#FF4B4B" if days_left <= 30 else "#FFA500" if days_left <= 90 else "#00D4AA"
+                    st.markdown(
+                        f'<div style="background:#1A1D24;border:1px solid #2E3140;border-radius:6px;'
+                        f'padding:0.5rem 0.8rem;margin-top:0.35rem;display:flex;gap:1rem">'
+                        f'<span style="color:#888;font-size:0.75rem">📅 Deadline:</span>'
+                        f'<span style="color:{dl_color};font-weight:700;font-size:0.75rem">{deadline} ({deadline_label})</span>'
+                        f'<span style="color:#888;font-size:0.72rem">— {days_left}d remaining</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                if next_action:
+                    st.markdown(
+                        f'<div style="background:#1A1D24;border:1px solid #2E3140;border-radius:6px;'
+                        f'padding:0.5rem 0.8rem;margin-top:0.25rem">'
+                        f'<span style="color:#FFA500;font-size:0.72rem;font-weight:700">⚡ REQUIRED ACTION: </span>'
+                        f'<span style="color:#ccc;font-size:0.75rem">{next_action}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                break
+
+
+def _render_timeline(today: date) -> None:
+    st.markdown("### Regulatory Timeline & Upcoming Plans")
+
+    # All 7 REGULATORY_MILESTONES
+    ALL_MILESTONES = [
+        {
+            "date":   date(2025, 1, 1),
+            "label":  "UK Crypto Financial Promotions Regime",
+            "detail": "FCA PS22/10 live. All crypto financial promotions to UK persons must comply with mandatory risk warnings, cooling-off periods, and appropriateness tests.",
+            "phase":  "PRE_GATEWAY",
+            "status": "PASSED",
+        },
+        {
+            "date":   date(2026, 1, 1),
+            "label":  "Stablecoin Issuance Regime Expected",
+            "detail": "FCA expected to publish final stablecoin issuer rules under FSMA 2023 Part 5A. Fiat-backed stablecoins require EMI authorisation or recognition.",
+            "phase":  "PRE_GATEWAY",
+            "status": "PASSED" if today >= date(2026, 1, 1) else "UPCOMING",
+        },
+        {
+            "date":   GATEWAY_OPEN_DATE,
+            "label":  "FCA Part 4A Crypto Gateway Opens",
+            "detail": "FCA begins accepting full authorisation applications under the new cryptoasset regime. Firms should submit Part 4A or Variation of Permission (VoP) applications.",
+            "phase":  "GATEWAY_OPEN",
+            "status": "PASSED" if today >= GATEWAY_OPEN_DATE else "UPCOMING",
+        },
+        {
+            "date":   date(2026, 12, 1),
+            "label":  "FCA Target: 50% Applications Assessed",
+            "detail": "FCA internal target to have assessed at least 50% of submitted crypto authorisation applications by this date.",
+            "phase":  "GATEWAY_OPEN",
+            "status": "PASSED" if today >= date(2026, 12, 1) else "UPCOMING",
+        },
+        {
+            "date":   GATEWAY_CLOSE_DATE,
+            "label":  "Gateway Closes — HARD DEADLINE",
+            "detail": "Final deadline for submitting Part 4A or VoP applications. Firms not registered or applied by this date must cease regulated crypto activities. No extensions.",
+            "phase":  "POST_GATEWAY",
+            "status": "PASSED" if today >= GATEWAY_CLOSE_DATE else "CRITICAL",
+        },
+        {
+            "date":   date(2027, 6, 30),
+            "label":  "FCA Target: All Applications Decided",
+            "detail": "FCA targets completion of all crypto authorisation decisions. Firms with applications pending receive interim transitional protection until decided.",
+            "phase":  "POST_GATEWAY",
+            "status": "PASSED" if today >= date(2027, 6, 30) else "UPCOMING",
+        },
+        {
+            "date":   ENFORCEMENT_DATE,
+            "label":  "Hard Enforcement Cliff — s.23 FSMA",
+            "detail": "Criminal liability under s.23 FSMA activates. Operating regulated cryptoasset activities without Part 4A authorisation is a criminal offence: up to 2 years imprisonment + unlimited fine.",
+            "phase":  "ENFORCEMENT_CLIFF",
+            "status": "PASSED" if today >= ENFORCEMENT_DATE else "CRITICAL",
+        },
+    ]
+
+    _section_header("COMPLETE REGULATORY MILESTONE CALENDAR")
+
+    for i, m in enumerate(ALL_MILESTONES):
+        days_delta = (m["date"] - today).days
+        is_passed = days_delta < 0
+        is_critical = m["status"] == "CRITICAL"
+
+        if is_passed:
+            border_color = "#2E3140"
+            date_color = "#555"
+            label_color = "#666"
+            status_chip = '<span style="color:#555;font-size:0.68rem">✓ PASSED</span>'
+            bg = "#161920"
+        elif is_critical:
+            border_color = "#FF4B4B"
+            date_color = "#FF4B4B"
+            label_color = "#FF6B6B"
+            status_chip = f'<span style="color:#FF4B4B;font-weight:700;font-size:0.72rem">⚠ {days_delta}d REMAINING</span>'
+            bg = "#2A1A1A"
+        else:
+            phase_col = _PHASE_COLOR.get(m["phase"], "#5B8FD4")
+            border_color = phase_col
+            date_color = phase_col
+            label_color = "#ccc"
+            status_chip = f'<span style="color:{phase_col};font-size:0.72rem">{days_delta}d</span>'
+            bg = "#1A1D24"
+
+        connector = '<div style="width:2px;height:1rem;background:#2E3140;margin-left:1.2rem"></div>' if i < len(ALL_MILESTONES) - 1 else ""
+
+        st.markdown(
+            f'<div style="background:{bg};border:1px solid {border_color};border-left:4px solid {border_color};'
+            f'border-radius:0 8px 8px 0;padding:0.65rem 1rem;margin-bottom:0">'
+            f'<div style="display:flex;justify-content:space-between;align-items:center">'
+            f'<span style="color:{label_color};font-weight:700;font-size:0.82rem">{m["label"]}</span>'
+            f'{status_chip}</div>'
+            f'<div style="color:{date_color};font-size:0.72rem;margin:0.15rem 0">{m["date"]} · {m["phase"].replace("_"," ")}</div>'
+            f'<div style="color:#888;font-size:0.74rem;line-height:1.4">{m["detail"]}</div>'
+            f'</div>{connector}',
+            unsafe_allow_html=True,
+        )
+
+    st.divider()
+
+    # Upcoming regulatory plans & consultations
+    _section_header("UPCOMING REGULATORY PLANS & CONSULTATIONS")
+
+    upcoming_plans = [
+        {
+            "title": "FCA Crypto Custody Rules Consultation",
+            "expected": "Q3 2026",
+            "detail": "FCA expected to publish detailed custody rules for crypto assets held by authorised firms. Will cover cold storage requirements, key management, proof-of-reserves, and insurance mandates.",
+            "impact": "LSE ETPs, Asset Managers",
+            "color": "#5B8FD4",
+        },
+        {
+            "title": "Stablecoin Systemic Designation",
+            "expected": "Q4 2026",
+            "detail": "HM Treasury / Bank of England to designate systemically important stablecoins (>£10bn daily volume). USDT likely candidate. Designated coins face enhanced prudential requirements.",
+            "impact": "USDT, USDC",
+            "color": "#2ECC71",
+        },
+        {
+            "title": "FCA Cryptoasset Trading Venue Rules",
+            "expected": "Q1 2027",
+            "detail": "Rules for UK crypto trading platforms (Multilateral Trading Facilities) — market abuse prevention, order book transparency, algorithmic trading controls.",
+            "impact": "Spot Crypto Exchanges",
+            "color": "#9B59B6",
+        },
+        {
+            "title": "Digital Securities Sandbox (DSS) Expansion",
+            "expected": "Ongoing",
+            "detail": "Bank of England and FCA jointly operating Digital Securities Sandbox. Tokenised securities (including ETFs on DLT) can operate under modified FMI rules. Currently in live phase.",
+            "impact": "LSE ETPs, Asset Managers",
+            "color": "#E67E22",
+        },
+        {
+            "title": "UK Crypto Equivalence Assessments",
+            "expected": "2027",
+            "detail": "HM Treasury to assess equivalence of EU MiCA regime and other major jurisdictions. Could enable cross-border recognition of authorisations, reducing dual-licensing burden.",
+            "impact": "All Instrument Types",
+            "color": "#FFA500",
+        },
+        {
+            "title": "CBDC (Digital Pound) Framework",
+            "expected": "2027–2028",
+            "detail": "Bank of England progressing Digital Pound (retail CBDC) design phase. Will impact stablecoin market dynamics and potentially create direct competition to regulated stablecoins.",
+            "impact": "Stablecoins",
+            "color": "#2ECC71",
+        },
+    ]
+
+    plan_cols = st.columns(2)
+    for i, plan in enumerate(upcoming_plans):
+        with plan_cols[i % 2]:
+            st.markdown(
+                f'<div style="background:#1A1D24;border:1px solid #2E3140;border-top:3px solid {plan["color"]};'
+                f'border-radius:8px;padding:0.7rem 0.9rem;margin-bottom:0.5rem;height:100%">'
+                f'<div style="color:{plan["color"]};font-weight:700;font-size:0.8rem">{plan["title"]}</div>'
+                f'<div style="color:#888;font-size:0.7rem;margin:0.2rem 0">Expected: <span style="color:#aaa">{plan["expected"]}</span> '
+                f'· Affects: <span style="color:#aaa">{plan["impact"]}</span></div>'
+                f'<div style="color:#999;font-size:0.75rem;line-height:1.4;margin-top:0.3rem">{plan["detail"]}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+    st.divider()
+
+    # Regulatory framework explainer
+    with st.expander("📖 UK Crypto Regulatory Framework — Complete Reference", expanded=False):
         st.markdown("""
-**FSMA 2023 (Financial Services and Markets Act 2023)** expanded FCA's perimeter to all crypto asset
-activities in the UK, including issuance, promotion, and exchange operations.
+### Legislative Architecture
 
-| Phase | Date | Implications |
-|-------|------|-------------|
-| **Pre-Gateway** | Before 30 Sep 2026 | Temporary registration window; existing firms may operate under sandbox rules |
-| **Gateway Opens** | 30 Sep 2026 | FCA begins processing full authorisation applications under new crypto regime |
-| **Gateway Closes** | 28 Feb 2027 | **HARD DEADLINE** — any firm not registered or applied for authorisation must cease regulated crypto activities |
-| **Enforcement Cliff** | 25 Oct 2027 | Section 23 FSMA criminal liability activates — operating without authorisation becomes a criminal offence (up to 2 years imprisonment + unlimited fine) |
+| Legislation | Key Provisions |
+|------------|----------------|
+| **FSMA 2000** (as amended) | Part 4A authorisation; s.19 general prohibition; s.23 criminal liability; Schedule 2 regulated activities |
+| **FSMA 2023** | Extended FCA perimeter to cryptoassets; Part 5A stablecoin regime; Digital Securities Sandbox enabling powers |
+| **Money Laundering Regulations 2017** (as amended) | AML/CFT registration for crypto exchange providers and custodian wallet providers |
+| **Financial Services Act 2021** | UK Financial Promotions Order amendments; cryptoasset promotion regime |
+| **Proceeds of Crime Act 2002** | UK Travel Rule implementation; criminal property confiscation |
 
-**LSE ETP Considerations:**
-- Physically-backed ETPs listed on LSE are already FCA-supervised under UCITS-equivalent rules
-- Stablecoins face specific Electronic Money Institution (EMI) licensing requirements
-- Privacy coins (XMR, ZEC) face probable de facto prohibition under JMLSG guidance
+### FCA Cryptoasset Perimeter — Regulated Activities
 
-**Strategic Implication:** Firms achieving FCA registration before gateway close gain permanent regulatory moat vs. later entrants, likely driving institutional AUM consolidation into 3-5 dominant authorised operators.
-        """)
+| Activity | Regulatory Requirement |
+|----------|----------------------|
+| Operating a cryptoasset exchange | Part 4A FSMA + MLR registration |
+| Dealing in cryptoassets as principal | Part 4A FSMA permission |
+| Arranging deals in cryptoassets | Part 4A FSMA permission |
+| Safeguarding cryptoassets (custody) | Part 4A FSMA + CASS compliance |
+| Issuing stablecoins | Part 5A FSMA / EMI authorisation |
+| Promoting cryptoassets | FCA financial promotions approval |
+| Managing crypto investment portfolios | Part 4A FSMA (investment management) |
+
+### Phase Summary
+
+| Phase | Date Range | Implications |
+|-------|-----------|-------------|
+| **Pre-Gateway** | Before 30 Sep 2026 | Temporary registration; sandbox rules; prepare applications |
+| **Gateway Open** | 30 Sep 2026 – 28 Feb 2027 | FCA accepts full Part 4A and VoP applications |
+| **Post-Gateway** | 1 Mar 2027 – 24 Oct 2027 | Gateway closed; pending applicants protected; non-applicants must cease |
+| **Enforcement Cliff** | 25 Oct 2027 onwards | s.23 FSMA criminal liability active; FCA enforcement begins |
+
+### Strategic Implications
+
+**Regulatory Moat**: Firms securing FCA authorisation before gateway close gain significant competitive advantage — late entrants face 2+ year wait or prohibition from UK market.
+
+**AUM Consolidation**: Institutional AUM expected to consolidate into 3-5 FCA-authorised operators. BlackRock, WisdomTree, and CoinShares best positioned given existing registration.
+
+**Stablecoin Market**: USDT and GBPT face highest risk of UK prohibition. USDC's US regulatory track record improves its UK authorisation prospects.
+
+**International Firms**: Overseas firms (21Shares AG — Switzerland) must obtain direct UK FCA authorisation; EU MiCA equivalence not confirmed, so passporting not available.
+""")
+
+
+def render() -> None:
+    today = date.today()
+    phase = current_phase(today)
+    phase_color = _PHASE_COLOR.get(phase, "#666")
+
+    st.markdown("## 🏛️ Regulatory Sandbox — UK FSMA 2026/2027 FCA Compliance Intelligence")
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Overview",
+        "📋 FCA Requirements",
+        "🔬 Compliance Matrix",
+        "📅 Timeline & Plans",
+    ])
+
+    with tab1:
+        _render_overview(today, phase, phase_color)
+
+    with tab2:
+        _render_fca_requirements()
+
+    with tab3:
+        _render_compliance_matrix(today)
+
+    with tab4:
+        _render_timeline(today)
