@@ -322,8 +322,57 @@ st.markdown(
         border-color: var(--navy-200) !important;
     }
 
+    /* ── Selectbox / Multiselect ─────────────────────────────────────────────── */
+    .stSelectbox [data-baseweb="select"] > div:first-child,
+    .stMultiSelect [data-baseweb="select"] > div:first-child {
+        background-color: var(--card) !important;
+        border: 1.5px solid var(--border) !important;
+        border-radius: 8px !important;
+        color: var(--text-h) !important;
+        font-size: 0.84rem !important;
+    }
+    .stSelectbox [data-baseweb="select"] span,
+    .stMultiSelect [data-baseweb="select"] span {
+        color: var(--text-h) !important;
+    }
+    /* Dropdown menu */
+    [data-baseweb="popover"] [data-baseweb="menu"] {
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        box-shadow: var(--shadow-card-hover) !important;
+    }
+    [data-baseweb="popover"] [role="option"] {
+        color: var(--text-h) !important;
+        font-size: 0.84rem !important;
+    }
+    [data-baseweb="popover"] [role="option"]:hover,
+    [data-baseweb="popover"] [aria-selected="true"] {
+        background-color: var(--navy-50) !important;
+    }
+    /* Selected tags in multiselect */
+    [data-baseweb="tag"] {
+        background-color: var(--navy-100) !important;
+        color: var(--navy-800) !important;
+        border-radius: 6px !important;
+        font-size: 0.78rem !important;
+    }
+    [data-baseweb="tag"] span { color: var(--navy-800) !important; }
+
     /* ── Toggle ──────────────────────────────────────────────────────────────── */
-    .stToggle label { color: var(--text-sub) !important; font-size: 0.82rem !important; }
+    .stToggle label {
+        color: var(--text-h) !important;
+        font-size: 0.84rem !important;
+        font-weight: 500 !important;
+    }
+    /* Track off */
+    [data-testid="stToggleSwitch"] {
+        background-color: var(--navy-200) !important;
+    }
+    /* Track on */
+    [aria-checked="true"] [data-testid="stToggleSwitch"] {
+        background-color: var(--accent) !important;
+    }
 
     /* ── Text inputs ─────────────────────────────────────────────────────────── */
     .stTextInput input {
@@ -443,6 +492,16 @@ st.markdown(
     }
 
     /* ── DataFrames ──────────────────────────────────────────────────────────── */
+    [data-testid="stDataFrame"] {
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
+    }
+    /* Canvas-based grid container */
+    [data-testid="stDataFrame"] > div {
+        background: var(--card) !important;
+    }
     [data-testid="stDataFrame"] table, [data-testid="stDataFrame"] thead,
     [data-testid="stDataFrame"] tbody, [data-testid="stDataFrame"] th,
     [data-testid="stDataFrame"] td {
