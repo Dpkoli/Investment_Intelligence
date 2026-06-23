@@ -27,7 +27,7 @@ from analytics.compliance.uk_crypto_matrix import UKCryptoComplianceMatrix, _INS
 
 _PHASE_COLOR = {
     "PRE_GATEWAY":       "#4A7C59",
-    "GATEWAY_OPEN":      "#FFA500",
+    "GATEWAY_OPEN":      "#E8A500",
     "POST_GATEWAY":      "#CC5500",
     "ENFORCEMENT_CLIFF": "#CC0000",
 }
@@ -38,10 +38,10 @@ def _hex_to_rgba(hex_color: str, alpha: float = 0.27) -> str:
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     return f"rgba({r},{g},{b},{alpha})"
 _SURVIVAL_COLOR = {
-    "GREEN":    "#00D4AA",
-    "AMBER":    "#FFA500",
-    "RED":      "#FF6B6B",
-    "CRITICAL": "#FF2222",
+    "GREEN":    "#1AB868",
+    "AMBER":    "#E8A500",
+    "RED":      "#E53535",
+    "CRITICAL": "#E53535",
 }
 _CAT_COLOR = {
     "LSE_ETP":      "#5B8FD4",
@@ -64,11 +64,11 @@ _AUTH_LABEL = {
     "Grandfathered":      "Grandfathered",
 }
 _AUTH_COLOR = {
-    "Fully_Authorised":   "#00D4AA",
-    "Registered_Only":    "#FFA500",
+    "Fully_Authorised":   "#1AB868",
+    "Registered_Only":    "#E8A500",
     "Application_Pending":"#5B8FD4",
-    "Not_Started":        "#FF6B6B",
-    "Withdrawn":          "#FF2222",
+    "Not_Started":        "#E53535",
+    "Withdrawn":          "#E53535",
     "Grandfathered":      "#9B59B6",
 }
 
@@ -108,12 +108,12 @@ def _auth_badge(status: str) -> str:
 def _countdown_chip(target: date, ref: date) -> str:
     delta = (target - ref).days
     if delta < 0:
-        return f"<span style='color:#FF4B4B;font-size:0.75rem'>PASSED {abs(delta)}d ago</span>"
+        return f"<span style='color:#E53535;font-size:0.75rem'>PASSED {abs(delta)}d ago</span>"
     if delta <= 30:
-        return f"<span style='color:#FF4B4B;font-weight:700;font-size:0.75rem'>{delta}d</span>"
+        return f"<span style='color:#E53535;font-weight:700;font-size:0.75rem'>{delta}d</span>"
     if delta <= 90:
-        return f"<span style='color:#FFA500;font-size:0.75rem'>{delta}d</span>"
-    return f"<span style='color:#00D4AA;font-size:0.75rem'>{delta}d</span>"
+        return f"<span style='color:#E8A500;font-size:0.75rem'>{delta}d</span>"
+    return f"<span style='color:#1AB868;font-size:0.75rem'>{delta}d</span>"
 
 
 def _section_header(text: str, color: str = "#5B8FD4") -> None:
@@ -125,12 +125,12 @@ def _section_header(text: str, color: str = "#5B8FD4") -> None:
     )
 
 
-def _info_card(title: str, body: str, color: str = "#e2e8f0") -> None:
+def _info_card(title: str, body: str, color: str = "#D9E8F5") -> None:
     st.markdown(
         f'<div style="background:#ffffff;border:1px solid {color};border-radius:8px;'
         f'padding:0.8rem 1rem;margin-bottom:0.5rem">'
-        f'<div style="color:#374151;font-weight:600;font-size:0.82rem;margin-bottom:0.3rem">{title}</div>'
-        f'<div style="color:#64748b;font-size:0.78rem;line-height:1.5">{body}</div></div>',
+        f'<div style="color:#2B5A85;font-weight:600;font-size:0.82rem;margin-bottom:0.3rem">{title}</div>'
+        f'<div style="color:#5A8EBB;font-size:0.78rem;line-height:1.5">{body}</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -143,7 +143,7 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
             <span style="color:{phase_color};font-weight:700;font-size:0.85rem;letter-spacing:0.1em">
             CURRENT REGULATORY PHASE: {phase.replace('_',' ')}
             </span><br>
-            <span style="color:#64748b;font-size:0.82rem">{phase_narrative(phase)}</span>
+            <span style="color:#5A8EBB;font-size:0.82rem">{phase_narrative(phase)}</span>
         </div>""",
         unsafe_allow_html=True,
     )
@@ -155,45 +155,45 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
         color = "#4A7C59" if (d is not None and d > 0) else "#888"
         label = f"{d}d" if (d is not None and d > 0) else "OPEN"
         st.markdown(
-            f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-top:3px solid {color};
+            f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {color};
                 border-radius:8px;padding:0.75rem;text-align:center">
-                <div style="font-size:0.7rem;color:#64748b;letter-spacing:0.1em">GATEWAY OPENS</div>
+                <div style="font-size:0.7rem;color:#5A8EBB;letter-spacing:0.1em">GATEWAY OPENS</div>
                 <div style="font-size:1.6rem;font-weight:700;color:{color}">{label}</div>
-                <div style="font-size:0.75rem;color:#64748b">{GATEWAY_OPEN_DATE}</div>
-                <div style="font-size:0.68rem;color:#64748b">FCA registration window opens</div>
+                <div style="font-size:0.75rem;color:#5A8EBB">{GATEWAY_OPEN_DATE}</div>
+                <div style="font-size:0.68rem;color:#5A8EBB">FCA registration window opens</div>
             </div>""",
             unsafe_allow_html=True,
         )
     with t2:
         d = days_to_gateway_close(today)
-        color = ("#FFA500" if (d is not None and d > 30)
-                 else "#FF6B6B" if (d is not None and d > 0)
+        color = ("#E8A500" if (d is not None and d > 30)
+                 else "#E53535" if (d is not None and d > 0)
                  else "#888")
         label = f"{d}d" if (d is not None and d > 0) else "CLOSED"
         st.markdown(
-            f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-top:3px solid {color};
+            f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {color};
                 border-radius:8px;padding:0.75rem;text-align:center">
-                <div style="font-size:0.7rem;color:#64748b;letter-spacing:0.1em">GATEWAY CLOSES</div>
+                <div style="font-size:0.7rem;color:#5A8EBB;letter-spacing:0.1em">GATEWAY CLOSES</div>
                 <div style="font-size:1.6rem;font-weight:700;color:{color}">{label}</div>
-                <div style="font-size:0.75rem;color:#64748b">{GATEWAY_CLOSE_DATE}</div>
-                <div style="font-size:0.68rem;color:#64748b">Final registration deadline (HARD)</div>
+                <div style="font-size:0.75rem;color:#5A8EBB">{GATEWAY_CLOSE_DATE}</div>
+                <div style="font-size:0.68rem;color:#5A8EBB">Final registration deadline (HARD)</div>
             </div>""",
             unsafe_allow_html=True,
         )
     with t3:
         d = days_to_enforcement(today)
         color = ("#CC0000" if (d is not None and d <= 90)
-                 else "#FF6B6B" if (d is not None and d <= 180)
-                 else "#FFA500" if d is not None
+                 else "#E53535" if (d is not None and d <= 180)
+                 else "#E8A500" if d is not None
                  else "#CC0000")
         label = f"{d}d" if (d is not None and d > 0) else "ACTIVE"
         st.markdown(
-            f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-top:3px solid {color};
+            f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {color};
                 border-radius:8px;padding:0.75rem;text-align:center">
-                <div style="font-size:0.7rem;color:#64748b;letter-spacing:0.1em">ENFORCEMENT CLIFF</div>
+                <div style="font-size:0.7rem;color:#5A8EBB;letter-spacing:0.1em">ENFORCEMENT CLIFF</div>
                 <div style="font-size:1.6rem;font-weight:700;color:{color}">{label}</div>
-                <div style="font-size:0.75rem;color:#64748b">{ENFORCEMENT_DATE}</div>
-                <div style="font-size:0.68rem;color:#64748b">s.23 FSMA criminal liability begins</div>
+                <div style="font-size:0.75rem;color:#5A8EBB">{ENFORCEMENT_DATE}</div>
+                <div style="font-size:0.68rem;color:#5A8EBB">s.23 FSMA criminal liability begins</div>
             </div>""",
             unsafe_allow_html=True,
         )
@@ -218,7 +218,7 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
             st.markdown(
                 f'<div style="background:{color}11;border:1px solid {color};border-radius:8px;'
                 f'padding:0.7rem;text-align:center"><div style="color:{color};font-size:2rem;font-weight:700">'
-                f'{count}</div><div style="color:#64748b;font-size:0.72rem;letter-spacing:0.08em">{flag}</div></div>',
+                f'{count}</div><div style="color:#5A8EBB;font-size:0.72rem;letter-spacing:0.08em">{flag}</div></div>',
                 unsafe_allow_html=True,
             )
 
@@ -250,10 +250,10 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
                     f'<div style="background:#ffffff;border:1px solid {cat_color};border-top:3px solid {cat_color};'
                     f'border-radius:8px;padding:0.65rem;text-align:center">'
                     f'<div style="color:{cat_color};font-size:0.72rem;font-weight:700;letter-spacing:0.06em">{label}</div>'
-                    f'<div style="color:#0a0f1d;font-size:1.6rem;font-weight:800;margin:0.2rem 0">{counts["total"]}</div>'
-                    f'<div style="color:#64748b;font-size:0.68rem">instruments</div>'
+                    f'<div style="color:#071D35;font-size:1.6rem;font-weight:800;margin:0.2rem 0">{counts["total"]}</div>'
+                    f'<div style="color:#5A8EBB;font-size:0.68rem">instruments</div>'
                     f'<div style="margin-top:0.4rem">{_flag_badge(worst, "0.68rem")}</div>'
-                    f'<div style="color:#64748b;font-size:0.65rem;margin-top:0.3rem">'
+                    f'<div style="color:#5A8EBB;font-size:0.65rem;margin-top:0.3rem">'
                     f'🟢{counts["GREEN"]} 🟡{counts["AMBER"]} 🔴{counts["RED"]} ⛔{counts["CRITICAL"]}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
@@ -282,8 +282,8 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
                 f'<div style="display:flex;justify-content:space-between;align-items:center">'
                 f'<span style="color:{color};font-weight:700;font-size:0.8rem">{inst_id}</span>'
                 f'<span style="color:{cat_color};font-size:0.65rem">{_CAT_LABEL.get(cat_str,cat_str)}</span></div>'
-                f'<div style="color:#0a0f1d;font-size:0.78rem;font-weight:600">{inst_name}</div>'
-                f'<div style="color:#64748b;font-size:0.73rem;margin-top:0.2rem">⚡ {next_action}</div>'
+                f'<div style="color:#071D35;font-size:0.78rem;font-weight:600">{inst_name}</div>'
+                f'<div style="color:#5A8EBB;font-size:0.73rem;margin-top:0.2rem">⚡ {next_action}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -296,16 +296,16 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
             dt    = m.get("date") or m.get("deadline") or "—"
             detail = m.get("detail") or m.get("description", "")
             delta = (dt - today).days if isinstance(dt, date) else None
-            urgency = "#dc2626" if "ENFORCEMENT" in label.upper() else "#ea580c" if "GATEWAY" in label.upper() else "#00875a"
+            urgency = "#E53535" if "ENFORCEMENT" in label.upper() else "#E8A500" if "GATEWAY" in label.upper() else "#1AB868"
             delta_str = f"{delta}d" if delta is not None else ""
-            detail_html = f'<div style="color:#374151;font-size:0.72rem;margin-top:0.15rem;line-height:1.4">{detail}</div>' if detail else ""
+            detail_html = f'<div style="color:#2B5A85;font-size:0.72rem;margin-top:0.15rem;line-height:1.4">{detail}</div>' if detail else ""
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid {urgency};'
+                f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid {urgency};'
                 f'border-radius:6px;padding:0.5rem 0.9rem;margin-bottom:0.3rem">'
                 f'<div style="display:flex;justify-content:space-between;align-items:center">'
                 f'<span style="color:{urgency};font-weight:700;font-size:0.78rem">{label}</span>'
                 f'<span style="color:{urgency};font-size:0.72rem;font-weight:700">{delta_str}</span></div>'
-                f'<div style="color:#64748b;font-size:0.72rem">{dt}</div>'
+                f'<div style="color:#5A8EBB;font-size:0.72rem">{dt}</div>'
                 f'{detail_html}'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -315,7 +315,7 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
 def _render_fca_requirements() -> None:
     st.markdown("### FCA Authorisation Requirements by Instrument Type")
     st.markdown(
-        '<div style="color:#64748b;font-size:0.82rem;margin-bottom:1rem">'
+        '<div style="color:#5A8EBB;font-size:0.82rem;margin-bottom:1rem">'
         'Under FSMA 2023, the FCA\'s cryptoasset perimeter expanded to cover all '
         'crypto activities in the UK. Requirements differ significantly by instrument type '
         'and legal structure.</div>',
@@ -362,16 +362,16 @@ def _render_fca_requirements() -> None:
         steps = [
             ("1. Scope Assessment", "Map all cryptoasset activities — dealing, arranging, custody, advising — to FSMA Schedule 2/RAO regulated activities.", "#4A7C59"),
             ("2. Pre-Application Engagement", "Request early FCA interaction (EFI) to discuss application before gateway opens.", "#4A7C59"),
-            ("3. Part 4A Application / VoP", "Submit full application via Connect portal with business plan, compliance manual, SMF appointments, and financial projections.", "#FFA500"),
-            ("4. FCA Review (target 6–12m)", "FCA may issue Section 165 notices requesting further information. All queries must be answered within deadlines.", "#FFA500"),
-            ("5. Authorisation Grant", "Firm receives Part 4A permission. Must comply with ongoing reporting: GABRIEL, transaction reports, senior manager accountability (SMCR).", "#00D4AA"),
+            ("3. Part 4A Application / VoP", "Submit full application via Connect portal with business plan, compliance manual, SMF appointments, and financial projections.", "#E8A500"),
+            ("4. FCA Review (target 6–12m)", "FCA may issue Section 165 notices requesting further information. All queries must be answered within deadlines.", "#E8A500"),
+            ("5. Authorisation Grant", "Firm receives Part 4A permission. Must comply with ongoing reporting: GABRIEL, transaction reports, senior manager accountability (SMCR).", "#1AB868"),
         ]
         for title, desc, color in steps:
             st.markdown(
                 f'<div style="background:#ffffff;border-left:3px solid {color};border-radius:0 6px 6px 0;'
                 f'padding:0.5rem 0.8rem;margin-bottom:0.35rem">'
                 f'<span style="color:{color};font-weight:700;font-size:0.8rem">{title}</span><br>'
-                f'<span style="color:#64748b;font-size:0.76rem">{desc}</span></div>',
+                f'<span style="color:#5A8EBB;font-size:0.76rem">{desc}</span></div>',
                 unsafe_allow_html=True,
             )
 
@@ -513,13 +513,13 @@ Under **FCA PS22/10** (effective October 2023), firms marketing cryptoassets to 
                 auth_color = _AUTH_COLOR.get(status.replace(" ", "_"), "#888")
                 status_key = status.replace(" ", "_")
                 st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;'
+                    f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-radius:6px;'
                     f'padding:0.5rem 0.8rem;margin-bottom:0.3rem">'
                     f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                    f'<span style="color:#374151;font-weight:700;font-size:0.8rem">{name}</span>'
-                    f'<span style="color:#64748b;font-size:0.68rem">FCA: {fca_ref}</span></div>'
+                    f'<span style="color:#2B5A85;font-weight:700;font-size:0.8rem">{name}</span>'
+                    f'<span style="color:#5A8EBB;font-size:0.68rem">FCA: {fca_ref}</span></div>'
                     f'{_auth_badge(status_key)}'
-                    f'<div style="color:#64748b;font-size:0.72rem;margin-top:0.25rem">{note}</div>'
+                    f'<div style="color:#5A8EBB;font-size:0.72rem;margin-top:0.25rem">{note}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -593,7 +593,7 @@ def _render_compliance_matrix(today: date) -> None:
     # Gantt chart
     phases = [
         {"Phase": "PRE_GATEWAY",       "Start": "2025-01-01", "End": "2026-09-29", "Color": "#4A7C59"},
-        {"Phase": "GATEWAY OPEN",      "Start": "2026-09-30", "End": "2027-02-28", "Color": "#FFA500"},
+        {"Phase": "GATEWAY OPEN",      "Start": "2026-09-30", "End": "2027-02-28", "Color": "#E8A500"},
         {"Phase": "POST_GATEWAY",      "Start": "2027-03-01", "End": "2027-10-24", "Color": "#CC5500"},
         {"Phase": "ENFORCEMENT CLIFF", "Start": "2027-10-25", "End": "2028-12-31", "Color": "#CC0000"},
     ]
@@ -609,14 +609,14 @@ def _render_compliance_matrix(today: date) -> None:
         ))
     fig_gantt.add_vline(
         x=str(ref_date), line_dash="dot",
-        line_color="#00D4AA", line_width=2,
+        line_color="#1AB868", line_width=2,
         annotation_text=f"Ref: {ref_date}",
-        annotation_font_color="#00D4AA",
+        annotation_font_color="#1AB868",
     )
     fig_gantt.update_layout(
         height=150, margin={"t": 20, "b": 30, "l": 0, "r": 0},
-        paper_bgcolor="#f4f6f9", plot_bgcolor="#f4f6f9",
-        xaxis={"range": ["2025-01-01", "2028-12-31"], "color": "#64748b", "gridcolor": "#e2e8f0"},
+        paper_bgcolor="#EEF4FB", plot_bgcolor="#EEF4FB",
+        xaxis={"range": ["2025-01-01", "2028-12-31"], "color": "#5A8EBB", "gridcolor": "#D9E8F5"},
         yaxis={"visible": False},
         showlegend=True,
         legend={"orientation": "h", "y": 1.15, "font": {"color": "#888", "size": 10}},
@@ -648,7 +648,7 @@ def _render_compliance_matrix(today: date) -> None:
                 f'style="background:{color}{"22" if is_active else "0d"};border:{border_style};'
                 f'border-radius:8px;padding:0.65rem;text-align:center;cursor:pointer">'
                 f'<span style="color:{color};font-size:1.4rem;font-weight:800">{counts[flag]}</span><br>'
-                f'<span style="color:#374151;font-size:0.78rem;font-weight:600">{flag}</span><br>'
+                f'<span style="color:#2B5A85;font-size:0.78rem;font-weight:600">{flag}</span><br>'
                 f'<span style="color:{color};font-size:0.65rem">{"▼ hide" if is_active else "▲ view"}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -713,18 +713,18 @@ def _render_compliance_matrix(today: date) -> None:
             wind_down   = getattr(r, "estimated_wind_down_risk", False)
             risk_tags = ""
             if retail_risk:
-                risk_tags += ' <span style="background:#FF6B6B22;color:#FF6B6B;border-radius:3px;padding:0 4px;font-size:0.65rem">Retail Risk</span>'
+                risk_tags += ' <span style="background:#E5353522;color:#E53535;border-radius:3px;padding:0 4px;font-size:0.65rem">Retail Risk</span>'
             if wind_down:
-                risk_tags += ' <span style="background:#FF222222;color:#FF2222;border-radius:3px;padding:0 4px;font-size:0.65rem">Wind-Down</span>'
+                risk_tags += ' <span style="background:#E5353522;color:#E53535;border-radius:3px;padding:0 4px;font-size:0.65rem">Wind-Down</span>'
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid {color};'
+                f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid {color};'
                 f'border-radius:0 6px 6px 0;padding:0.55rem 0.85rem;margin-bottom:0.3rem">'
                 f'<div style="display:flex;justify-content:space-between;align-items:center">'
                 f'<span style="color:{color};font-weight:700;font-size:0.82rem">{inst_id}</span>'
-                f'<span style="color:#64748b;font-size:0.68rem">{_CAT_LABEL.get(cat, cat)}</span></div>'
-                f'<div style="color:#374151;font-size:0.78rem">{inst_name}</div>'
-                f'<div style="color:#64748b;font-size:0.72rem;margin-top:0.1rem">{auth}{risk_tags}</div>'
-                f'<div style="color:#64748b;font-size:0.72rem;margin-top:0.15rem">⚡ {next_action}</div>'
+                f'<span style="color:#5A8EBB;font-size:0.68rem">{_CAT_LABEL.get(cat, cat)}</span></div>'
+                f'<div style="color:#2B5A85;font-size:0.78rem">{inst_name}</div>'
+                f'<div style="color:#5A8EBB;font-size:0.72rem;margin-top:0.1rem">{auth}{risk_tags}</div>'
+                f'<div style="color:#5A8EBB;font-size:0.72rem;margin-top:0.15rem">⚡ {next_action}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -812,7 +812,7 @@ def _render_compliance_matrix(today: date) -> None:
     if critical_items:
         with st.expander(f"🚨 Critical & Red Instruments ({len(critical_items)}) — Immediate Action Required", expanded=True):
             for item in critical_items:
-                color = "#FF2222" if item["Survival"] == "CRITICAL" else "#FF6B6B"
+                color = "#E53535" if item["Survival"] == "CRITICAL" else "#E53535"
                 retail_warn = " · ⚠️ Retail Access at Risk" if item["Retail at Risk"] == "Yes" else ""
                 wind_warn   = " · ☠️ Wind-Down Risk" if item["Wind-Down Risk"] == "Yes" else ""
                 st.markdown(
@@ -822,8 +822,8 @@ def _render_compliance_matrix(today: date) -> None:
                     f'<span style="color:{color};font-weight:700">{item["ID"]} — {item["Name"]}</span>'
                     f'{_flag_badge(item["Survival"])}'
                     f'</div>'
-                    f'<span style="color:#64748b;font-size:0.78rem">{item["Category"]} · {item["Auth Status"]}{retail_warn}{wind_warn}</span><br>'
-                    f'<span style="color:#64748b;font-size:0.78rem">⚡ {item["Action Required"]}</span>'
+                    f'<span style="color:#5A8EBB;font-size:0.78rem">{item["Category"]} · {item["Auth Status"]}{retail_warn}{wind_warn}</span><br>'
+                    f'<span style="color:#5A8EBB;font-size:0.78rem">⚡ {item["Action Required"]}</span>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -843,10 +843,10 @@ def _render_compliance_matrix(today: date) -> None:
                 phase_color = _PHASE_COLOR.get(str(proj_phase), "#666")
                 with col:
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-top:3px solid {flag_color};'
+                        f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {flag_color};'
                         f'border-radius:8px;padding:0.6rem;text-align:center">'
-                        f'<div style="font-size:0.65rem;color:#64748b;letter-spacing:0.08em">{cp_label}</div>'
-                        f'<div style="font-size:0.75rem;color:#64748b">{proj_date}</div>'
+                        f'<div style="font-size:0.65rem;color:#5A8EBB;letter-spacing:0.08em">{cp_label}</div>'
+                        f'<div style="font-size:0.75rem;color:#5A8EBB">{proj_date}</div>'
                         f'<div style="margin:0.3rem 0">{_flag_badge(str(proj_flag))}</div>'
                         f'<div style="font-size:0.62rem;color:{phase_color}">{str(proj_phase).replace("_"," ")}</div>'
                         f'</div>',
@@ -859,10 +859,10 @@ def _render_compliance_matrix(today: date) -> None:
                 narrative = getattr(r, "risk_narrative", "")
                 if narrative:
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid #5B8FD4;'
+                        f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid #5B8FD4;'
                         f'border-radius:0 6px 6px 0;padding:0.6rem 1rem;margin-top:0.5rem">'
                         f'<div style="color:#5B8FD4;font-size:0.72rem;font-weight:700;margin-bottom:0.25rem">RISK NARRATIVE</div>'
-                        f'<div style="color:#64748b;font-size:0.78rem;line-height:1.5">{narrative}</div>'
+                        f'<div style="color:#5A8EBB;font-size:0.78rem;line-height:1.5">{narrative}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -871,22 +871,22 @@ def _render_compliance_matrix(today: date) -> None:
                 next_action = getattr(r, "next_action", "")
                 if deadline:
                     days_left = (deadline - ref_date).days
-                    dl_color = "#FF4B4B" if days_left <= 30 else "#FFA500" if days_left <= 90 else "#00D4AA"
+                    dl_color = "#E53535" if days_left <= 30 else "#E8A500" if days_left <= 90 else "#1AB868"
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;'
+                        f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-radius:6px;'
                         f'padding:0.5rem 0.8rem;margin-top:0.35rem;display:flex;gap:1rem">'
-                        f'<span style="color:#64748b;font-size:0.75rem">📅 Deadline:</span>'
+                        f'<span style="color:#5A8EBB;font-size:0.75rem">📅 Deadline:</span>'
                         f'<span style="color:{dl_color};font-weight:700;font-size:0.75rem">{deadline} ({deadline_label})</span>'
-                        f'<span style="color:#64748b;font-size:0.72rem">— {days_left}d remaining</span>'
+                        f'<span style="color:#5A8EBB;font-size:0.72rem">— {days_left}d remaining</span>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
                 if next_action:
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;'
+                        f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-radius:6px;'
                         f'padding:0.5rem 0.8rem;margin-top:0.25rem">'
-                        f'<span style="color:#FFA500;font-size:0.72rem;font-weight:700">⚡ REQUIRED ACTION: </span>'
-                        f'<span style="color:#374151;font-size:0.75rem">{next_action}</span>'
+                        f'<span style="color:#E8A500;font-size:0.72rem;font-weight:700">⚡ REQUIRED ACTION: </span>'
+                        f'<span style="color:#2B5A85;font-size:0.75rem">{next_action}</span>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -958,25 +958,25 @@ def _render_timeline(today: date) -> None:
 
         if is_passed:
             border_color = "#cbd5e1"
-            date_color = "#94a3b8"
-            label_color = "#94a3b8"
-            status_chip = '<span style="color:#94a3b8;font-size:0.68rem">✓ PASSED</span>'
-            bg = "#f8fafc"
+            date_color = "#5A8EBB"
+            label_color = "#5A8EBB"
+            status_chip = '<span style="color:#5A8EBB;font-size:0.68rem">✓ PASSED</span>'
+            bg = "#EEF4FB"
         elif is_critical:
-            border_color = "#dc2626"
-            date_color = "#dc2626"
-            label_color = "#dc2626"
-            status_chip = f'<span style="color:#dc2626;font-weight:700;font-size:0.72rem">⚠ {days_delta}d REMAINING</span>'
+            border_color = "#E53535"
+            date_color = "#E53535"
+            label_color = "#E53535"
+            status_chip = f'<span style="color:#E53535;font-weight:700;font-size:0.72rem">⚠ {days_delta}d REMAINING</span>'
             bg = "#fff5f5"
         else:
-            phase_col = _PHASE_COLOR.get(m["phase"], "#2563eb")
+            phase_col = _PHASE_COLOR.get(m["phase"], "#3A72A0")
             border_color = phase_col
             date_color = phase_col
-            label_color = "#0a0f1d"
+            label_color = "#071D35"
             status_chip = f'<span style="color:{phase_col};font-size:0.72rem">{days_delta}d</span>'
             bg = "#ffffff"
 
-        connector = '<div style="width:2px;height:1rem;background:#e2e8f0;margin-left:1.2rem"></div>' if i < len(ALL_MILESTONES) - 1 else ""
+        connector = '<div style="width:2px;height:1rem;background:#D9E8F5;margin-left:1.2rem"></div>' if i < len(ALL_MILESTONES) - 1 else ""
 
         st.markdown(
             f'<div style="background:{bg};border:1px solid {border_color};border-left:4px solid {border_color};'
@@ -985,7 +985,7 @@ def _render_timeline(today: date) -> None:
             f'<span style="color:{label_color};font-weight:700;font-size:0.82rem">{m["label"]}</span>'
             f'{status_chip}</div>'
             f'<div style="color:{date_color};font-size:0.72rem;margin:0.15rem 0">{m["date"]} · {m["phase"].replace("_"," ")}</div>'
-            f'<div style="color:#64748b;font-size:0.74rem;line-height:1.4">{m["detail"]}</div>'
+            f'<div style="color:#5A8EBB;font-size:0.74rem;line-height:1.4">{m["detail"]}</div>'
             f'</div>{connector}',
             unsafe_allow_html=True,
         )
@@ -1029,7 +1029,7 @@ def _render_timeline(today: date) -> None:
             "expected": "2027",
             "detail": "HM Treasury to assess equivalence of EU MiCA regime and other major jurisdictions. Could enable cross-border recognition of authorisations, reducing dual-licensing burden.",
             "impact": "All Instrument Types",
-            "color": "#FFA500",
+            "color": "#E8A500",
         },
         {
             "title": "CBDC (Digital Pound) Framework",
@@ -1044,13 +1044,13 @@ def _render_timeline(today: date) -> None:
     for i, plan in enumerate(upcoming_plans):
         with plan_cols[i % 2]:
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-top:3px solid {plan["color"]};'
+                f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {plan["color"]};'
                 f'border-radius:8px;padding:0.7rem 0.9rem;margin-bottom:0.5rem;height:100%">'
                 f'<div style="color:{plan["color"]};font-weight:700;font-size:0.8rem">{plan["title"]}</div>'
-                f'<div style="color:#64748b;font-size:0.7rem;margin:0.2rem 0">'
-                f'Expected: <span style="color:#374151;font-weight:600">{plan["expected"]}</span>'
-                f' · Affects: <span style="color:#374151;font-weight:600">{plan["impact"]}</span></div>'
-                f'<div style="color:#374151;font-size:0.75rem;line-height:1.5;margin-top:0.3rem">{plan["detail"]}</div>'
+                f'<div style="color:#5A8EBB;font-size:0.7rem;margin:0.2rem 0">'
+                f'Expected: <span style="color:#2B5A85;font-weight:600">{plan["expected"]}</span>'
+                f' · Affects: <span style="color:#2B5A85;font-weight:600">{plan["impact"]}</span></div>'
+                f'<div style="color:#2B5A85;font-size:0.75rem;line-height:1.5;margin-top:0.3rem">{plan["detail"]}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -1108,7 +1108,7 @@ def render() -> None:
     phase = current_phase(today)
     phase_color = _PHASE_COLOR.get(phase, "#666")
 
-    st.markdown("<h2 class='iw-module-header'>🏛️ Regulatory Sandbox — UK FSMA 2026/2027 FCA Compliance Intelligence</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Regulatory Sandbox — UK FSMA 2026/2027 FCA Compliance Intelligence</h2>", unsafe_allow_html=True)
 
     tab1, tab2, tab3, tab4 = st.tabs([
         "📊 Overview",

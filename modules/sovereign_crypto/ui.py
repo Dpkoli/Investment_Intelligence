@@ -397,14 +397,14 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
         if holders:
             st.markdown(f"##### Known institutional & insider holders of {symbol}")
             for i, h in enumerate(holders, 1):
-                pct_color = "#00D4AA" if h["pct"] not in ("—", "") else "#888"
+                pct_color = "#1AB868" if h["pct"] not in ("—", "") else "#888"
                 st.markdown(
-                    f"""<div style="background:#f8fafc;border:1px solid #e2e8f0;
+                    f"""<div style="background:#EEF4FB;border:1px solid #D9E8F5;
   border-left:3px solid {accent};border-radius:6px;padding:0.5rem 0.9rem;
   margin-bottom:0.35rem;display:flex;align-items:center;gap:1rem">
-  <span style="color:#64748b;min-width:22px;font-size:0.75rem">#{i}</span>
+  <span style="color:#5A8EBB;min-width:22px;font-size:0.75rem">#{i}</span>
   <span style="flex:1;font-weight:600;font-size:0.85rem">{h["name"]}</span>
-  <span style="color:#1e293b;font-size:0.8rem;min-width:120px;text-align:right">{h["amount"]}</span>
+  <span style="color:#071D35;font-size:0.8rem;min-width:120px;text-align:right">{h["amount"]}</span>
   <span style="color:{pct_color};font-size:0.8rem;min-width:60px;text-align:right;font-weight:700">{h["pct"]}</span>
 </div>""",
                     unsafe_allow_html=True,
@@ -428,21 +428,21 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
                 p0v = next((v for v in vis_prices if v is not None), None)
                 p1v = next((v for v in reversed(vis_prices) if v is not None), None)
                 if p0v and p1v and p1v < p0v:
-                    line_color = "#FF4B4B"
+                    line_color = "#E53535"
 
             fig_p = go.Figure(go.Scatter(
                 x=vis_dates, y=vis_prices, mode="lines",
                 line={"color": line_color, "width": 1.8},
                 fill="tozeroy",
-                fillcolor="rgba(0,212,170,0.06)" if line_color == accent else "rgba(255,75,75,0.06)",
+                fillcolor="rgba(26,184,104,0.06)" if line_color == accent else "rgba(229,53,53,0.06)",
                 hovertemplate="%{x}<br>$%{y:,.4f}<extra></extra>",
             ))
             fig_p.update_layout(
                 height=220,
                 margin={"t": 5, "b": 5, "l": 0, "r": 0},
-                paper_bgcolor="#f4f6f9", plot_bgcolor="#f4f6f9",
+                paper_bgcolor="#EEF4FB", plot_bgcolor="#EEF4FB",
                 xaxis={"visible": False},
-                yaxis={"color": "#64748b", "gridcolor": "#e2e8f0", "tickformat": "$,.2f"},
+                yaxis={"color": "#5A8EBB", "gridcolor": "#D9E8F5", "tickformat": "$,.2f"},
                 showlegend=False,
             )
             st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False})
@@ -453,14 +453,14 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
             for lbl, val in periods:
                 is_active = lbl == tf
                 if val is not None:
-                    clr     = "#00D4AA" if val >= 0 else "#FF4B4B"
+                    clr     = "#1AB868" if val >= 0 else "#E53535"
                     val_str = f"{val:+.1f}%"
                 else:
                     clr, val_str = "#555", "—"
-                border = "border-bottom:2px solid #00D4AA;" if is_active else ""
+                border = "border-bottom:2px solid #1AB868;" if is_active else ""
                 cells += (
                     f'<div style="text-align:center;flex:1;{border}">'
-                    f'<div style="font-size:0.62rem;color:#64748b">{lbl}</div>'
+                    f'<div style="font-size:0.62rem;color:#5A8EBB">{lbl}</div>'
                     f'<div style="font-size:0.8rem;font-weight:700;color:{clr}">{val_str}</div>'
                     f'</div>'
                 )
@@ -486,17 +486,17 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
             st.caption("⚠ Price targets are forward-looking estimates from public analyst reports. Not financial advice.")
             for t in targets:
                 st.markdown(
-                    f"""<div style="background:#f8fafc;border:1px solid #e2e8f0;
+                    f"""<div style="background:#EEF4FB;border:1px solid #D9E8F5;
   border-left:3px solid {accent};border-radius:8px;padding:0.65rem 1rem;
   margin-bottom:0.4rem">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
     <div>
       <span style="font-weight:700;font-size:0.88rem">{t["analyst"]}</span><br>
-      <span style="color:#64748b;font-size:0.73rem">{t["thesis"]}</span>
+      <span style="color:#5A8EBB;font-size:0.73rem">{t["thesis"]}</span>
     </div>
     <div style="text-align:right;white-space:nowrap">
       <div style="font-size:1.05rem;font-weight:700;color:{accent}">{t["target"]}</div>
-      <div style="font-size:0.7rem;color:#64748b">Target · {t["horizon"]}</div>
+      <div style="font-size:0.7rem;color:#5A8EBB">Target · {t["horizon"]}</div>
     </div>
   </div>
 </div>""",
@@ -509,7 +509,7 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
-    st.markdown("<h2 class='iw-module-header'>₿ Sovereign Crypto Networks</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Sovereign Crypto Networks</h2>", unsafe_allow_html=True)
     st.caption("Top-10 digital assets · Institutional holders · Live prices · Analyst predictions")
 
     # Session state
@@ -552,15 +552,15 @@ def render() -> None:
                 f"${price:,.4f}" if price and price < 1 else
                 f"${price:,.2f}" if price else "—"
             )
-            chg_color = "#00D4AA" if (chg is not None and chg >= 0) else "#FF4B4B"
+            chg_color = "#1AB868" if (chg is not None and chg >= 0) else "#E53535"
             chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
             is_active  = selected == yf_t
-            border_style = f"border:2px solid {accent}" if is_active else "border:1px solid #e2e8f0"
+            border_style = f"border:2px solid {accent}" if is_active else "border:1px solid #D9E8F5"
 
             with col:
                 card_id = f"cr_card_{yf_t.replace('-', '_')}"
                 bg = f"{accent}12" if is_active else "#ffffff"
-                border = f"2px solid {accent}" if is_active else "1px solid #e2e8f0"
+                border = f"2px solid {accent}" if is_active else "1px solid #D9E8F5"
                 shadow = "box-shadow:0 3px 10px rgba(0,0,0,0.10);" if is_active else "box-shadow:0 1px 3px rgba(0,0,0,0.06);"
                 st.markdown(
                     f'<div id="{card_id}" class="iw-price-card"'
@@ -569,9 +569,9 @@ def render() -> None:
                     f'<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem">'
                     f'<span style="font-size:1.1rem">{icon}</span>'
                     f'<span style="font-weight:700;font-size:0.88rem;color:{accent}">{sym}</span>'
-                    f'<span style="color:#64748b;font-size:0.68rem;margin-left:auto">{name}</span>'
+                    f'<span style="color:#5A8EBB;font-size:0.68rem;margin-left:auto">{name}</span>'
                     f'</div>'
-                    f'<div style="font-size:1.15rem;font-weight:800;color:#0a0f1d">{price_str}</div>'
+                    f'<div style="font-size:1.15rem;font-weight:800;color:#071D35">{price_str}</div>'
                     f'<div style="font-size:0.75rem;color:{chg_color};margin-top:0.05rem">{chg_str} today</div>'
                     f'</div>',
                     unsafe_allow_html=True,

@@ -245,7 +245,7 @@ def _render_detail_panel(p, prices: dict) -> None:
     chg     = _safe_num(px_data.get("chg_pct"))
 
     price_str = f"${price:,.4f}" if price else "—"
-    chg_color = "#00D4AA" if (chg is not None and chg >= 0) else "#FF4B4B"
+    chg_color = "#1AB868" if (chg is not None and chg >= 0) else "#E53535"
     chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
     lev_str   = f"{p.leverage:+.0f}×" if p.leverage != 1.0 else "1×"
 
@@ -255,13 +255,13 @@ def _render_detail_panel(p, prices: dict) -> None:
     issuer_url = _fund_url(p.ticker, p.issuer)
     yahoo_url  = f"https://finance.yahoo.com/quote/{p.ticker}"
 
-    ter_span  = f'<span>💰 TER&nbsp;<b style="color:#1e293b">{p.expense_ratio:.2f}%</b></span>' if p.expense_ratio else ""
-    aum_span  = f'<span>📦 AUM&nbsp;<b style="color:#1e293b">${p.aum_bn:.1f}bn</b></span>'        if p.aum_bn        else ""
-    isin_span = f'<span>🔢&nbsp;<b style="color:#1e293b">{p.isin}</b></span>'                       if p.isin          else ""
+    ter_span  = f'<span>💰 TER&nbsp;<b style="color:#071D35">{p.expense_ratio:.2f}%</b></span>' if p.expense_ratio else ""
+    aum_span  = f'<span>📦 AUM&nbsp;<b style="color:#071D35">${p.aum_bn:.1f}bn</b></span>'        if p.aum_bn        else ""
+    isin_span = f'<span>🔢&nbsp;<b style="color:#071D35">{p.isin}</b></span>'                       if p.isin          else ""
 
     st.markdown(
         f"""
-<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid {color};
+<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:4px solid {color};
      border-radius:10px;padding:1rem 1.2rem;margin:0.4rem 0 0.75rem 0">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
     <div>
@@ -269,7 +269,7 @@ def _render_detail_panel(p, prices: dict) -> None:
         {metal_name.upper()} &middot; {p.product_type}
       </span><br>
       <span style="font-size:1.25rem;font-weight:700">{p.ticker}</span>&nbsp;
-      <span style="color:#374151;font-size:0.87rem">{p.name}</span>
+      <span style="color:#2B5A85;font-size:0.87rem">{p.name}</span>
     </div>
     <div style="text-align:right">
       <div style="font-size:1.3rem;font-weight:700">{price_str}</div>
@@ -277,10 +277,10 @@ def _render_detail_panel(p, prices: dict) -> None:
     </div>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:0.6rem;font-size:0.75rem;color:#999">
-    <span>🏢&nbsp;<b style="color:#1e293b">{p.issuer or "—"}</b></span>
-    <span>🏛&nbsp;<b style="color:#1e293b">{p.exchange}</b></span>
-    <span>💱&nbsp;<b style="color:#1e293b">{p.currency}</b></span>
-    <span>⚡&nbsp;<b style="color:#1e293b">Leverage {lev_str}</b></span>
+    <span>🏢&nbsp;<b style="color:#071D35">{p.issuer or "—"}</b></span>
+    <span>🏛&nbsp;<b style="color:#071D35">{p.exchange}</b></span>
+    <span>💱&nbsp;<b style="color:#071D35">{p.currency}</b></span>
+    <span>⚡&nbsp;<b style="color:#071D35">Leverage {lev_str}</b></span>
     {ter_span}
     {aum_span}
     {isin_span}
@@ -316,8 +316,8 @@ def _render_detail_panel(p, prices: dict) -> None:
             fig_h.update_layout(
                 height=max(180, len(h_df) * 28),
                 margin={"t": 5, "b": 5, "l": 10, "r": 55},
-                paper_bgcolor="#f4f6f9",
-                plot_bgcolor="#f4f6f9",
+                paper_bgcolor="#EEF4FB",
+                plot_bgcolor="#EEF4FB",
                 xaxis={"visible": False},
                 yaxis={"color": "#888", "tickfont": {"size": 11}, "autorange": "reversed"},
                 showlegend=False,
@@ -338,27 +338,27 @@ def _render_detail_panel(p, prices: dict) -> None:
             vis_dates  = all_dates[-n_days:]  if n_days else all_dates
             vis_prices = all_prices[-n_days:] if n_days else all_prices
 
-            line_color = "#00D4AA"
+            line_color = "#1AB868"
             if len(vis_prices) >= 2:
                 p0v = next((v for v in vis_prices if v is not None), None)
                 p1v = next((v for v in reversed(vis_prices) if v is not None), None)
                 if p0v and p1v and p1v < p0v:
-                    line_color = "#FF4B4B"
+                    line_color = "#E53535"
 
             fig_p = go.Figure(go.Scatter(
                 x=vis_dates, y=vis_prices, mode="lines",
                 line={"color": line_color, "width": 1.8},
                 fill="tozeroy",
-                fillcolor=f"rgba({'0,212,170' if line_color == '#00D4AA' else '255,75,75'},0.07)",
+                fillcolor=f"rgba({'26,184,104' if line_color == '#1AB868' else '229,53,53'},0.07)",
                 hovertemplate="%{x}<br>$%{y:,.2f}<extra></extra>",
             ))
             fig_p.update_layout(
                 height=150,
                 margin={"t": 5, "b": 5, "l": 0, "r": 0},
-                paper_bgcolor="#f4f6f9",
-                plot_bgcolor="#f4f6f9",
+                paper_bgcolor="#EEF4FB",
+                plot_bgcolor="#EEF4FB",
                 xaxis={"visible": False},
-                yaxis={"color": "#64748b", "gridcolor": "#e2e8f0", "tickformat": "$,.0f"},
+                yaxis={"color": "#5A8EBB", "gridcolor": "#D9E8F5", "tickformat": "$,.0f"},
                 showlegend=False,
             )
             st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False})
@@ -370,14 +370,14 @@ def _render_detail_panel(p, prices: dict) -> None:
             for lbl, val in periods:
                 is_tf = lbl == tf
                 if val is not None:
-                    v_color = "#00D4AA" if val >= 0 else "#FF4B4B"
+                    v_color = "#1AB868" if val >= 0 else "#E53535"
                     val_str = f"{val:+.1f}%"
                 else:
                     v_color, val_str = "#555", "—"
-                border = "border-bottom:2px solid #00D4AA;" if is_tf else ""
+                border = "border-bottom:2px solid #1AB868;" if is_tf else ""
                 cells += (
                     f'<div style="text-align:center;flex:1;{border}">'
-                    f'<div style="font-size:0.62rem;color:#64748b">{lbl}</div>'
+                    f'<div style="font-size:0.62rem;color:#5A8EBB">{lbl}</div>'
                     f'<div style="font-size:0.8rem;font-weight:700;color:{v_color}">{val_str}</div>'
                     f'</div>'
                 )
@@ -406,23 +406,23 @@ def _render_detail_panel(p, prices: dict) -> None:
             if link and link.startswith("http"):
                 headline_html = (
                     f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
-                    f'style="color:#1e293b;text-decoration:none;font-weight:600;'
+                    f'style="color:#071D35;text-decoration:none;font-weight:600;'
                     f'border-bottom:1px dotted #555">{title}</a>'
                 )
                 read_link = (
-                    f'<span style="color:#64748b">&middot;</span>'
+                    f'<span style="color:#5A8EBB">&middot;</span>'
                     f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
-                    f'style="color:#00D4AA;text-decoration:none;font-size:0.68rem">&nearr; Read</a>'
+                    f'style="color:#1AB868;text-decoration:none;font-size:0.68rem">&nearr; Read</a>'
                 )
             else:
-                headline_html = f'<span style="color:#1e293b;font-weight:600">{title}</span>'
+                headline_html = f'<span style="color:#071D35;font-weight:600">{title}</span>'
                 read_link = ""
 
-            time_html = (f'<span style="color:#64748b">&middot;</span><span>{time_label}</span>'
+            time_html = (f'<span style="color:#5A8EBB">&middot;</span><span>{time_label}</span>'
                          if time_label else "")
 
             st.markdown(
-                f"""<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #FFA500;
+                f"""<div style="background:#EEF4FB;border:1px solid #D9E8F5;border-left:3px solid #E8A500;
      border-radius:6px;padding:0.55rem 0.8rem;margin-bottom:0.4rem">
   <div style="font-size:0.79rem">{headline_html}</div>
   <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.28rem;font-size:0.68rem;color:#666">
@@ -445,7 +445,7 @@ def _render_detail_panel(p, prices: dict) -> None:
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
-    st.markdown("<h2 class='iw-module-header'>🥇 Precious Metals — Spot, Physical ETPs & Mining Equity Intelligence</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Precious Metals — Spot, Physical ETPs & Mining Equity Intelligence</h2>", unsafe_allow_html=True)
     st.caption(f"{len(METALS_REGISTRY)} products tracked — Gold · Silver · Platinum · Palladium")
 
     if "pm_page" not in st.session_state:
@@ -469,16 +469,16 @@ def render() -> None:
         chg       = _safe_num(px_data.get("chg_pct"))
         color     = _METAL_COLOR.get(color_key, "#FFD700")
         price_str = f"${price:,.2f}" if price else "—"
-        chg_color = "#00D4AA" if (chg is not None and chg >= 0) else "#FF4B4B"
+        chg_color = "#1AB868" if (chg is not None and chg >= 0) else "#E53535"
         chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
         with col:
             st.markdown(
-                f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid {color};
+                f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid {color};
                     border-radius:8px;padding:0.75rem 1.2rem;text-align:center">
                     <div style="font-size:0.72rem;color:{color};font-weight:700;letter-spacing:0.1em">{metal.upper()}</div>
                     <div style="font-size:1.5rem;font-weight:700;margin:0.2rem 0">{price_str}</div>
                     <div style="font-size:0.85rem;color:{chg_color}">{chg_str}</div>
-                    <div style="font-size:0.68rem;color:#64748b;margin-top:0.2rem">troy oz · {ticker}</div>
+                    <div style="font-size:0.68rem;color:#5A8EBB;margin-top:0.2rem">troy oz · {ticker}</div>
                 </div>""",
                 unsafe_allow_html=True,
             )

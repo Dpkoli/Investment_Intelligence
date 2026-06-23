@@ -19,12 +19,12 @@ from modules.news_feed.data import (
 )
 
 _CATEGORIES = [
-    ("🌍 All",             "all",        "#888"),
-    ("₿ Crypto",          "crypto",     "#9B59B6"),
-    ("📈 Equities & ETFs", "equities",   "#5B8FD4"),
-    ("🥇 Precious Metals", "metals",     "#FFD700"),
-    ("📊 Thematic",        "thematic",   "#2ECC71"),
-    ("⚖️ Regulatory",     "regulatory", "#FFA500"),
+    ("All",             "all",        "#5A8EBB"),
+    ("Crypto",          "crypto",     "#7c3aed"),
+    ("Equities & ETFs", "equities",   "#3A72A0"),
+    ("Precious Metals", "metals",     "#C98900"),
+    ("Thematic",        "thematic",   "#1AB868"),
+    ("Regulatory",      "regulatory", "#E8A500"),
 ]
 
 # Known instruments for ticker-aware search suggestions
@@ -54,10 +54,10 @@ def _news_card(item: dict, accent: str = "#5B8FD4") -> None:
 
     title_html = (
         f'<a href="{link}" target="_blank" '
-        f'style="color:#0a0f1d;text-decoration:none;font-weight:600;font-size:0.81rem;line-height:1.45">'
+        f'style="color:#071D35;text-decoration:none;font-weight:600;font-size:0.81rem;line-height:1.45">'
         f'{title}</a>'
         if link else
-        f'<span style="color:#0a0f1d;font-weight:600;font-size:0.81rem">{title}</span>'
+        f'<span style="color:#071D35;font-weight:600;font-size:0.81rem">{title}</span>'
     )
 
     ticker_chip = (
@@ -67,14 +67,14 @@ def _news_card(item: dict, accent: str = "#5B8FD4") -> None:
     )
 
     st.markdown(
-        f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid {accent};'
+        f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid {accent};'
         f'border-radius:0 12px 12px 0;padding:0.6rem 0.9rem;margin-bottom:0.35rem;'
         f'box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
         f'{title_html}'
         f'<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem">'
-        f'<span style="color:#64748b;font-size:0.68rem">{pub}</span>'
+        f'<span style="color:#5A8EBB;font-size:0.68rem">{pub}</span>'
         f'<span style="color:#cbd5e1">·</span>'
-        f'<span style="color:#94a3b8;font-size:0.68rem">{time_str}</span>'
+        f'<span style="color:#5A8EBB;font-size:0.68rem">{time_str}</span>'
         f'{ticker_chip}'
         f'</div></div>',
         unsafe_allow_html=True,
@@ -164,8 +164,8 @@ def _render_category(label: str, cat_key: str, accent: str) -> None:
 
 def render() -> None:
     st.markdown(
-        "<h2 class='iw-module-header'>📰 News Feed</h2>"
-        "<p style='color:#64748b;margin-top:2px;font-size:0.82rem'>Global market intelligence across all asset classes · refreshed every 5 min · click any headline to read</p>",
+        "<h2 class='iw-module-header'>News Feed</h2>"
+        "<p style='color:#5A8EBB;margin-top:2px;font-size:0.82rem'>Global market intelligence across all asset classes · refreshed every 5 min · click any headline to read</p>",
         unsafe_allow_html=True,
     )
 

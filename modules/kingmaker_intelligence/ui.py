@@ -12,19 +12,19 @@ import plotly.graph_objects as go
 from .data import SUPPLY_CHAIN_REGISTRY, SupplyChainLink, ALL_SECTORS, SECTOR_ANCHORS
 
 _CONN_COLOR = {
-    "Custom_Silicon":  "#00D4AA",
-    "JV_Partner":      "#FFA500",
-    "Sole_Supplier":   "#FF4B4B",
-    "Preferred_Supplier": "#4ADE80",
-    "Subcontractor":   "#A78BFA",
-    "CRO":             "#60A5FA",
-    "CDMO":            "#F472B6",
+    "Custom_Silicon":  "#1AB868",
+    "JV_Partner":      "#E8A500",
+    "Sole_Supplier":   "#E53535",
+    "Preferred_Supplier": "#149453",
+    "Subcontractor":   "#7c3aed",
+    "CRO":             "#3A72A0",
+    "CDMO":            "#2B5A85",
 }
 _WALLET_COLOR = {
-    "Critical (>50%)":     "#FF2222",
-    "Major (30-50%)":      "#FF8C00",
-    "Significant (15-30%)":"#FFA500",
-    "Notable (5-15%)":     "#4ADE80",
+    "Critical (>50%)":     "#E53535",
+    "Major (30-50%)":      "#C98900",
+    "Significant (15-30%)":"#E8A500",
+    "Notable (5-15%)":     "#1AB868",
 }
 
 
@@ -48,19 +48,19 @@ def _valuation_delta_bar(anchor_val: float | None, supplier_val: float | None,
     if anchor_val is None or supplier_val is None:
         return None
     discount = (supplier_val - anchor_val) / anchor_val * 100
-    color = "#00D4AA" if discount < 0 else "#FF6B6B"
+    color = "#1AB868" if discount < 0 else "#E53535"
     fig = go.Figure(go.Bar(
         x=[anchor_val, supplier_val],
         y=["Anchor", "Supplier"],
         orientation="h",
-        marker_color=["#e2e8f0", color],
+        marker_color=["#D9E8F5", color],
         text=[f"{anchor_val:.1f}×", f"{supplier_val:.1f}×  ({discount:+.0f}%)"],
         textposition="outside",
         hoverinfo="skip",
     ))
     fig.update_layout(
         height=90, margin={"t": 5, "b": 5, "l": 60, "r": 80},
-        paper_bgcolor="#f4f6f9", plot_bgcolor="#f4f6f9",
+        paper_bgcolor="#EEF4FB", plot_bgcolor="#EEF4FB",
         xaxis={"visible": False}, yaxis={"color": "#888", "tickfont": {"size": 10}},
         showlegend=False,
         title={"text": label, "font": {"size": 11, "color": "#888"}, "x": 0},
@@ -78,7 +78,7 @@ def _render_link_card(link: SupplyChainLink, idx: int) -> None:
                       if link.wallet_share_pct else "")
 
     source_link = (
-        f'<a href="{link.source_url}" target="_blank" style="color:#00D4AA;font-size:0.72rem;text-decoration:none">'
+        f'<a href="{link.source_url}" target="_blank" style="color:#1AB868;font-size:0.72rem;text-decoration:none">'
         f'↗ Source IR</a>'
         if link.source_url else ""
     )
@@ -86,13 +86,13 @@ def _render_link_card(link: SupplyChainLink, idx: int) -> None:
     renewal_str = (f"Renewal cliff: <b>{link.renewal_cliff}</b>" if link.renewal_cliff else "")
 
     st.markdown(
-        f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid {_CONN_COLOR.get(link.connection_type,'#888')};
+        f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid {_CONN_COLOR.get(link.connection_type,'#888')};
             border-radius:8px;padding:0.75rem 1rem;margin-bottom:0.5rem">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
                 <div>
-                    <span style="font-size:0.75rem;color:#64748b">{sector_icon} {link.sector} · {link.anchor_index}</span><br>
+                    <span style="font-size:0.75rem;color:#5A8EBB">{sector_icon} {link.sector} · {link.anchor_index}</span><br>
                     <span style="font-size:1rem;font-weight:700">{link.anchor_ticker} → {link.supplier_ticker}</span>
-                    <span style="color:#64748b;margin:0 0.5rem">|</span>
+                    <span style="color:#5A8EBB;margin:0 0.5rem">|</span>
                     <span style="font-size:0.85rem">{link.anchor_name} → <b>{link.supplier_name}</b></span>
                 </div>
                 <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
@@ -101,12 +101,12 @@ def _render_link_card(link: SupplyChainLink, idx: int) -> None:
                     {source_link}
                 </div>
             </div>
-            <div style="margin-top:0.4rem;font-size:0.78rem;color:#64748b">
+            <div style="margin-top:0.4rem;font-size:0.78rem;color:#5A8EBB">
                 <b>Supply Layer:</b> {link.supply_layer}{wallet_pct_str}
                 {"  ·  " + renewal_str if renewal_str else ""}
                 {"  ·  Contract: " + str(link.contract_years) + "y" if link.contract_years else ""}
             </div>
-            {f'<div style="margin-top:0.35rem;font-size:0.75rem;font-style:italic;color:#64748b">" {link.exec_quote} "</div>' if link.exec_quote else ""}
+            {f'<div style="margin-top:0.35rem;font-size:0.75rem;font-style:italic;color:#5A8EBB">" {link.exec_quote} "</div>' if link.exec_quote else ""}
         </div>""",
         unsafe_allow_html=True,
     )
@@ -199,7 +199,7 @@ def _tactical_predictions(link: SupplyChainLink) -> list[str]:
 
 
 def render() -> None:
-    st.markdown("<h2 class='iw-module-header'>🔗 Kingmaker Intelligence — Global Supply-Chain Dependency Mapping</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Kingmaker Intelligence — Global Supply-Chain Dependency Mapping</h2>", unsafe_allow_html=True)
     st.caption(f"{len(SUPPLY_CHAIN_REGISTRY)} verified B2B relationships · {len(ALL_SECTORS)} sectors · "
                f"Click any supplier card to reveal valuation analysis and tactical predictions")
 
@@ -267,14 +267,14 @@ def render() -> None:
                     fig.add_trace(go.Bar(
                         name="Supplier EV/EBITDA",
                         x=cd_df["Supplier"], y=cd_df["Supplier EV/EBITDA"],
-                        marker_color="#00D4AA",
+                        marker_color="#1AB868",
                         text=[f"{d:+.0f}%" if d is not None else "" for d in cd_df["Discount %"]],
                         textposition="outside",
                     ))
                     fig.update_layout(
                         barmode="group", height=220,
                         margin={"t": 20, "b": 30, "l": 0, "r": 0},
-                        paper_bgcolor="#f4f6f9", plot_bgcolor="#f4f6f9",
+                        paper_bgcolor="#EEF4FB", plot_bgcolor="#EEF4FB",
                         legend={"orientation": "h", "y": 1.1, "font": {"color": "#888", "size": 10}},
                         xaxis={"color": "#888"}, yaxis={"color": "#888", "title": "EV/EBITDA ×"},
                         title={"text": "Valuation Delta: Anchor vs. Supplier", "font": {"color": "#888", "size": 11}},
