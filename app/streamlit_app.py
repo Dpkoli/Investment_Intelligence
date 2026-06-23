@@ -76,268 +76,324 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    /* ── InvestWise Design System — Font Imports ─────────────────────────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* Apply Inter only to text elements, not to icon/symbol pseudo-elements */
-    body, .stApp, .stMarkdown p, .stMarkdown span, .stMarkdown a,
-    .stMarkdown li, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-    .stButton button p, .stTextInput input, .stSelectbox select,
+    body, .stApp,
+    .stMarkdown p, .stMarkdown span, .stMarkdown a, .stMarkdown li,
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stButton button, .stTextInput input, .stSelectbox select,
     .stTabs [role="tab"], div[data-testid="stExpander"] summary p,
-    div[data-testid="metric-container"] label,
-    div[data-testid="metric-container"] [data-testid="stMetricValue"],
-    div[data-testid="metric-container"] [data-testid="stMetricDelta"],
-    label, .stCaption p {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+    div[data-testid="metric-container"] label, label, .stCaption p {
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
     }
 
-    /* Preserve Streamlit's Material icon font for icons */
+    /* Preserve icon fonts */
+    span[aria-hidden="true"], [class*="material-icons"],
     [data-testid="stExpander"] summary svg,
-    [data-testid="stExpander"] summary [data-testid="stIconMaterial"],
-    span[aria-hidden="true"], [class*="material-icons"] {
+    [data-testid="stExpander"] summary [data-testid="stIconMaterial"] {
         font-family: 'Material Icons', 'Material Symbols Rounded' !important;
     }
 
+    /* ── Design System Tokens ────────────────────────────────────────────────── */
     :root {
-        --canvas:   #f4f6f9;
-        --sidebar:  #111c24;
-        --card:     #ffffff;
-        --border:   #e2e8f0;
-        --text-h:   #0a0f1d;
-        --text-sub: #64748b;
-        --accent:   #00875a;
-        --danger:   #dc2626;
-        --warn:     #ea580c;
-        --info:     #2563eb;
+        /* Navy scale */
+        --navy-50:  #EEF4FB;
+        --navy-100: #D9E8F5;
+        --navy-200: #B4D0E9;
+        --navy-300: #87B0D2;
+        --navy-400: #5A8EBB;
+        --navy-500: #3A72A0;
+        --navy-600: #2B5A85;
+        --navy-700: #1D4369;
+        --navy-800: #0F2D4F;
+        --navy-900: #071D35;
+        /* Emerald */
+        --emerald-50:  #EDFAF3;
+        --emerald-100: #D0F4E1;
+        --emerald-200: #A3E8C4;
+        --emerald-400: #37C87C;
+        --emerald-500: #1AB868;
+        --emerald-600: #149453;
+        /* Coral */
+        --coral-50:  #FEF2F2;
+        --coral-200: #FBCACA;
+        --coral-500: #E53535;
+        --coral-700: #9B1515;
+        /* Amber */
+        --amber-50:  #FFFBEB;
+        --amber-200: #FDE58A;
+        --amber-500: #E8A500;
+        --amber-600: #C98900;
+        /* Semantic */
+        --color-primary:        #0F2D4F;
+        --color-accent:         #1AB868;
+        --color-bg:             #F2F6FA;
+        --color-surface:        #FFFFFF;
+        --color-surface-subtle: #EEF4FB;
+        --color-text-primary:   #071D35;
+        --color-text-secondary: #2B5A85;
+        --color-text-muted:     #5A8EBB;
+        --color-positive:       #149453;
+        --color-negative:       #E53535;
+        --color-warning:        #E8A500;
+        --color-border:         #D9E8F5;
+        --color-border-strong:  #B4D0E9;
+        --shadow-card:          0 1px 3px rgba(7,29,53,0.05), 0 4px 12px rgba(7,29,53,0.04);
+        --shadow-card-hover:    0 2px 6px rgba(7,29,53,0.08), 0 6px 18px rgba(7,29,53,0.07);
+        --font-display:         'Cormorant Garamond', Georgia, serif;
+        --font-body:            'Plus Jakarta Sans', system-ui, sans-serif;
+        --font-mono:            'JetBrains Mono', 'Courier New', monospace;
+        /* App compatibility aliases */
+        --canvas:   #F2F6FA;
+        --sidebar:  #071D35;
+        --card:     #FFFFFF;
+        --border:   #D9E8F5;
+        --text-h:   #071D35;
+        --text-sub: #5A8EBB;
+        --accent:   #1AB868;
+        --danger:   #E53535;
+        --warn:     #E8A500;
+        --info:     #3A72A0;
         --purple:   #7c3aed;
     }
 
-    /* ── Canvas ─────────────────────────────────── */
+    /* ── Canvas ──────────────────────────────────────────────────────────────── */
     .stApp { background-color: var(--canvas) !important; }
     .block-container { padding-top: 1rem; background: transparent; }
 
-    /* ── Sidebar ────────────────────────────────── */
+    /* ── Sidebar ─────────────────────────────────────────────────────────────── */
     section[data-testid="stSidebar"] > div:first-child {
-        background-color: var(--sidebar) !important;
+        background-color: #071D35 !important;
     }
     section[data-testid="stSidebar"] h1,
     section[data-testid="stSidebar"] h2,
     section[data-testid="stSidebar"] p,
     section[data-testid="stSidebar"] .stCaption,
-    section[data-testid="stSidebar"] label { color: #94a3b8 !important; }
-    section[data-testid="stSidebar"] .stRadio label { color: #94a3b8 !important; }
-    section[data-testid="stSidebar"] .stRadio label:hover { color: #ffffff !important; }
+    section[data-testid="stSidebar"] label { color: rgba(255,255,255,0.55) !important; }
 
-    /* ── Metric containers ──────────────────────── */
+    /* ── Sidebar navigation ──────────────────────────────────────────────────── */
+    section[data-testid="stSidebar"] .stRadio > div { gap: 0 !important; }
+    section[data-testid="stSidebar"] .stRadio label {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.48rem 0.9rem !important;
+        border-radius: 8px !important;
+        color: rgba(255,255,255,0.55) !important;
+        cursor: pointer !important;
+        border-left: 3px solid transparent !important;
+        transition: background 0.13s, color 0.13s !important;
+        font-size: 0.84rem !important;
+        margin: 0.1rem 0 !important;
+        font-weight: 400 !important;
+        width: 100% !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label:hover {
+        background: rgba(255,255,255,0.06) !important;
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label:has(input[type="radio"]:checked) {
+        background: rgba(26,184,104,0.12) !important;
+        color: #1AB868 !important;
+        border-left-color: #1AB868 !important;
+        font-weight: 600 !important;
+    }
+    section[data-testid="stSidebar"] .stRadio input[type="radio"] {
+        position: absolute !important;
+        opacity: 0 !important; width: 0 !important;
+        height: 0 !important; margin: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* ── Metrics ─────────────────────────────────────────────────────────────── */
     div[data-testid="metric-container"] {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 0.85rem 1.25rem;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        box-shadow: var(--shadow-card);
     }
-    div[data-testid="metric-container"] label { color: var(--text-sub) !important; font-size: 0.8rem; }
-    div[data-testid="metric-container"] [data-testid="stMetricValue"] { color: var(--text-h) !important; font-weight: 800; }
+    div[data-testid="metric-container"] label {
+        color: var(--text-sub) !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.07em !important;
+        text-transform: uppercase !important;
+    }
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+        color: var(--text-h) !important;
+        font-weight: 400 !important;
+        font-family: var(--font-display) !important;
+        font-size: 1.85rem !important;
+        letter-spacing: -0.02em !important;
+        line-height: 1.1 !important;
+    }
 
-    /* ── Expanders ──────────────────────────────── */
+    /* ── Expanders ───────────────────────────────────────────────────────────── */
     div[data-testid="stExpander"] {
         background: var(--card);
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         margin-bottom: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: var(--shadow-card);
     }
-    div[data-testid="stExpander"] summary { color: var(--text-h) !important; font-weight: 600; }
+    div[data-testid="stExpander"] summary {
+        color: var(--text-h) !important; font-weight: 600;
+        cursor: pointer; align-items: center; gap: 0.5rem;
+    }
+    div[data-testid="stExpander"] summary svg {
+        display: inline-block !important; flex-shrink: 0;
+        min-width: 16px; min-height: 16px;
+    }
+    div[data-testid="stExpander"] summary p {
+        margin: 0 !important; line-height: 1.4 !important;
+    }
 
-    /* ── Tabs ───────────────────────────────────── */
+    /* ── Tabs ────────────────────────────────────────────────────────────────── */
     .stTabs [data-testid="stTab"] { color: var(--text-sub) !important; }
-    .stTabs [aria-selected="true"] { color: var(--text-h) !important; font-weight: 700; border-bottom-color: var(--info) !important; }
+    .stTabs [aria-selected="true"] {
+        color: var(--text-h) !important;
+        font-weight: 700;
+        border-bottom-color: var(--accent) !important;
+    }
 
-    /* ── Buttons ────────────────────────────────── */
+    /* ── Buttons ─────────────────────────────────────────────────────────────── */
     .stButton button {
         border-radius: 8px !important;
         font-weight: 600 !important;
         font-size: 0.82rem !important;
+        font-family: var(--font-body) !important;
+        transition: background 0.13s, transform 0.1s !important;
     }
-    .stButton button[kind="primary"] { background: var(--accent) !important; border-color: var(--accent) !important; }
-
-    /* (trigger-button hiding is handled by the :has(.iw-price-card) + [stButton] rule below) */
-
-    /* ── Secondary / inactive chip buttons → soft slate style ─ */
+    .stButton button[kind="primary"] {
+        background: var(--color-primary) !important;
+        border-color: var(--color-primary) !important;
+    }
+    .stButton button[kind="primary"]:hover {
+        background: var(--navy-700) !important;
+        transform: scale(0.98);
+    }
     .stButton button[kind="secondary"] {
-        background: #f1f5f9 !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #475569 !important;
+        background: var(--navy-50) !important;
+        border: 1px solid var(--navy-100) !important;
+        color: var(--navy-600) !important;
     }
     .stButton button[kind="secondary"]:hover {
-        background: #e2e8f0 !important;
-        border-color: #94a3b8 !important;
-        color: #1e293b !important;
+        background: var(--navy-100) !important;
+        border-color: var(--navy-200) !important;
+        color: var(--navy-800) !important;
     }
 
-    /* ── Expander arrow — ensure SVG shows, never shows as text ─ */
-    div[data-testid="stExpander"] summary {
-        cursor: pointer;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    div[data-testid="stExpander"] summary svg {
-        display: inline-block !important;
-        flex-shrink: 0;
-        min-width: 16px;
-        min-height: 16px;
-    }
-    div[data-testid="stExpander"] summary p {
-        margin: 0 !important;
-        line-height: 1.4 !important;
-    }
-
-    /* ── Hide trigger buttons that follow price cards — CSS-first, no flash ─ */
-    /* The stButton directly after a stMarkdownContainer containing .iw-price-card is our hidden trigger */
+    /* ── Hide trigger buttons that follow price cards ────────────────────────── */
     [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"],
     [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"] * {
-        height: 0 !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: none !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        position: absolute !important;
-        line-height: 0 !important;
+        height: 0 !important; min-height: 0 !important;
+        overflow: hidden !important; margin: 0 !important;
+        padding: 0 !important; border: none !important;
+        opacity: 0 !important; pointer-events: none !important;
+        position: absolute !important; line-height: 0 !important;
     }
 
-    /* ── Price card hover ────────────────────────── */
-    .iw-price-card {
-        transition: transform 0.13s ease, box-shadow 0.13s ease !important;
-    }
+    /* ── Price card hover ────────────────────────────────────────────────────── */
+    .iw-price-card { transition: transform 0.13s ease, box-shadow 0.13s ease !important; }
     .iw-price-card:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 5px 18px rgba(0,0,0,0.13) !important;
-        border-color: #cbd5e1 !important;
+        box-shadow: var(--shadow-card-hover) !important;
+        border-color: var(--navy-200) !important;
     }
 
-    /* ── Toggle ─────────────────────────────────── */
+    /* ── Toggle ──────────────────────────────────────────────────────────────── */
     .stToggle label { color: var(--text-sub) !important; font-size: 0.82rem !important; }
 
-    /* ── Text inputs ────────────────────────────── */
+    /* ── Text inputs ─────────────────────────────────────────────────────────── */
     .stTextInput input {
         border-radius: 8px !important;
         border: 1px solid var(--border) !important;
         background: var(--card) !important;
         color: var(--text-h) !important;
+        font-family: var(--font-body) !important;
     }
 
-    /* ── Cards via classes ──────────────────────── */
+    /* ── Card classes ────────────────────────────────────────────────────────── */
     .cr-card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 0.9rem 1.1rem;
         margin-bottom: 0.55rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        box-shadow: var(--shadow-card);
     }
     .cr-card-crit { border-left: 4px solid var(--danger); }
     .cr-card-warn { border-left: 4px solid var(--warn); }
     .cr-card-ok   { border-left: 4px solid var(--accent); }
 
-    /* ── Legacy .banner-card support ───────────── */
-    .banner-card { background: var(--card); border: 1px solid var(--border); border-radius:12px; padding:0.85rem 1.1rem; margin-bottom:0.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+    .banner-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:0.85rem 1.1rem; margin-bottom:0.5rem; box-shadow:var(--shadow-card); }
     .banner-card-critical { border-left: 4px solid var(--danger); }
     .banner-card-warn     { border-left: 4px solid var(--warn); }
     .banner-card-ok       { border-left: 4px solid var(--accent); }
 
-    /* ── Badges ─────────────────────────────────── */
-    .badge-green    { background:#dcfce7; color:#00875a; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
-    .badge-amber    { background:#fef3c7; color:#d97706; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
-    .badge-red      { background:#fee2e2; color:#dc2626; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
-    .badge-critical { background:#fee2e2; color:#b91c1c; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; animation:pulse 1.5s infinite; }
+    /* ── Status badges ───────────────────────────────────────────────────────── */
+    .badge-green    { background:var(--emerald-50); color:var(--emerald-600); border-radius:999px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
+    .badge-amber    { background:var(--amber-50); color:var(--amber-600); border-radius:999px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
+    .badge-red      { background:var(--coral-50); color:var(--coral-500); border-radius:999px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
+    .badge-critical { background:var(--coral-50); color:var(--coral-700); border-radius:999px; padding:2px 10px; font-size:0.74rem; font-weight:700; animation:pulse 1.5s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
 
-    /* ── Score pills ────────────────────────────── */
+    /* ── Score pills ─────────────────────────────────────────────────────────── */
     .ticker-item { font-size:0.82rem; margin-bottom:0.3rem; }
-    .score-pill  { display:inline-block; border-radius:999px; padding:2px 10px; font-size:0.72rem; font-weight:700; margin-right:0.4rem; }
-    .pill-9  { background:#fee2e2; color:#b91c1c; }
-    .pill-8  { background:#ffedd5; color:#c2410c; }
-    .pill-7  { background:#fef3c7; color:#a16207; }
-    .pill-6  { background:#dcfce7; color:#166534; }
-    .pill-low{ background:#f1f5f9; color:#64748b; }
+    .score-pill  { display:inline-block; border-radius:999px; padding:2px 10px; font-size:0.72rem; font-weight:700; margin-right:0.4rem; font-family:var(--font-mono); }
+    .pill-9  { background:var(--coral-50); color:var(--coral-700); }
+    .pill-8  { background:#FFF0E0; color:#9A4700; }
+    .pill-7  { background:var(--amber-50); color:var(--amber-600); }
+    .pill-6  { background:var(--emerald-50); color:var(--emerald-600); }
+    .pill-low{ background:var(--navy-50); color:var(--navy-400); }
 
-    /* ── Section labels ─────────────────────────── */
-    .zone-header { font-size:0.7rem; font-weight:800; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-sub); margin-bottom:0.4rem; }
+    /* ── Section labels ──────────────────────────────────────────────────────── */
+    .zone-header {
+        font-size: 0.68rem; font-weight: 700;
+        letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--text-sub); margin-bottom: 0.4rem;
+    }
 
-    /* ── Dividers ───────────────────────────────── */
+    /* ── Dividers ────────────────────────────────────────────────────────────── */
     hr { border-color: var(--border) !important; }
 
-    /* ── Page heading ───────────────────────────── */
-    h1 { color: var(--text-h) !important; font-weight: 900 !important; }
-    h2 { color: var(--text-h) !important; font-weight: 800 !important; }
-    h3 { color: var(--text-h) !important; font-weight: 700 !important; }
+    /* ── Page headings ───────────────────────────────────────────────────────── */
+    h1 { color: var(--text-h) !important; font-weight: 700 !important; letter-spacing: -0.02em; }
+    h2 { color: var(--text-h) !important; font-weight: 600 !important; }
+    h3 { color: var(--text-h) !important; font-weight: 600 !important; }
     p  { color: var(--text-h) !important; }
 
-    /* ── Sidebar navigation — pill-style active highlighting ─ */
-    section[data-testid="stSidebar"] .stRadio > div {
-        gap: 0 !important;
-    }
-    section[data-testid="stSidebar"] .stRadio label {
-        display: flex !important;
-        align-items: center !important;
-        padding: 0.45rem 0.85rem !important;
-        border-radius: 8px !important;
-        color: #94a3b8 !important;
-        cursor: pointer !important;
-        border-left: 3px solid transparent !important;
-        transition: background 0.12s, color 0.12s !important;
-        font-size: 0.84rem !important;
-        margin: 0.1rem 0 !important;
-        font-weight: 500 !important;
-        width: 100% !important;
-    }
-    section[data-testid="stSidebar"] .stRadio label:hover {
-        background: rgba(255,255,255,0.07) !important;
-        color: #e2e8f0 !important;
-    }
-    section[data-testid="stSidebar"] .stRadio label:has(input[type="radio"]:checked) {
-        background: rgba(59,130,246,0.18) !important;
-        color: #60a5fa !important;
-        border-left-color: #3b82f6 !important;
-        font-weight: 700 !important;
-    }
-    section[data-testid="stSidebar"] .stRadio input[type="radio"] {
-        position: absolute !important;
-        opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-        margin: 0 !important;
-        pointer-events: none !important;
-    }
-
-    /* ── Module page headers (smaller than main InvestWise h1) ─ */
+    /* ── Module headers ──────────────────────────────────────────────────────── */
     .iw-module-header {
-        font-size: 1.3rem !important;
-        font-weight: 800 !important;
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
         color: var(--text-h) !important;
         margin-bottom: 0 !important;
         margin-top: 0.25rem !important;
         line-height: 1.3 !important;
+        letter-spacing: -0.01em !important;
     }
 
-    /* ── Dataframe / table theme ────────────────── */
+    /* ── DataFrames ──────────────────────────────────────────────────────────── */
     [data-testid="stDataFrame"] table, [data-testid="stDataFrame"] thead,
     [data-testid="stDataFrame"] tbody, [data-testid="stDataFrame"] th,
     [data-testid="stDataFrame"] td {
         background-color: var(--card) !important;
         color: var(--text-h) !important;
         border-color: var(--border) !important;
+        font-family: var(--font-body) !important;
     }
     [data-testid="stDataFrame"] thead th {
-        background-color: #f1f5f9 !important;
+        background-color: var(--navy-50) !important;
         color: var(--text-sub) !important;
         font-weight: 700 !important;
-        font-size: 0.78rem !important;
+        font-size: 0.72rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.07em !important;
     }
     [data-testid="stDataFrame"] tbody tr:hover td {
-        background-color: #f8fafc !important;
+        background-color: var(--navy-50) !important;
     }
     </style>
     """,
@@ -535,32 +591,32 @@ def _badge(flag: str) -> str:
 def _countdown(target: date, ref: date) -> str:
     delta = (target - ref).days
     if delta < 0:
-        return f"<span style='color:#FF4B4B'>PASSED {abs(delta)}d ago</span>"
+        return f"<span style='color:#E53535'>PASSED {abs(delta)}d ago</span>"
     if delta <= 30:
-        return f"<span style='color:#FF4B4B;font-weight:700'>{delta}d</span>"
+        return f"<span style='color:#E53535;font-weight:700'>{delta}d</span>"
     if delta <= 90:
-        return f"<span style='color:#FFA500'>{delta}d</span>"
-    return f"<span style='color:#00D4AA'>{delta}d</span>"
+        return f"<span style='color:#E8A500'>{delta}d</span>"
+    return f"<span style='color:#1AB868'>{delta}d</span>"
 
 
 def _phase_color(phase: str) -> str:
     return {
-        "PRE_GATEWAY":       "#4A7C59",
-        "GATEWAY_OPEN":      "#FFA500",
-        "POST_GATEWAY":      "#CC5500",
-        "ENFORCEMENT_CLIFF": "#CC0000",
-    }.get(phase, "#666")
+        "PRE_GATEWAY":       "#149453",
+        "GATEWAY_OPEN":      "#E8A500",
+        "POST_GATEWAY":      "#C98900",
+        "ENFORCEMENT_CLIFF": "#E53535",
+    }.get(phase, "#5A8EBB")
 
 
 def _survival_color(flag: str) -> str:
-    return {"GREEN": "#00D4AA", "AMBER": "#FFA500",
-            "RED": "#FF6B6B", "CRITICAL": "#FF2222"}.get(flag, "#888")
+    return {"GREEN": "#1AB868", "AMBER": "#E8A500",
+            "RED": "#E53535", "CRITICAL": "#E53535"}.get(flag, "#5A8EBB")
 
 
 def _cassandra_assessment(vector: str, title: str, score: int) -> list[str]:
     base = _RISK_ASSESSMENTS.get(vector, _DEFAULT_ASSESSMENT)
     if score >= 9:
-        urgency = f"**⚠️ SEVERITY {score}/10 — Immediate attention warranted.** This signal is in the top decile of systemic threat indicators."
+        urgency = f"**SEVERITY {score}/10 — Immediate attention warranted.** This signal is in the top decile of systemic threat indicators."
         return [urgency] + base
     return base
 
@@ -578,7 +634,7 @@ def _kingmaker_assessment(conn_type: str, vendor: str, titan: str, conf: int) ->
         events.append(f"{titan}'s procurement consolidation trend favours fewer, deeper Tier-1 supplier relationships. {vendor}'s incumbent position is structurally advantaged in renewal cycles (8-15% annual price escalation typical for sole-source suppliers in regulated industries).")
         events.append(f"Competitor qualification attempts by {titan} require 2-4 year re-qualification cycles — this creates a structural moat period for {vendor} at current revenue run-rate.")
     if conf >= 9:
-        events.insert(0, f"**🔥 CONFIDENCE {conf}/10 — Named executive confirmation.** This is the highest-tier endorsement signal; institutional smart money typically builds positions within 30-60 days of such disclosures.")
+        events.insert(0, f"**CONFIDENCE {conf}/10 — Named executive confirmation.** This is the highest-tier endorsement signal; institutional smart money typically builds positions within 30-60 days of such disclosures.")
     return events
 
 
@@ -587,22 +643,29 @@ def _kingmaker_assessment(conn_type: str, vendor: str, titan: str, conf: int) ->
 # ═════════════════════════════════════════════════════════════════════════════
 
 _NAV_OPTIONS = [
-    "🏠 Intelligence Hub",
-    "📰 News Feed",
-    "📈 Core Equity",
-    "📊 Thematic Sectors",
-    "₿ Sovereign Crypto",
-    "🥇 Precious Metals",
-    "🔗 Kingmaker Intelligence",
-    "🏛️ Regulatory Sandbox",
+    "Intelligence Hub",
+    "News Feed",
+    "Core Equity",
+    "Thematic Sectors",
+    "Sovereign Crypto",
+    "Precious Metals",
+    "Kingmaker Intelligence",
+    "Regulatory Sandbox",
 ]
 
 
 def render_sidebar() -> str:
     with st.sidebar:
         st.markdown(
-            "<div style='padding:0.5rem 0 0.25rem 0'>"
-            "<span style='color:#ffffff;font-size:1.35rem;font-weight:900;letter-spacing:-0.02em'>📊 InvestWise</span>"
+            "<div style='padding:0.6rem 0 0.5rem 0;display:flex;align-items:center;gap:10px'>"
+            "<div style='width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.08);"
+            "display:flex;align-items:center;justify-content:center;flex-shrink:0'>"
+            "<svg width='18' height='18' viewBox='0 0 32 32' fill='none'>"
+            "<polyline points='3,24 9,17 14,20 20,12 28,7' stroke='#1AB868' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/>"
+            "<circle cx='28' cy='7' r='2.5' fill='#1AB868'/>"
+            "</svg></div>"
+            "<div><span style='color:#ffffff;font-size:1.05rem;font-weight:700;letter-spacing:-0.02em'>Invest</span>"
+            "<span style='color:#1AB868;font-size:1.05rem;font-weight:300;letter-spacing:-0.02em'>Wise</span></div>"
             "</div>",
             unsafe_allow_html=True,
         )
@@ -624,9 +687,9 @@ def render_sidebar() -> str:
 # ═════════════════════════════════════════════════════════════════════════════
 
 _HUB_ROWS = [
-    ("crypto",   "₿ Sovereign Crypto",  "#7c3aed", "₿ Sovereign Crypto"),
-    ("thematic", "📊 Thematic Sectors", "#00875a", "📊 Thematic Sectors"),
-    ("equity",   "📈 Core Equity",      "#2563eb", "📈 Core Equity"),
+    ("crypto",   "Sovereign Crypto",  "#7c3aed", "Sovereign Crypto"),
+    ("thematic", "Thematic Sectors",  "#1AB868", "Thematic Sectors"),
+    ("equity",   "Core Equity",       "#3A72A0", "Core Equity"),
 ]
 _HUB_DEFAULT_FAVS: dict[str, list[str]] = {
     "crypto":   ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD"],
@@ -675,13 +738,13 @@ _HUB_ALL_TICKERS: dict[str, dict] = {
 }
 _HUB_ROW_COLOR: dict[str, str] = {
     "crypto":   "#7c3aed",
-    "thematic": "#00875a",
-    "equity":   "#2563eb",
+    "thematic": "#1AB868",
+    "equity":   "#3A72A0",
 }
 _HUB_ROW_NAV: dict[str, str] = {
-    "crypto":   "₿ Sovereign Crypto",
-    "thematic": "📊 Thematic Sectors",
-    "equity":   "📈 Core Equity",
+    "crypto":   "Sovereign Crypto",
+    "thematic": "Thematic Sectors",
+    "equity":   "Core Equity",
 }
 
 _INFLUENTIAL_PEOPLE: list[dict] = [
@@ -914,15 +977,15 @@ def render_hub() -> None:
         pc = _phase_color(phase)
         st.markdown(
             f'<div style="text-align:right"><span style="background:{pc}22;border:1px solid {pc};'
-            f'color:{pc};border-radius:4px;padding:0.18rem 0.45rem;font-size:0.67rem;font-weight:700">'
+            f'color:{pc};border-radius:6px;padding:0.18rem 0.45rem;font-size:0.67rem;font-weight:700">'
             f'{phase.replace("_"," ")}</span></div>',
             unsafe_allow_html=True,
         )
 
     # ── Market Snapshot Cards ─────────────────────────────────────────────────
     st.markdown(
-        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;color:#64748b;margin-bottom:0.35rem;text-transform:uppercase">'
-        '📊 Market Snapshot — tap a card to view latest news</p>',
+        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;color:#5A8EBB;margin-bottom:0.35rem;text-transform:uppercase">'
+        'Market Snapshot — tap a card to view latest news</p>',
         unsafe_allow_html=True,
     )
 
@@ -984,14 +1047,14 @@ def render_hub() -> None:
             # Render autocomplete-style suggestion header
             if q:
                 st.markdown(
-                    f'<div style="font-size:0.68rem;color:#64748b;font-weight:600;margin:0.3rem 0 0.2rem 0">'
-                    f'{"Showing " + str(len(matches)) + " matches for "" + search.strip() + """ if matches else "No matches found — try a different name or ticker"}'
+                    f'<div style="font-size:0.68rem;color:#5A8EBB;font-weight:600;margin:0.3rem 0 0.2rem 0">'
+                    f'{"Showing " + str(len(matches)) + " matches for “" + search.strip() + "”" if matches else "No matches found — try a different name or ticker"}'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
             else:
                 st.markdown(
-                    f'<div style="font-size:0.68rem;color:#64748b;font-weight:600;margin:0.3rem 0 0.2rem 0">'
+                    f'<div style="font-size:0.68rem;color:#5A8EBB;font-weight:600;margin:0.3rem 0 0.2rem 0">'
                     f'Active instruments shown first · start typing to search all {len(_HUB_ALL_TICKERS)} available'
                     f'</div>',
                     unsafe_allow_html=True,
@@ -1043,25 +1106,24 @@ def render_hub() -> None:
                         price_str = "—"
 
                     if chg is not None:
-                        cc  = "#00875a" if chg >= 0 else "#dc2626"
+                        cc  = "#149453" if chg >= 0 else "#E53535"
                         arr = "▲" if chg >= 0 else "▼"
-                        chg_str = f'<span style="color:{cc};font-weight:600">{arr}{abs(chg):.1f}%</span>'
+                        chg_str = f'<span style="color:{cc};font-weight:600;font-family:\'JetBrains Mono\',monospace">{arr}{abs(chg):.1f}%</span>'
                     else:
-                        chg_str = '<span style="color:#94a3b8">—</span>'
+                        chg_str = '<span style="color:#5A8EBB">—</span>'
 
                     is_sel = st.session_state["hub_news_ticker"] == ticker
                     bt = f"3px solid {row_color}" if is_sel else f"2px solid {row_color}"
                     bg = f"{row_color}12" if is_sel else "#ffffff"
-                    shadow = "box-shadow:0 2px 8px rgba(0,0,0,0.10);" if is_sel else "box-shadow:0 1px 3px rgba(0,0,0,0.06);"
 
                     st.markdown(
                         f'<div id="{card_id}" class="iw-price-card" '
-                        f'style="background:{bg};border:1px solid #e2e8f0;'
+                        f'style="background:{bg};border:1px solid #D9E8F5;'
                         f'border-top:{bt};border-radius:12px;padding:0.6rem 0.4rem;'
                         f'text-align:center;cursor:pointer;">'
-                        f'<div style="color:{row_color};font-size:0.62rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase">{ticker}</div>'
-                        f'<div style="color:#64748b;font-size:0.59rem;margin:0.05rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name_s}</div>'
-                        f'<div style="color:#0a0f1d;font-size:0.88rem;font-weight:800;line-height:1.25;margin:0.1rem 0">{price_str}</div>'
+                        f'<div style="color:{row_color};font-size:0.62rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;font-family:\'JetBrains Mono\',monospace">{ticker}</div>'
+                        f'<div style="color:#5A8EBB;font-size:0.59rem;margin:0.05rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name_s}</div>'
+                        f'<div style="color:#071D35;font-size:0.88rem;font-weight:700;line-height:1.25;margin:0.1rem 0;font-family:\'JetBrains Mono\',monospace">{price_str}</div>'
                         f'<div style="font-size:0.62rem">{chg_str}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
@@ -1120,9 +1182,9 @@ def render_hub() -> None:
 
         st.markdown(
             f'<div style="background:#ffffff;border:1px solid {sel_col};border-left:4px solid {sel_col};border-radius:12px;'
-            f'padding:0.6rem 1rem;margin-top:0.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.08)">'
+            f'padding:0.6rem 1rem;margin-top:0.5rem;box-shadow:var(--shadow-card)">'
             f'<span style="color:{sel_col};font-weight:800;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.06em">'
-            f'📰 Latest News — {sel} · {sel_name}</span></div>',
+            f'Latest News — {sel} · {sel_name}</span></div>',
             unsafe_allow_html=True,
         )
         cl1, cl2, _ = st.columns([1, 2, 6])
@@ -1146,18 +1208,18 @@ def render_hub() -> None:
                 pub   = item.get("publisher", "")
                 time_str = _format_ts(item.get("ts", 0))
                 title_html = (
-                    f'<a href="{link}" target="_blank" style="color:#0a0f1d;text-decoration:none;'
+                    f'<a href="{link}" target="_blank" style="color:#071D35;text-decoration:none;'
                     f'font-weight:600;font-size:0.79rem;line-height:1.4">{title}</a>'
                     if link else
-                    f'<span style="color:#0a0f1d;font-size:0.79rem;font-weight:600">{title}</span>'
+                    f'<span style="color:#071D35;font-size:0.79rem;font-weight:600">{title}</span>'
                 )
                 with (nc1 if idx % 2 == 0 else nc2):
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #e2e8f0;'
+                        f'<div style="background:#ffffff;border:1px solid #D9E8F5;'
                         f'border-left:3px solid {sel_col};border-radius:0 10px 10px 0;'
-                        f'padding:0.5rem 0.75rem;margin-bottom:0.3rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
+                        f'padding:0.5rem 0.75rem;margin-bottom:0.3rem;box-shadow:var(--shadow-card)">'
                         f'{title_html}'
-                        f'<div style="color:#64748b;font-size:0.66rem;margin-top:0.2rem">'
+                        f'<div style="color:#5A8EBB;font-size:0.66rem;margin-top:0.2rem">'
                         f'{pub} · {time_str}</div></div>',
                         unsafe_allow_html=True,
                     )
@@ -1173,8 +1235,8 @@ def render_hub() -> None:
 
     with left_col:
         st.markdown(
-            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem">'
-            '🔴 Cassandra Alerts — Live macro threats</p>',
+            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#5A8EBB;margin-bottom:0.4rem">'
+            'Cassandra Alerts — Live macro threats</p>',
             unsafe_allow_html=True,
         )
         for a in alerts[:6]:
@@ -1183,20 +1245,19 @@ def render_hub() -> None:
             vector  = (a.get("vector") or a.get("Risk_Vector") or "").replace("_", " ").upper()
             src_url = a.get("source_url") or a.get("Source_URL") or ""
             raw_src = a.get("source") or ""
-            bar_col = "#dc2626" if score >= 8 else "#ea580c" if score >= 6 else "#00875a"
-            icon    = "🔴" if score >= 8 else "🟡" if score >= 6 else "🟢"
+            bar_col = "#E53535" if score >= 8 else "#E8A500" if score >= 6 else "#149453"
             title_s = title[:60] + ("…" if len(title) > 60 else "")
             src_html = (
-                f'<a href="{src_url}" target="_blank" style="color:#2563eb;font-size:0.67rem;text-decoration:none;font-weight:600">↗ {raw_src}</a>'
-                if src_url else f'<span style="color:#64748b;font-size:0.67rem">{raw_src}</span>'
+                f'<a href="{src_url}" target="_blank" style="color:#149453;font-size:0.67rem;text-decoration:none;font-weight:600">↗ {raw_src}</a>'
+                if src_url else f'<span style="color:#5A8EBB;font-size:0.67rem">{raw_src}</span>'
             )
-            with st.expander(f"{icon} {score}/10  ·  {title_s}", expanded=False):
+            with st.expander(f"{score}/10  ·  {title_s}", expanded=False):
                 st.markdown(
-                    f'<div style="background:#f8fafc;border-left:3px solid {bar_col};padding:0.55rem 0.85rem;'
+                    f'<div style="background:#EEF4FB;border-left:3px solid {bar_col};padding:0.55rem 0.85rem;'
                     f'border-radius:0 10px 10px 0;margin-bottom:0.35rem">'
                     f'<span style="color:{bar_col};font-size:0.7rem;font-weight:700">{vector}</span>'
                     f' <span style="color:{bar_col};font-weight:700;font-size:0.78rem">{score}/10</span><br>'
-                    f'<span style="color:#374151;font-size:0.77rem;line-height:1.5">{title}</span><br>'
+                    f'<span style="color:#2B5A85;font-size:0.77rem;line-height:1.5">{title}</span><br>'
                     f'<div style="margin-top:0.25rem">{src_html}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
@@ -1207,8 +1268,8 @@ def render_hub() -> None:
 
     with right_col:
         st.markdown(
-            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem">'
-            '🚀 Kingmaker Signals — Named-exec endorsements</p>',
+            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#5A8EBB;margin-bottom:0.4rem">'
+            'Kingmaker Signals — Named-exec endorsements</p>',
             unsafe_allow_html=True,
         )
         for e in endorsements[:5]:
@@ -1220,22 +1281,22 @@ def render_hub() -> None:
             conf       = int(e.get("confidence") or e.get("Confidence_Score") or 7)
             quote      = e.get("quote") or e.get("Extracted_Text") or ""
             src_url    = e.get("source_url") or e.get("Endorsement_Source") or ""
-            conf_col   = "#dc2626" if conf >= 9 else "#ea580c" if conf >= 7 else "#00875a"
+            conf_col   = "#E53535" if conf >= 9 else "#E8A500" if conf >= 7 else "#149453"
             vtag       = f" ({vticker})" if vticker else ""
             vlink      = (
-                f'<a href="{src_url}" target="_blank" style="color:#2563eb;text-decoration:none;font-weight:700">{vendor}{vtag}</a>'
+                f'<a href="{src_url}" target="_blank" style="color:#149453;text-decoration:none;font-weight:700">{vendor}{vtag}</a>'
                 if src_url and src_url.startswith("http") else
-                f'<b style="color:#2563eb">{vendor}{vtag}</b>'
+                f'<b style="color:#3A72A0">{vendor}{vtag}</b>'
             )
-            with st.expander(f"🏆 {titan_name}  ›  {vendor}{vtag}  ·  {conf}/10", expanded=False):
+            with st.expander(f"{titan_name}  ›  {vendor}{vtag}  ·  {conf}/10", expanded=False):
                 st.markdown(
-                    f'<div style="background:#f8fafc;border-left:3px solid {conf_col};padding:0.55rem 0.85rem;'
+                    f'<div style="background:#EEF4FB;border-left:3px solid {conf_col};padding:0.55rem 0.85rem;'
                     f'border-radius:0 10px 10px 0;margin-bottom:0.35rem">'
                     f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                    f'<span style="color:#374151;font-size:0.78rem"><b style="color:#0a0f1d">{titan_name}</b> <span style="color:#94a3b8">›</span> {vlink}</span>'
+                    f'<span style="color:#2B5A85;font-size:0.78rem"><b style="color:#071D35">{titan_name}</b> <span style="color:#5A8EBB">›</span> {vlink}</span>'
                     f'<span style="color:{conf_col};font-weight:700">{conf}/10</span></div>'
-                    f'<span style="color:#64748b;font-size:0.7rem">{exec_name} · {conn_type}</span>'
-                    f'<div style="color:#4b5563;font-size:0.74rem;font-style:italic;border-top:1px solid #e2e8f0;'
+                    f'<span style="color:#5A8EBB;font-size:0.7rem">{exec_name} · {conn_type}</span>'
+                    f'<div style="color:#2B5A85;font-size:0.74rem;font-style:italic;border-top:1px solid #D9E8F5;'
                     f'padding-top:0.25rem;margin-top:0.25rem">'
                     f'&ldquo;{quote[:160]}{"…" if len(quote) > 160 else ""}&rdquo;</div>'
                     f'</div>',
@@ -1249,8 +1310,8 @@ def render_hub() -> None:
 
     # ── Influential Voices (dynamic news) ─────────────────────────────────────
     st.markdown(
-        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem">'
-        '👥 Influential Voices — Latest views & live market news</p>',
+        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#5A8EBB;margin-bottom:0.4rem">'
+        'Influential Voices — Latest views &amp; live market news</p>',
         unsafe_allow_html=True,
     )
 
@@ -1261,27 +1322,27 @@ def render_hub() -> None:
             sc           = person["stance_color"]
             news_ticker  = person.get("news_ticker", "")
             asset_tags   = "".join(
-                f'<span style="background:#f1f5f9;color:#64748b;border-radius:6px;padding:1px 6px;'
+                f'<span style="background:#EEF4FB;color:#5A8EBB;border-radius:6px;padding:1px 6px;'
                 f'font-size:0.62rem;margin-right:3px;font-weight:600">{a}</span>'
                 for a in person["asset_focus"][:4]
             )
             src_link = (
-                f'<a href="{person["source_url"]}" target="_blank" style="color:#2563eb;font-size:0.67rem;text-decoration:none;font-weight:600">↗ {person["source"]}</a>'
+                f'<a href="{person["source_url"]}" target="_blank" style="color:#149453;font-size:0.67rem;text-decoration:none;font-weight:600">↗ {person["source"]}</a>'
                 if person.get("source_url") else
-                f'<span style="color:#64748b;font-size:0.67rem">{person["source"]}</span>'
+                f'<span style="color:#5A8EBB;font-size:0.67rem">{person["source"]}</span>'
             )
-            header = f'{person["avatar"]} {person["name"]}  ·  {person["role"]}  ·  {person["date"]}'
+            header = f'{person["name"]}  ·  {person["role"]}  ·  {person["date"]}'
             with st.expander(header, expanded=False):
                 pv1, pv2 = st.columns([5, 4])
                 with pv1:
                     st.markdown(
-                        f'<div style="background:#f8fafc;border-left:4px solid {sc};border-radius:0 12px 12px 0;padding:0.7rem 0.9rem">'
+                        f'<div style="background:#EEF4FB;border-left:4px solid {sc};border-radius:0 12px 12px 0;padding:0.7rem 0.9rem">'
                         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">'
-                        f'<span style="color:#0a0f1d;font-weight:800;font-size:0.85rem">{person["name"]}</span>'
+                        f'<span style="color:#071D35;font-weight:800;font-size:0.85rem">{person["name"]}</span>'
                         f'<span style="background:{sc}18;color:{sc};border-radius:6px;padding:0.15rem 0.5rem;font-size:0.64rem;font-weight:700">{person["stance"]}</span></div>'
-                        f'<div style="color:#64748b;font-size:0.71rem;margin-bottom:0.28rem">{person["role"]}</div>'
+                        f'<div style="color:#5A8EBB;font-size:0.71rem;margin-bottom:0.28rem">{person["role"]}</div>'
                         f'<div style="margin-bottom:0.35rem">{asset_tags}</div>'
-                        f'<div style="color:#374151;font-size:0.77rem;line-height:1.55">{person["latest_view"]}</div>'
+                        f'<div style="color:#2B5A85;font-size:0.77rem;line-height:1.55">{person["latest_view"]}</div>'
                         f'<div style="margin-top:0.35rem">{src_link}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
@@ -1289,7 +1350,7 @@ def render_hub() -> None:
                 with pv2:
                     if news_ticker:
                         st.markdown(
-                            f'<div style="color:#64748b;font-size:0.65rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.25rem">Live News · {news_ticker}</div>',
+                            f'<div style="color:#5A8EBB;font-size:0.65rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.25rem">Live News · {news_ticker}</div>',
                             unsafe_allow_html=True,
                         )
                         for ni in _fetch_hub_news(news_ticker)[:4]:
@@ -1298,19 +1359,19 @@ def render_hub() -> None:
                             npub  = ni.get("publisher", "")
                             ntime = _format_ts(ni.get("ts", 0))
                             nt_html = (
-                                f'<a href="{nl}" target="_blank" style="color:#0a0f1d;text-decoration:none;font-size:0.72rem;font-weight:600;line-height:1.4">{nt[:90]}{"…" if len(nt)>90 else ""}</a>'
+                                f'<a href="{nl}" target="_blank" style="color:#071D35;text-decoration:none;font-size:0.72rem;font-weight:600;line-height:1.4">{nt[:90]}{"…" if len(nt)>90 else ""}</a>'
                                 if nl else
-                                f'<span style="color:#374151;font-size:0.72rem">{nt[:90]}</span>'
+                                f'<span style="color:#2B5A85;font-size:0.72rem">{nt[:90]}</span>'
                             )
                             st.markdown(
-                                f'<div style="border-bottom:1px solid #e2e8f0;padding:0.3rem 0">'
+                                f'<div style="border-bottom:1px solid #D9E8F5;padding:0.3rem 0">'
                                 f'{nt_html}'
-                                f'<div style="color:#64748b;font-size:0.63rem;margin-top:0.1rem">{npub} · {ntime}</div>'
+                                f'<div style="color:#5A8EBB;font-size:0.63rem;margin-top:0.1rem">{npub} · {ntime}</div>'
                                 f'</div>',
                                 unsafe_allow_html=True,
                             )
                     else:
-                        st.markdown('<span style="color:#94a3b8;font-size:0.72rem">No live ticker linked.</span>', unsafe_allow_html=True)
+                        st.markdown('<span style="color:#5A8EBB;font-size:0.72rem">No live ticker linked.</span>', unsafe_allow_html=True)
 
     with tab_managers:
         for mgr in _ASSET_MANAGERS:
@@ -1320,18 +1381,18 @@ def render_hub() -> None:
                 mv1, mv2 = st.columns([5, 4])
                 with mv1:
                     st.markdown(
-                        f'<div style="background:#f8fafc;border-left:4px solid {mc};border-radius:0 12px 12px 0;padding:0.65rem 0.9rem">'
+                        f'<div style="background:#EEF4FB;border-left:4px solid {mc};border-radius:0 12px 12px 0;padding:0.65rem 0.9rem">'
                         f'<div style="color:{mc};font-weight:800;font-size:0.82rem;margin-bottom:0.22rem">{mgr["name"]}</div>'
-                        f'<div style="color:#64748b;font-size:0.7rem">AUM: <span style="color:#374151;font-weight:600">{mgr["aum"]}</span></div>'
-                        f'<div style="color:#64748b;font-size:0.7rem;margin:0.12rem 0">Crypto: <span style="color:#374151">{mgr["crypto_exposure"]}</span></div>'
-                        f'<div style="color:#374151;font-size:0.75rem;line-height:1.5;margin-top:0.2rem">{mgr["view"]}</div>'
+                        f'<div style="color:#5A8EBB;font-size:0.7rem">AUM: <span style="color:#2B5A85;font-weight:600">{mgr["aum"]}</span></div>'
+                        f'<div style="color:#5A8EBB;font-size:0.7rem;margin:0.12rem 0">Crypto: <span style="color:#2B5A85">{mgr["crypto_exposure"]}</span></div>'
+                        f'<div style="color:#2B5A85;font-size:0.75rem;line-height:1.5;margin-top:0.2rem">{mgr["view"]}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
                 with mv2:
                     if news_ticker:
                         st.markdown(
-                            f'<div style="color:#64748b;font-size:0.65rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.25rem">Live News · {news_ticker}</div>',
+                            f'<div style="color:#5A8EBB;font-size:0.65rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.25rem">Live News · {news_ticker}</div>',
                             unsafe_allow_html=True,
                         )
                         for ni in _fetch_hub_news(news_ticker)[:3]:
@@ -1339,19 +1400,19 @@ def render_hub() -> None:
                             nl    = ni.get("link", "")
                             ntime = _format_ts(ni.get("ts", 0))
                             nt_html = (
-                                f'<a href="{nl}" target="_blank" style="color:#0a0f1d;text-decoration:none;font-size:0.72rem;font-weight:600">{nt[:85]}{"…" if len(nt)>85 else ""}</a>'
+                                f'<a href="{nl}" target="_blank" style="color:#071D35;text-decoration:none;font-size:0.72rem;font-weight:600">{nt[:85]}{"…" if len(nt)>85 else ""}</a>'
                                 if nl else
-                                f'<span style="color:#374151;font-size:0.72rem">{nt[:85]}</span>'
+                                f'<span style="color:#2B5A85;font-size:0.72rem">{nt[:85]}</span>'
                             )
                             st.markdown(
-                                f'<div style="border-bottom:1px solid #e2e8f0;padding:0.3rem 0">'
+                                f'<div style="border-bottom:1px solid #D9E8F5;padding:0.3rem 0">'
                                 f'{nt_html}'
-                                f'<div style="color:#64748b;font-size:0.63rem;margin-top:0.1rem">{ntime}</div>'
+                                f'<div style="color:#5A8EBB;font-size:0.63rem;margin-top:0.1rem">{ntime}</div>'
                                 f'</div>',
                                 unsafe_allow_html=True,
                             )
                     else:
-                        st.markdown('<span style="color:#94a3b8;font-size:0.72rem">No linked news ticker.</span>', unsafe_allow_html=True)
+                        st.markdown('<span style="color:#5A8EBB;font-size:0.72rem">No linked news ticker.</span>', unsafe_allow_html=True)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1365,41 +1426,41 @@ def main() -> None:
     h1, h2 = st.columns([3, 1])
     with h1:
         st.markdown(
-            "<h1 style='margin-bottom:0;color:#0a0f1d;font-weight:900;font-size:2.1rem;letter-spacing:-0.02em'>📊 InvestWise</h1>",
+            "<h1 style='margin-bottom:0;color:#071D35;font-weight:700;font-size:2.1rem;letter-spacing:-0.02em'>InvestWise</h1>",
             unsafe_allow_html=True,
         )
     with h2:
         _pc = _phase_color(current_phase())
         st.markdown(
             f"<div style='text-align:right;padding-top:0.5rem'>"
-            f"<span style='color:#64748b;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em'>Phase</span><br>"
+            f"<span style='color:#5A8EBB;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em'>Phase</span><br>"
             f"<span style='background:{_pc}15;border:1px solid {_pc};border-radius:6px;padding:0.15rem 0.55rem;"
             f"color:{_pc};font-size:0.74rem;font-weight:700'>{current_phase().replace('_', ' ')}</span><br>"
-            f"<span style='color:#94a3b8;font-size:0.72rem'>{date.today()}</span>"
+            f"<span style='color:#5A8EBB;font-size:0.72rem'>{date.today()}</span>"
             f"</div>",
             unsafe_allow_html=True,
         )
 
     # ── Module routing ────────────────────────────────────────────────────────
-    if nav == "📈 Core Equity":
+    if nav == "Core Equity":
         _mod_core_equity.render()
 
-    elif nav == "📊 Thematic Sectors":
+    elif nav == "Thematic Sectors":
         _mod_thematic.render()
 
-    elif nav == "₿ Sovereign Crypto":
+    elif nav == "Sovereign Crypto":
         _mod_crypto.render()
 
-    elif nav == "🥇 Precious Metals":
+    elif nav == "Precious Metals":
         _mod_metals.render()
 
-    elif nav == "🔗 Kingmaker Intelligence":
+    elif nav == "Kingmaker Intelligence":
         _mod_kingmaker.render()
 
-    elif nav == "🏛️ Regulatory Sandbox":
+    elif nav == "Regulatory Sandbox":
         _mod_regulatory.render()
 
-    elif nav == "📰 News Feed":
+    elif nav == "News Feed":
         _mod_news.render()
 
     else:
@@ -1408,7 +1469,7 @@ def main() -> None:
     # ── Footer ────────────────────────────────────────────────────────────────
     st.divider()
     st.markdown(
-        "<p style='text-align:center;color:#444;font-size:0.75rem'>"
+        "<p style='text-align:center;color:#5A8EBB;font-size:0.75rem'>"
         "InvestWise · 7 modules · Data latency ≤ 5 min · "
         "Not investment advice · Regulatory data sourced from FCA CP23/28 &amp; PS24/12"
         "</p>",

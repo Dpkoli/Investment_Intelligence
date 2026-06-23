@@ -168,11 +168,11 @@ _ANALYST_TARGETS: dict[str, list[dict]] = {
 }
 
 _FCA_COLOR = {
-    FCAStatus.REGULATED_ETP:  "#00D4AA",
+    FCAStatus.REGULATED_ETP:  "#1AB868",
     FCAStatus.REGISTERED:     "#4ADE80",
-    FCAStatus.PENDING:        "#FFA500",
-    FCAStatus.GRANDFATHERED:  "#FFA500",
-    FCAStatus.UNREGISTERED:   "#FF6B6B",
+    FCAStatus.PENDING:        "#E8A500",
+    FCAStatus.GRANDFATHERED:  "#E8A500",
+    FCAStatus.UNREGISTERED:   "#E53535",
     FCAStatus.NOT_APPLICABLE: "#888",
 }
 
@@ -319,25 +319,25 @@ def _render_news_item(article: dict) -> None:
     if link and link.startswith("http"):
         headline_html = (
             f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
-            f'style="color:#1e293b;text-decoration:none;font-weight:600;border-bottom:1px dotted #555">'
+            f'style="color:#071D35;text-decoration:none;font-weight:600;border-bottom:1px dotted #555">'
             f'{title}</a>'
         )
         read_link = (
-            f'<span style="color:#64748b">&middot;</span>'
+            f'<span style="color:#5A8EBB">&middot;</span>'
             f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
-            f'style="color:#00D4AA;text-decoration:none;font-size:0.68rem">&nearr; Read</a>'
+            f'style="color:#1AB868;text-decoration:none;font-size:0.68rem">&nearr; Read</a>'
         )
     else:
-        headline_html = f'<span style="color:#1e293b;font-weight:600">{title}</span>'
+        headline_html = f'<span style="color:#071D35;font-weight:600">{title}</span>'
         read_link = ""
 
     time_html = (
-        f'<span style="color:#64748b">&middot;</span><span>{time_label}</span>'
+        f'<span style="color:#5A8EBB">&middot;</span><span>{time_label}</span>'
         if time_label else ""
     )
 
     st.markdown(
-        f"""<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #FFA500;
+        f"""<div style="background:#EEF4FB;border:1px solid #D9E8F5;border-left:3px solid #E8A500;
  border-radius:6px;padding:0.55rem 0.8rem;margin-bottom:0.4rem">
   <div style="font-size:0.79rem">{headline_html}</div>
   <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.28rem;font-size:0.68rem;color:#666">
@@ -349,7 +349,7 @@ def _render_news_item(article: dict) -> None:
 
 
 def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -> None:
-    accent = _CRYPTO_COLOR.get(yf_ticker, "#00D4AA")
+    accent = _CRYPTO_COLOR.get(yf_ticker, "#1AB868")
     px_data = prices.get(yf_ticker, {})
     price   = _safe_num(px_data.get("price"))
     chg     = _safe_num(px_data.get("chg_pct"))
@@ -360,16 +360,16 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
         f"${price:,.4f}" if price and price < 1 else
         f"${price:,.2f}" if price else "—"
     )
-    chg_color = "#00D4AA" if (chg is not None and chg >= 0) else "#FF4B4B"
+    chg_color = "#1AB868" if (chg is not None and chg >= 0) else "#E53535"
     chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
 
     st.markdown(
-        f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid {accent};
+        f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:4px solid {accent};
  border-radius:10px;padding:1rem 1.2rem;margin:0.4rem 0 0.8rem 0">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
     <div>
       <span style="color:{accent};font-size:2rem;font-weight:700">{symbol}</span>&nbsp;
-      <span style="color:#374151;font-size:1rem">{name}</span>
+      <span style="color:#2B5A85;font-size:1rem">{name}</span>
     </div>
     <div style="text-align:right">
       <div style="font-size:1.6rem;font-weight:700">{price_str}</div>
