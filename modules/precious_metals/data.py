@@ -143,24 +143,40 @@ _ETP_TICKERS_LSE = ["PHAU.L", "SGLN.L", "PHAG.L"]
 
 def fetch_prices(tickers: list[str] | None = None) -> dict[str, dict]:
     """Fetch spot/ETP prices from yfinance. Falls back to {} on failure."""
+    import math
+
+    def _clean(v):
+        try:
+            f = float(v)
+            return None if (math.isnan(f) or math.isinf(f)) else f
+        except Exception:
+            return None
+
     if tickers is None:
         tickers = _SPOT_TICKERS + _ETP_TICKERS_US
     try:
         import yfinance as yf
+        import pandas as pd
         data: dict[str, dict] = {}
-        batch = yf.download(tickers, period="2d", auto_adjust=True,
+        batch = yf.download(tickers, period="5d", auto_adjust=True,
                             progress=False, threads=True)
         closes = batch.get("Close", batch)
         if closes is None or closes.empty:
+            return data
+        if isinstance(closes, pd.Series):
+            closes = closes.to_frame(name=tickers[0])
+        closes = closes.dropna(how="all")
+        if closes.empty:
             return data
         last  = closes.iloc[-1]
         prev  = closes.iloc[-2] if len(closes) >= 2 else closes.iloc[-1]
         for t in tickers:
             try:
-                p  = float(last[t]) if t in last.index else None
-                p0 = float(prev[t]) if t in prev.index else None
-                pct = round((p - p0) / p0 * 100, 2) if p and p0 and p0 != 0 else None
-                data[t] = {"price": round(p, 2) if p else None, "chg_pct": pct}
+                p  = _clean(last.get(t))
+                p0 = _clean(prev.get(t))
+                pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
+                if p is not None:
+                    data[t] = {"price": round(p, 2), "chg_pct": pct}
             except Exception:
                 pass
         return data
