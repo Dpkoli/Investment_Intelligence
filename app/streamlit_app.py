@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Contrarian Radar — Modular Production Hub (v2.0)
+InvestWise — Modular Investment Intelligence Hub
 
 Zone 1 : Enhanced Cassandra alert ticker + Kingmaker endorsement banner
          (clickable source links, expandable Systemic Assessment panels)
@@ -62,11 +62,11 @@ import modules.news_feed.ui            as _mod_news
 # ═════════════════════════════════════════════════════════════════════════════
 
 st.set_page_config(
-    page_title="Contrarian Radar",
-    page_icon="📡",
+    page_title="InvestWise",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "Contrarian Radar — Institutional-grade asymmetric intelligence platform."},
+    menu_items={"About": "InvestWise — Institutional-grade investment intelligence platform."},
 )
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -78,9 +78,23 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-    html, body, [class*="css"], .stApp, .stMarkdown, .stButton, .stTextInput, .stSelectbox,
-    .stExpander, .stTabs, div, span, p, h1, h2, h3, label {
+    /* Apply Inter only to text elements, not to icon/symbol pseudo-elements */
+    body, .stApp, .stMarkdown p, .stMarkdown span, .stMarkdown a,
+    .stMarkdown li, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stButton button p, .stTextInput input, .stSelectbox select,
+    .stTabs [role="tab"], div[data-testid="stExpander"] summary p,
+    div[data-testid="metric-container"] label,
+    div[data-testid="metric-container"] [data-testid="stMetricValue"],
+    div[data-testid="metric-container"] [data-testid="stMetricDelta"],
+    label, .stCaption p {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+    }
+
+    /* Preserve Streamlit's Material icon font for icons */
+    [data-testid="stExpander"] summary svg,
+    [data-testid="stExpander"] summary [data-testid="stIconMaterial"],
+    span[aria-hidden="true"], [class*="material-icons"] {
+        font-family: 'Material Icons', 'Material Symbols Rounded' !important;
     }
 
     :root {
@@ -145,6 +159,72 @@ st.markdown(
         font-size: 0.82rem !important;
     }
     .stButton button[kind="primary"] { background: var(--accent) !important; border-color: var(--accent) !important; }
+
+    /* ── Hide empty hidden trigger buttons (card click wiring) ─ */
+    div[data-testid="stButton"]:has(button p:empty),
+    div[data-testid="stButton"]:has(button:not([aria-label])[title=""]) {
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    button.hub-hidden-btn, div.hub-hidden-wrapper {
+        height: 0 !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important;
+    }
+
+    /* ── Secondary / inactive chip buttons → soft slate style ─ */
+    .stButton button[kind="secondary"] {
+        background: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #475569 !important;
+    }
+    .stButton button[kind="secondary"]:hover {
+        background: #e2e8f0 !important;
+        border-color: #94a3b8 !important;
+        color: #1e293b !important;
+    }
+
+    /* ── Expander arrow — ensure SVG shows, never shows as text ─ */
+    div[data-testid="stExpander"] summary {
+        cursor: pointer;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    div[data-testid="stExpander"] summary svg {
+        display: inline-block !important;
+        flex-shrink: 0;
+        min-width: 16px;
+        min-height: 16px;
+    }
+    div[data-testid="stExpander"] summary p {
+        margin: 0 !important;
+        line-height: 1.4 !important;
+    }
+
+    /* ── Hidden card-trigger button ─────────────── */
+    .iw-hidden-btn-wrap,
+    .iw-hidden-btn-wrap > div,
+    .iw-hidden-btn-wrap button {
+        height: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: block !important;
+        line-height: 0 !important;
+    }
+
+    /* ── Price card hover ────────────────────────── */
+    .iw-price-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.13) !important;
+    }
+
+    /* ── Toggle ─────────────────────────────────── */
+    .stToggle label { color: var(--text-sub) !important; font-size: 0.82rem !important; }
 
     /* ── Text inputs ────────────────────────────── */
     .stTextInput input {
@@ -461,8 +541,12 @@ _NAV_OPTIONS = [
 
 def render_sidebar() -> str:
     with st.sidebar:
-        st.markdown("## 📡 Contrarian Radar")
-        st.caption("Institutional asymmetric intelligence platform")
+        st.markdown(
+            "<div style='padding:0.5rem 0 0.25rem 0'>"
+            "<span style='color:#ffffff;font-size:1.35rem;font-weight:900;letter-spacing:-0.02em'>📊 InvestWise</span>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
         st.divider()
 
         nav = st.radio(
@@ -753,9 +837,19 @@ def render_hub() -> None:
     # ── Header row ────────────────────────────────────────────────────────────
     rc1, _, rc3 = st.columns([2, 3, 1])
     with rc1:
-        if st.toggle("Auto-refresh (5 min)", value=False, key="hub_autorefresh"):
-            st.cache_data.clear()
-            st.rerun()
+        auto_on = st.toggle("Auto-refresh (5 min)", value=False, key="hub_autorefresh")
+        if auto_on:
+            # Schedule a rerun in 5 minutes by checking elapsed time
+            import time as _time
+            _now = _time.time()
+            _last = st.session_state.get("hub_last_refresh", 0)
+            if _now - _last >= 300:
+                st.session_state["hub_last_refresh"] = _now
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                _remaining = int(300 - (_now - _last))
+                st.caption(f"Next refresh in {_remaining // 60}m {_remaining % 60}s")
     with rc3:
         phase = current_phase(today)
         pc = _phase_color(phase)
@@ -797,37 +891,65 @@ def render_hub() -> None:
                 )
                 st.rerun()
 
-        # Add/remove search panel
+        # Add/remove search panel (autocomplete)
         if st.session_state["hub_add_mode"] == row_key:
-            s1, s2 = st.columns([4, 1])
+            s1, s2 = st.columns([5, 1])
             with s1:
                 search = st.text_input(
                     "Search", key=f"hub_srch_{row_key}",
-                    placeholder="Type ticker or name (e.g. NVDA, Bitcoin)…",
+                    placeholder="🔍  Type ticker or name — e.g. BTC, NVIDIA, Ethereum…",
                     label_visibility="collapsed",
                 )
             with s2:
-                if st.button("✕ Done", key=f"hub_done_{row_key}"):
+                if st.button("✕ Close", key=f"hub_done_{row_key}", use_container_width=True):
                     st.session_state["hub_add_mode"] = None
                     st.rerun()
 
             q = search.strip().upper() if search else ""
-            matches = {
-                k: v for k, v in _HUB_ALL_TICKERS.items()
-                if not q or q in k or q in v["name"].upper()
-            }
-            matches = dict(list(matches.items())[:16])
+
+            # Build matches — if query present, rank exact ticker match first
+            all_items = list(_HUB_ALL_TICKERS.items())
+            if q:
+                exact   = [(k, v) for k, v in all_items if k.upper() == q or v["name"].upper() == q]
+                starts  = [(k, v) for k, v in all_items if (k.upper().startswith(q) or v["name"].upper().startswith(q)) and (k, v) not in exact]
+                contains= [(k, v) for k, v in all_items if q in k.upper() or q in v["name"].upper()]
+                seen    = {k for k, _ in exact + starts}
+                contains = [(k, v) for k, v in contains if k not in seen]
+                matches = dict((exact + starts + contains)[:16])
+            else:
+                # Show currently added tickers first, then the rest
+                in_row_items = [(k, v) for k, v in all_items if k in favs]
+                rest = [(k, v) for k, v in all_items if k not in favs]
+                matches = dict((in_row_items + rest)[:16])
+
+            # Render autocomplete-style suggestion header
+            if q:
+                st.markdown(
+                    f'<div style="font-size:0.68rem;color:#64748b;font-weight:600;margin:0.3rem 0 0.2rem 0">'
+                    f'{"Showing " + str(len(matches)) + " matches for "" + search.strip() + """ if matches else "No matches found — try a different name or ticker"}'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f'<div style="font-size:0.68rem;color:#64748b;font-weight:600;margin:0.3rem 0 0.2rem 0">'
+                    f'Active instruments shown first · start typing to search all {len(_HUB_ALL_TICKERS)} available'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
 
             if matches:
                 chip_cols = st.columns(min(8, len(matches)))
                 for ci, (tick, meta) in enumerate(matches.items()):
                     in_row = tick in favs
                     with chip_cols[ci % 8]:
+                        label = ("✓ " if in_row else "") + tick
                         if st.button(
-                            f"{'✓ ' if in_row else ''}{tick}",
+                            label,
                             key=f"hub_chip_{row_key}_{tick}",
                             type="primary" if in_row else "secondary",
                             use_container_width=True,
+                            help=meta["name"] + (" · remove" if in_row else " · add"),
                         ):
                             nf = list(favs)
                             if in_row:
@@ -874,51 +996,90 @@ def render_hub() -> None:
                     shadow = "box-shadow:0 2px 8px rgba(0,0,0,0.10);" if is_sel else "box-shadow:0 1px 3px rgba(0,0,0,0.06);"
 
                     st.markdown(
-                        f'<div id="{card_id}" style="background:{bg};border:1px solid #e2e8f0;'
-                        f'border-top:{bt};border-radius:12px;padding:0.55rem 0.35rem;'
-                        f'text-align:center;cursor:pointer;{shadow}">'
-                        f'<div style="color:{row_color};font-size:0.6rem;font-weight:800;letter-spacing:0.04em">{ticker}</div>'
-                        f'<div style="color:#64748b;font-size:0.58rem;margin:0.04rem 0">{name_s}</div>'
-                        f'<div style="color:#0a0f1d;font-size:0.85rem;font-weight:800;line-height:1.2">{price_str}</div>'
-                        f'<div style="font-size:0.6rem;margin-top:0.04rem">{chg_str}</div>'
+                        f'<div id="{card_id}" class="iw-price-card" '
+                        f'style="background:{bg};border:1px solid #e2e8f0;'
+                        f'border-top:{bt};border-radius:12px;padding:0.6rem 0.4rem;'
+                        f'text-align:center;cursor:pointer;transition:all 0.15s ease;{shadow}">'
+                        f'<div style="color:{row_color};font-size:0.62rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase">{ticker}</div>'
+                        f'<div style="color:#64748b;font-size:0.59rem;margin:0.05rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name_s}</div>'
+                        f'<div style="color:#0a0f1d;font-size:0.88rem;font-weight:800;line-height:1.25;margin:0.1rem 0">{price_str}</div>'
+                        f'<div style="font-size:0.62rem">{chg_str}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
-                    # Hidden trigger button — wired by JS below
-                    if st.button("", key=f"hub_btn_{ticker}", use_container_width=True):
+                    # Hidden trigger button — styled invisible via CSS + JS
+                    st.markdown('<div class="iw-hidden-btn-wrap">', unsafe_allow_html=True)
+                    if st.button("​", key=f"hub_btn_{ticker}", use_container_width=True):
                         st.session_state["hub_news_ticker"] = (
                             None if is_sel else ticker
                         )
                         st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
-    # JS: wire card click → hidden button, hide buttons visually
+    # JS: wire card click → hidden button, aggressively hide wrappers
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
-  function setup(){
-    var cards=window.parent.document.querySelectorAll('[id^="hub_card_"]');
-    cards.forEach(function(card){
-      if(card._hubReady)return;
-      card._hubReady=true;
-      var mc=card.closest('[data-testid="stMarkdownContainer"]');
-      var vb=mc&&mc.parentElement;
-      if(vb){
-        var bd=vb.querySelector('[data-testid="stButton"]');
-        if(bd)bd.style.cssText='height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;';
-      }
-      card.addEventListener('click',function(){
-        var mc2=card.closest('[data-testid="stMarkdownContainer"]');
-        var vb2=mc2&&mc2.parentElement;
-        if(!vb2)return;
-        var btn=vb2.querySelector('button');
-        if(btn)btn.click();
+  var doc = window.parent.document;
+
+  function hideWrappers(){
+    /* Hide every .iw-hidden-btn-wrap container and its children */
+    doc.querySelectorAll('.iw-hidden-btn-wrap').forEach(function(w){
+      w.style.cssText = 'height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;';
+      w.querySelectorAll('*').forEach(function(c){
+        c.style.cssText = 'height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;';
       });
-      card.addEventListener('mouseenter',function(){card.style.opacity='0.8';});
-      card.addEventListener('mouseleave',function(){card.style.opacity='1';});
     });
   }
-  setup();
-  new MutationObserver(setup).observe(window.parent.document.body,{childList:true,subtree:true});
+
+  function wireCards(){
+    doc.querySelectorAll('[id^="hub_card_"]').forEach(function(card){
+      if(card._iwWired) return;
+      card._iwWired = true;
+
+      /* Find the hidden button: it's the next sibling wrapper after the card's markdown container */
+      function findBtn(card){
+        var mc = card.closest('[data-testid="stMarkdownContainer"]');
+        if(!mc) return null;
+        var col = mc.parentElement;
+        if(!col) return null;
+        /* Walk forward siblings inside the column to find the next stButton */
+        var els = Array.from(col.children);
+        var idx = els.indexOf(mc.parentElement) >= 0 ? els.indexOf(mc.parentElement) : -1;
+        /* Try the next element directly */
+        for(var i=0; i<els.length; i++){
+          var btn = els[i].querySelector('button');
+          if(btn && els[i] !== mc) return btn;
+        }
+        return null;
+      }
+
+      card.addEventListener('click', function(){
+        /* Locate by looking for a button inside .iw-hidden-btn-wrap near this card */
+        var mc = card.closest('[data-testid="stMarkdownContainer"]');
+        if(!mc) return;
+        var col = mc.closest('[data-testid="column"]') || mc.parentElement;
+        if(!col) return;
+        var wrap = col.querySelector('.iw-hidden-btn-wrap');
+        if(wrap){
+          var btn = wrap.querySelector('button');
+          if(btn){ btn.click(); return; }
+        }
+        /* Fallback: next stButton sibling in the column */
+        var stBtns = col.querySelectorAll('[data-testid="stButton"]');
+        if(stBtns.length > 0){
+          var b = stBtns[0].querySelector('button');
+          if(b) b.click();
+        }
+      });
+    });
+
+    hideWrappers();
+  }
+
+  wireCards();
+  new MutationObserver(function(){ wireCards(); hideWrappers(); })
+    .observe(doc.body, {childList:true, subtree:true});
 })();
 </script>""", height=0, scrolling=False)
 
@@ -1040,12 +1201,12 @@ def render_hub() -> None:
                 if src_url and src_url.startswith("http") else
                 f'<b style="color:#2563eb">{vendor}{vtag}</b>'
             )
-            with st.expander(f"🏆 {titan_name} → {vendor}{vtag}  ·  {conf}/10", expanded=False):
+            with st.expander(f"🏆 {titan_name}  ›  {vendor}{vtag}  ·  {conf}/10", expanded=False):
                 st.markdown(
                     f'<div style="background:#f8fafc;border-left:3px solid {conf_col};padding:0.55rem 0.85rem;'
                     f'border-radius:0 10px 10px 0;margin-bottom:0.35rem">'
                     f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                    f'<span style="color:#374151;font-size:0.78rem"><b style="color:#0a0f1d">{titan_name}</b> → {vlink}</span>'
+                    f'<span style="color:#374151;font-size:0.78rem"><b style="color:#0a0f1d">{titan_name}</b> <span style="color:#94a3b8">›</span> {vlink}</span>'
                     f'<span style="color:{conf_col};font-weight:700">{conf}/10</span></div>'
                     f'<span style="color:#64748b;font-size:0.7rem">{exec_name} · {conn_type}</span>'
                     f'<div style="color:#4b5563;font-size:0.74rem;font-style:italic;border-top:1px solid #e2e8f0;'
@@ -1178,8 +1339,7 @@ def main() -> None:
     h1, h2 = st.columns([3, 1])
     with h1:
         st.markdown(
-            "<h1 style='margin-bottom:0;color:#0a0f1d;font-weight:900;font-size:2rem'>📡 Contrarian Radar</h1>"
-            "<p style='color:#64748b;margin-top:2px;font-size:0.85rem'>Institutional asymmetric intelligence platform — v2.0 modular</p>",
+            "<h1 style='margin-bottom:0;color:#0a0f1d;font-weight:900;font-size:2.1rem;letter-spacing:-0.02em'>📊 InvestWise</h1>",
             unsafe_allow_html=True,
         )
     with h2:
@@ -1223,7 +1383,7 @@ def main() -> None:
     st.divider()
     st.markdown(
         "<p style='text-align:center;color:#444;font-size:0.75rem'>"
-        "Contrarian Radar v2.0 · 6 modular domains · Data latency ≤ 5 min · "
+        "InvestWise · 7 modules · Data latency ≤ 5 min · "
         "Not investment advice · Regulatory data sourced from FCA CP23/28 &amp; PS24/12"
         "</p>",
         unsafe_allow_html=True,

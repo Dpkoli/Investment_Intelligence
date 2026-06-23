@@ -53,14 +53,14 @@ def _valuation_delta_bar(anchor_val: float | None, supplier_val: float | None,
         x=[anchor_val, supplier_val],
         y=["Anchor", "Supplier"],
         orientation="h",
-        marker_color=["#2E3140", color],
+        marker_color=["#e2e8f0", color],
         text=[f"{anchor_val:.1f}×", f"{supplier_val:.1f}×  ({discount:+.0f}%)"],
         textposition="outside",
         hoverinfo="skip",
     ))
     fig.update_layout(
         height=90, margin={"t": 5, "b": 5, "l": 60, "r": 80},
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="#f4f6f9", plot_bgcolor="#f4f6f9",
         xaxis={"visible": False}, yaxis={"color": "#888", "tickfont": {"size": 10}},
         showlegend=False,
         title={"text": label, "font": {"size": 11, "color": "#888"}, "x": 0},
@@ -86,13 +86,13 @@ def _render_link_card(link: SupplyChainLink, idx: int) -> None:
     renewal_str = (f"Renewal cliff: <b>{link.renewal_cliff}</b>" if link.renewal_cliff else "")
 
     st.markdown(
-        f"""<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {_CONN_COLOR.get(link.connection_type,'#888')};
+        f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid {_CONN_COLOR.get(link.connection_type,'#888')};
             border-radius:8px;padding:0.75rem 1rem;margin-bottom:0.5rem">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
                 <div>
-                    <span style="font-size:0.75rem;color:#888">{sector_icon} {link.sector} · {link.anchor_index}</span><br>
+                    <span style="font-size:0.75rem;color:#64748b">{sector_icon} {link.sector} · {link.anchor_index}</span><br>
                     <span style="font-size:1rem;font-weight:700">{link.anchor_ticker} → {link.supplier_ticker}</span>
-                    <span style="color:#888;margin:0 0.5rem">|</span>
+                    <span style="color:#64748b;margin:0 0.5rem">|</span>
                     <span style="font-size:0.85rem">{link.anchor_name} → <b>{link.supplier_name}</b></span>
                 </div>
                 <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
@@ -101,12 +101,12 @@ def _render_link_card(link: SupplyChainLink, idx: int) -> None:
                     {source_link}
                 </div>
             </div>
-            <div style="margin-top:0.4rem;font-size:0.78rem;color:#aaa">
+            <div style="margin-top:0.4rem;font-size:0.78rem;color:#64748b">
                 <b>Supply Layer:</b> {link.supply_layer}{wallet_pct_str}
                 {"  ·  " + renewal_str if renewal_str else ""}
                 {"  ·  Contract: " + str(link.contract_years) + "y" if link.contract_years else ""}
             </div>
-            {f'<div style="margin-top:0.35rem;font-size:0.75rem;font-style:italic;color:#888">" {link.exec_quote} "</div>' if link.exec_quote else ""}
+            {f'<div style="margin-top:0.35rem;font-size:0.75rem;font-style:italic;color:#64748b">" {link.exec_quote} "</div>' if link.exec_quote else ""}
         </div>""",
         unsafe_allow_html=True,
     )
@@ -262,7 +262,7 @@ def render() -> None:
                     fig.add_trace(go.Bar(
                         name="Anchor EV/EBITDA",
                         x=cd_df["Supplier"], y=cd_df["Anchor EV/EBITDA"],
-                        marker_color="#2E3140",
+                        marker_color="#cbd5e1",
                     ))
                     fig.add_trace(go.Bar(
                         name="Supplier EV/EBITDA",
@@ -274,7 +274,7 @@ def render() -> None:
                     fig.update_layout(
                         barmode="group", height=220,
                         margin={"t": 20, "b": 30, "l": 0, "r": 0},
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="#f4f6f9", plot_bgcolor="#f4f6f9",
                         legend={"orientation": "h", "y": 1.1, "font": {"color": "#888", "size": 10}},
                         xaxis={"color": "#888"}, yaxis={"color": "#888", "title": "EV/EBITDA ×"},
                         title={"text": "Valuation Delta: Anchor vs. Supplier", "font": {"color": "#888", "size": 11}},

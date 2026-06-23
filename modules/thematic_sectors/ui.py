@@ -235,14 +235,14 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
     yahoo_url  = _yahoo_url(p.ticker)
 
     # Pre-build optional metadata spans to avoid f-string conditional bugs
-    ter_span  = f'<span>💰 TER&nbsp;<b style="color:#ddd">{p.expense_ratio:.2f}%</b></span>' if p.expense_ratio else ""
-    aum_span  = f'<span>📦 AUM&nbsp;<b style="color:#ddd">${p.aum_bn:.1f}bn</b></span>'        if p.aum_bn        else ""
-    isin_span = f'<span>🔢&nbsp;<b style="color:#ddd">{p.isin}</b></span>'                       if p.isin          else ""
+    ter_span  = f'<span>💰 TER&nbsp;<b style="color:#1e293b">{p.expense_ratio:.2f}%</b></span>' if p.expense_ratio else ""
+    aum_span  = f'<span>📦 AUM&nbsp;<b style="color:#1e293b">${p.aum_bn:.1f}bn</b></span>'        if p.aum_bn        else ""
+    isin_span = f'<span>🔢&nbsp;<b style="color:#1e293b">{p.isin}</b></span>'                       if p.isin          else ""
 
     # ── 1. Header ─────────────────────────────────────────────────────────────
     st.markdown(
         f"""
-<div style="background:#1A1D24;border:1px solid #2E3140;border-left:4px solid #00D4AA;
+<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid #00D4AA;
      border-radius:10px;padding:1rem 1.2rem;margin:0.4rem 0 0.75rem 0">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;
        flex-wrap:wrap;gap:0.5rem">
@@ -250,7 +250,7 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
       <span style="color:#00D4AA;font-size:0.68rem;font-weight:700;
             letter-spacing:0.12em">{p.sector.upper()} &middot; {p.sub_theme}</span><br>
       <span style="font-size:1.25rem;font-weight:700">{p.ticker}</span>&nbsp;
-      <span style="color:#bbb;font-size:0.87rem">{p.name}</span>
+      <span style="color:#374151;font-size:0.87rem">{p.name}</span>
     </div>
     <div style="text-align:right">
       <div style="font-size:1.3rem;font-weight:700">{price_str}</div>
@@ -259,10 +259,10 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:0.6rem;
        font-size:0.75rem;color:#999">
-    <span>🏢&nbsp;<b style="color:#ddd">{p.issuer or "—"}</b></span>
-    <span>🏛&nbsp;<b style="color:#ddd">{p.exchange}</b></span>
-    <span>🌍&nbsp;<b style="color:#ddd">{p.region}</b></span>
-    <span>💱&nbsp;<b style="color:#ddd">{p.currency}</b></span>
+    <span>🏢&nbsp;<b style="color:#1e293b">{p.issuer or "—"}</b></span>
+    <span>🏛&nbsp;<b style="color:#1e293b">{p.exchange}</b></span>
+    <span>🌍&nbsp;<b style="color:#1e293b">{p.region}</b></span>
+    <span>💱&nbsp;<b style="color:#1e293b">{p.currency}</b></span>
     {ter_span}
     {aum_span}
     {isin_span}
@@ -300,8 +300,8 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
             fig_h.update_layout(
                 height=max(180, len(h_df) * 28),
                 margin={"t": 5, "b": 5, "l": 10, "r": 55},
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="#f4f6f9",
+                plot_bgcolor="#f4f6f9",
                 xaxis={"visible": False},
                 yaxis={
                     "color": "#888", "tickfont": {"size": 11},
@@ -352,10 +352,10 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
             fig_p.update_layout(
                 height=150,
                 margin={"t": 5, "b": 5, "l": 0, "r": 0},
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="#f4f6f9",
+                plot_bgcolor="#f4f6f9",
                 xaxis={"visible": False},
-                yaxis={"color": "#666", "gridcolor": "#2E3140", "tickformat": "$,.0f"},
+                yaxis={"color": "#64748b", "gridcolor": "#e2e8f0", "tickformat": "$,.0f"},
                 showlegend=False,
             )
             st.plotly_chart(fig_p, use_container_width=True,
@@ -382,7 +382,7 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
                 border = "border-bottom:2px solid #00D4AA;" if is_active else ""
                 cells += (
                     f'<div style="text-align:center;flex:1;{border}">'
-                    f'<div style="font-size:0.62rem;color:#888">{lbl}</div>'
+                    f'<div style="font-size:0.62rem;color:#64748b">{lbl}</div>'
                     f'<div style="font-size:0.8rem;font-weight:700;color:{color}">{val_str}</div>'
                     f'</div>'
                 )
@@ -417,27 +417,27 @@ def _render_detail_panel(p: ThematicProduct, prices: dict) -> None:
             if link and link.startswith("http"):
                 headline_html = (
                     f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
-                    f'style="color:#ddd;text-decoration:none;font-weight:600;'
+                    f'style="color:#1e293b;text-decoration:none;font-weight:600;'
                     f'border-bottom:1px dotted #555;line-height:1.45">{title}</a>'
                 )
                 read_link = (
-                    f'<span style="color:#555">&middot;</span>'
+                    f'<span style="color:#64748b">&middot;</span>'
                     f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
                     f'style="color:#00D4AA;text-decoration:none;font-size:0.68rem">'
                     f'&nearr; Read</a>'
                 )
             else:
-                headline_html = f'<span style="color:#ddd;font-weight:600">{title}</span>'
+                headline_html = f'<span style="color:#1e293b;font-weight:600">{title}</span>'
                 read_link = ""
 
             time_html = (
-                f'<span style="color:#555">&middot;</span>'
+                f'<span style="color:#64748b">&middot;</span>'
                 f'<span>{time_label}</span>'
             ) if time_label else ""
 
             st.markdown(
                 f"""
-<div style="background:#14161E;border:1px solid #2E3140;border-left:3px solid #FFA500;
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #FFA500;
      border-radius:6px;padding:0.55rem 0.8rem;margin-bottom:0.4rem">
   <div style="font-size:0.79rem;line-height:1.45">{headline_html}</div>
   <div style="display:flex;gap:0.4rem;align-items:center;
@@ -546,7 +546,7 @@ def render() -> None:
 
     # ── Sector filter chips ───────────────────────────────────────────────────
     st.markdown(
-        '<div style="font-size:0.72rem;color:#888;margin-bottom:0.25rem">'
+        '<div style="font-size:0.72rem;color:#64748b;margin-bottom:0.25rem">'
         '&#x25BC; Click a sector to filter the table below</div>',
         unsafe_allow_html=True,
     )
@@ -578,7 +578,7 @@ def render() -> None:
                 if p.sector == treemap_sel["sector"])
         )
         st.markdown(
-            f'<div style="font-size:0.72rem;color:#888;margin:0.35rem 0 0.2rem 0">'
+            f'<div style="font-size:0.72rem;color:#64748b;margin:0.35rem 0 0.2rem 0">'
             f'Sub-themes in <b style="color:#00D4AA">{treemap_sel["sector"]}</b>:</div>',
             unsafe_allow_html=True,
         )
@@ -613,8 +613,8 @@ def render() -> None:
             f'<div style="background:#1a3d2e;border:1px solid #00D4AA;border-radius:6px;'
             f'padding:0.35rem 0.9rem;font-size:0.79rem;margin-top:0.4rem">'
             f'&#x1F5C2; <b style="color:#00D4AA">Active filter:</b> '
-            f'<span style="color:#ddd">{crumb}</span> — '
-            f'<span style="color:#888;font-size:0.7rem">click ✓ button above to clear</span>'
+            f'<span style="color:#1e293b">{crumb}</span> — '
+            f'<span style="color:#64748b;font-size:0.7rem">click ✓ button above to clear</span>'
             f'</div>',
             unsafe_allow_html=True,
         )

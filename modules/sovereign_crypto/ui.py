@@ -319,25 +319,25 @@ def _render_news_item(article: dict) -> None:
     if link and link.startswith("http"):
         headline_html = (
             f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
-            f'style="color:#ddd;text-decoration:none;font-weight:600;border-bottom:1px dotted #555">'
+            f'style="color:#1e293b;text-decoration:none;font-weight:600;border-bottom:1px dotted #555">'
             f'{title}</a>'
         )
         read_link = (
-            f'<span style="color:#555">&middot;</span>'
+            f'<span style="color:#64748b">&middot;</span>'
             f'<a href="{link}" target="_blank" rel="noopener noreferrer" '
             f'style="color:#00D4AA;text-decoration:none;font-size:0.68rem">&nearr; Read</a>'
         )
     else:
-        headline_html = f'<span style="color:#ddd;font-weight:600">{title}</span>'
+        headline_html = f'<span style="color:#1e293b;font-weight:600">{title}</span>'
         read_link = ""
 
     time_html = (
-        f'<span style="color:#555">&middot;</span><span>{time_label}</span>'
+        f'<span style="color:#64748b">&middot;</span><span>{time_label}</span>'
         if time_label else ""
     )
 
     st.markdown(
-        f"""<div style="background:#14161E;border:1px solid #2E3140;border-left:3px solid #FFA500;
+        f"""<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #FFA500;
  border-radius:6px;padding:0.55rem 0.8rem;margin-bottom:0.4rem">
   <div style="font-size:0.79rem">{headline_html}</div>
   <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.28rem;font-size:0.68rem;color:#666">
@@ -364,12 +364,12 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
     chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
 
     st.markdown(
-        f"""<div style="background:#1A1D24;border:1px solid #2E3140;border-left:4px solid {accent};
+        f"""<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid {accent};
  border-radius:10px;padding:1rem 1.2rem;margin:0.4rem 0 0.8rem 0">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
     <div>
       <span style="color:{accent};font-size:2rem;font-weight:700">{symbol}</span>&nbsp;
-      <span style="color:#bbb;font-size:1rem">{name}</span>
+      <span style="color:#374151;font-size:1rem">{name}</span>
     </div>
     <div style="text-align:right">
       <div style="font-size:1.6rem;font-weight:700">{price_str}</div>
@@ -399,12 +399,12 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
             for i, h in enumerate(holders, 1):
                 pct_color = "#00D4AA" if h["pct"] not in ("—", "") else "#888"
                 st.markdown(
-                    f"""<div style="background:#14161E;border:1px solid #2E3140;
+                    f"""<div style="background:#f8fafc;border:1px solid #e2e8f0;
   border-left:3px solid {accent};border-radius:6px;padding:0.5rem 0.9rem;
   margin-bottom:0.35rem;display:flex;align-items:center;gap:1rem">
-  <span style="color:#888;min-width:22px;font-size:0.75rem">#{i}</span>
+  <span style="color:#64748b;min-width:22px;font-size:0.75rem">#{i}</span>
   <span style="flex:1;font-weight:600;font-size:0.85rem">{h["name"]}</span>
-  <span style="color:#ddd;font-size:0.8rem;min-width:120px;text-align:right">{h["amount"]}</span>
+  <span style="color:#1e293b;font-size:0.8rem;min-width:120px;text-align:right">{h["amount"]}</span>
   <span style="color:{pct_color};font-size:0.8rem;min-width:60px;text-align:right;font-weight:700">{h["pct"]}</span>
 </div>""",
                     unsafe_allow_html=True,
@@ -440,9 +440,9 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
             fig_p.update_layout(
                 height=220,
                 margin={"t": 5, "b": 5, "l": 0, "r": 0},
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="#f4f6f9", plot_bgcolor="#f4f6f9",
                 xaxis={"visible": False},
-                yaxis={"color": "#666", "gridcolor": "#2E3140", "tickformat": "$,.2f"},
+                yaxis={"color": "#64748b", "gridcolor": "#e2e8f0", "tickformat": "$,.2f"},
                 showlegend=False,
             )
             st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False})
@@ -460,7 +460,7 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
                 border = "border-bottom:2px solid #00D4AA;" if is_active else ""
                 cells += (
                     f'<div style="text-align:center;flex:1;{border}">'
-                    f'<div style="font-size:0.62rem;color:#888">{lbl}</div>'
+                    f'<div style="font-size:0.62rem;color:#64748b">{lbl}</div>'
                     f'<div style="font-size:0.8rem;font-weight:700;color:{clr}">{val_str}</div>'
                     f'</div>'
                 )
@@ -486,17 +486,17 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
             st.caption("⚠ Price targets are forward-looking estimates from public analyst reports. Not financial advice.")
             for t in targets:
                 st.markdown(
-                    f"""<div style="background:#14161E;border:1px solid #2E3140;
+                    f"""<div style="background:#f8fafc;border:1px solid #e2e8f0;
   border-left:3px solid {accent};border-radius:8px;padding:0.65rem 1rem;
   margin-bottom:0.4rem">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
     <div>
       <span style="font-weight:700;font-size:0.88rem">{t["analyst"]}</span><br>
-      <span style="color:#888;font-size:0.73rem">{t["thesis"]}</span>
+      <span style="color:#64748b;font-size:0.73rem">{t["thesis"]}</span>
     </div>
     <div style="text-align:right;white-space:nowrap">
       <div style="font-size:1.05rem;font-weight:700;color:{accent}">{t["target"]}</div>
-      <div style="font-size:0.7rem;color:#888">Target · {t["horizon"]}</div>
+      <div style="font-size:0.7rem;color:#64748b">Target · {t["horizon"]}</div>
     </div>
   </div>
 </div>""",
@@ -555,19 +555,19 @@ def render() -> None:
             chg_color = "#00D4AA" if (chg is not None and chg >= 0) else "#FF4B4B"
             chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
             is_active  = selected == yf_t
-            border_style = f"border:2px solid {accent}" if is_active else "border:1px solid #2E3140"
+            border_style = f"border:2px solid {accent}" if is_active else "border:1px solid #e2e8f0"
 
             with col:
                 card_id = f"cr_card_{yf_t.replace('-', '_')}"
                 active_border = f"2px solid {accent}" if is_active else f"1px solid #2E3140"
                 st.markdown(
                     f"""<div id="{card_id}"
-  style="background:#1A1D24;border:{active_border};border-radius:10px;
+  style="background:#ffffff;border:{active_border};border-radius:10px;
          padding:0.9rem 1.1rem;margin-bottom:0.3rem;cursor:pointer">
   <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">
     <span style="font-size:1.4rem">{icon}</span>
     <span style="font-weight:700;font-size:1rem;color:{accent}">{sym}</span>
-    <span style="color:#888;font-size:0.75rem;margin-left:auto">{name}</span>
+    <span style="color:#64748b;font-size:0.75rem;margin-left:auto">{name}</span>
   </div>
   <div style="font-size:1.45rem;font-weight:700">{price_str}</div>
   <div style="font-size:0.9rem;color:{chg_color};margin-top:0.1rem">{chg_str} today</div>
