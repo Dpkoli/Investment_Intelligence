@@ -31,6 +31,12 @@ _PHASE_COLOR = {
     "POST_GATEWAY":      "#CC5500",
     "ENFORCEMENT_CLIFF": "#CC0000",
 }
+
+
+def _hex_to_rgba(hex_color: str, alpha: float = 0.27) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
 _SURVIVAL_COLOR = {
     "GREEN":    "#00D4AA",
     "AMBER":    "#FFA500",
@@ -596,7 +602,7 @@ def _render_compliance_matrix(today: date) -> None:
         fig_gantt.add_trace(go.Scatter(
             x=[ph["Start"], ph["End"], ph["End"], ph["Start"], ph["Start"]],
             y=[0.1, 0.1, 0.9, 0.9, 0.1],
-            fill="toself", fillcolor=ph["Color"] + "44",
+            fill="toself", fillcolor=_hex_to_rgba(ph["Color"]),
             line={"color": ph["Color"], "width": 1},
             mode="lines", name=ph["Phase"],
             hoverinfo="name+x",
@@ -621,21 +627,79 @@ def _render_compliance_matrix(today: date) -> None:
         st.warning("No compliance reports generated.")
         return
 
-    # Summary badges
-    badge_cols = st.columns(4)
+    # Summary badges — clickable to drill down
+    if "rsb_drill_flag" not in st.session_state:
+        st.session_state["rsb_drill_flag"] = None
+
     counts = {
         "GREEN":    matrix_data.green_count    if hasattr(matrix_data, "green_count")    else 0,
         "AMBER":    matrix_data.amber_count    if hasattr(matrix_data, "amber_count")    else 0,
         "RED":      matrix_data.red_count      if hasattr(matrix_data, "red_count")      else 0,
         "CRITICAL": matrix_data.critical_count if hasattr(matrix_data, "critical_count") else 0,
     }
+    badge_cols = st.columns(4)
     for col, flag in zip(badge_cols, ["GREEN", "AMBER", "RED", "CRITICAL"]):
         color = _SURVIVAL_COLOR[flag]
+        is_active = st.session_state["rsb_drill_flag"] == flag
+        border_style = f"3px solid {color}" if is_active else f"1px solid {color}"
         with col:
             st.markdown(
-                f'<div style="background:{color}22;border:1px solid {color};border-radius:6px;'
-                f'padding:0.5rem;text-align:center"><span style="color:{color};font-size:1.2rem;font-weight:700">'
-                f'{counts[flag]}</span><br><span style="color:#888;font-size:0.72rem">{flag}</span></div>',
+                f'<div style="background:{color}{"33" if is_active else "11"};border:{border_style};'
+                f'border-radius:6px;padding:0.5rem;text-align:center">'
+                f'<span style="color:{color};font-size:1.2rem;font-weight:700">{counts[flag]}</span><br>'
+                f'<span style="color:#888;font-size:0.72rem">{flag}</span><br>'
+                f'<span style="color:{color};font-size:0.62rem">{"▼ click to hide" if is_active else "▲ click to view"}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button(
+                "▼" if is_active else "▲",
+                key=f"rsb_badge_{flag}",
+                use_container_width=True,
+            ):
+                st.session_state["rsb_drill_flag"] = None if is_active else flag
+                st.rerun()
+
+    # Drill-down panel
+    active_flag = st.session_state.get("rsb_drill_flag")
+    if active_flag and reports:
+        drilled = [r for r in reports
+                   if (str(r.survival_flag.value) if hasattr(r.survival_flag, "value")
+                       else str(r.survival_flag)) == active_flag]
+        color = _SURVIVAL_COLOR[active_flag]
+        st.markdown(
+            f'<div style="background:{color}11;border:1px solid {color};border-radius:8px;'
+            f'padding:0.8rem 1rem;margin:0.5rem 0">'
+            f'<span style="color:{color};font-weight:700;font-size:0.85rem">'
+            f'{active_flag} — {len(drilled)} Instrument{"s" if len(drilled) != 1 else ""}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        for r in drilled:
+            inst_id   = getattr(r, "instrument_id", "—")
+            inst_name = getattr(r, "instrument_name", "—")
+            auth = getattr(r, "auth_status", None) or "—"
+            auth = str(auth.value) if hasattr(auth, "value") else str(auth).replace("_", " ")
+            cat = getattr(r, "category", None) or "—"
+            cat = str(cat.value) if hasattr(cat, "value") else str(cat).replace("_", " ")
+            next_action = getattr(r, "next_action", "—")
+            retail_risk = getattr(r, "retail_access_at_risk", False)
+            wind_down   = getattr(r, "estimated_wind_down_risk", False)
+            risk_tags = ""
+            if retail_risk:
+                risk_tags += ' <span style="background:#FF6B6B22;color:#FF6B6B;border-radius:3px;padding:0 4px;font-size:0.65rem">Retail Risk</span>'
+            if wind_down:
+                risk_tags += ' <span style="background:#FF222222;color:#FF2222;border-radius:3px;padding:0 4px;font-size:0.65rem">Wind-Down</span>'
+            st.markdown(
+                f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {color};'
+                f'border-radius:0 6px 6px 0;padding:0.55rem 0.85rem;margin-bottom:0.3rem">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                f'<span style="color:{color};font-weight:700;font-size:0.82rem">{inst_id}</span>'
+                f'<span style="color:#666;font-size:0.68rem">{_CAT_LABEL.get(cat, cat)}</span></div>'
+                f'<div style="color:#bbb;font-size:0.78rem">{inst_name}</div>'
+                f'<div style="color:#888;font-size:0.72rem;margin-top:0.1rem">{auth}{risk_tags}</div>'
+                f'<div style="color:#777;font-size:0.72rem;margin-top:0.15rem">⚡ {next_action}</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 

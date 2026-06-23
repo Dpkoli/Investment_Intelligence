@@ -408,10 +408,459 @@ def render_sidebar() -> str:
             "Navigate",
             _NAV_OPTIONS,
             index=0,
+            key="sidebar_nav",
             label_visibility="collapsed",
         )
 
     return nav
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# INTELLIGENCE HUB — helpers and data
+# ═════════════════════════════════════════════════════════════════════════════
+
+_HUB_DEFAULT_CRYPTO = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD"]
+_HUB_DEFAULT_THEMATIC = ["BOTZ", "ARKK", "CIBR", "ICLN"]
+_HUB_DEFAULT_EQUITY = ["SPY", "QQQ", "VWRP.L", "IWDA.L"]
+
+_HUB_TICKER_META: dict[str, dict] = {
+    "BTC-USD":  {"name": "Bitcoin",       "module": "₿ Sovereign Crypto"},
+    "ETH-USD":  {"name": "Ethereum",      "module": "₿ Sovereign Crypto"},
+    "SOL-USD":  {"name": "Solana",        "module": "₿ Sovereign Crypto"},
+    "XRP-USD":  {"name": "XRP",           "module": "₿ Sovereign Crypto"},
+    "BOTZ":     {"name": "BOTZ AI/Robot", "module": "📊 Thematic Sectors"},
+    "ARKK":     {"name": "ARK Innovation","module": "📊 Thematic Sectors"},
+    "CIBR":     {"name": "CIBR Cyber",    "module": "📊 Thematic Sectors"},
+    "ICLN":     {"name": "iShares Clean Energy","module": "📊 Thematic Sectors"},
+    "SPY":      {"name": "S&P 500 ETF",   "module": "📈 Core Equity"},
+    "QQQ":      {"name": "Nasdaq 100",    "module": "📈 Core Equity"},
+    "VWRP.L":   {"name": "Vanguard All-World","module": "📈 Core Equity"},
+    "IWDA.L":   {"name": "iShares Core MSCI World","module": "📈 Core Equity"},
+    "GLD":      {"name": "SPDR Gold",     "module": "🥇 Precious Metals"},
+    "SLV":      {"name": "iShares Silver","module": "🥇 Precious Metals"},
+    "GC=F":     {"name": "Gold Futures",  "module": "🥇 Precious Metals"},
+    "SI=F":     {"name": "Silver Futures","module": "🥇 Precious Metals"},
+}
+
+_HUB_TICKER_COLOR: dict[str, str] = {
+    "₿ Sovereign Crypto":  "#9B59B6",
+    "📊 Thematic Sectors": "#2ECC71",
+    "📈 Core Equity":      "#5B8FD4",
+    "🥇 Precious Metals":  "#FFD700",
+}
+
+_INFLUENTIAL_PEOPLE: list[dict] = [
+    {
+        "name": "Jensen Huang",
+        "role": "CEO, NVIDIA",
+        "avatar": "🟢",
+        "asset_focus": ["AI chips", "Data centres", "NVDA", "SMCI", "MRVL"],
+        "latest_view": "Blackwell Ultra demand exceeds all supply constraints through 2026; data-centre CAPEX cycle is just beginning. 'We are at an iPhone moment for AI.'",
+        "stance": "BULLISH",
+        "stance_color": "#00D4AA",
+        "source": "NVDA GTC 2026 keynote",
+        "source_url": "https://www.nvidia.com/en-us/events/gtc/",
+        "date": "Mar 2026",
+    },
+    {
+        "name": "Elon Musk",
+        "role": "CEO, Tesla / xAI / SpaceX",
+        "avatar": "🔵",
+        "asset_focus": ["DOGE", "BTC", "AI", "TSLA"],
+        "latest_view": "DOGE remains 'the people's crypto'. xAI Grok integration with X could drive crypto payment adoption. Tesla not currently buying BTC.",
+        "stance": "MIXED",
+        "stance_color": "#FFA500",
+        "source": "X (Twitter) / Tesla Q1 2026 earnings",
+        "source_url": "https://twitter.com/elonmusk",
+        "date": "Apr 2026",
+    },
+    {
+        "name": "Michael J. Saylor",
+        "role": "Chairman, Strategy (MicroStrategy)",
+        "avatar": "🟠",
+        "asset_focus": ["BTC", "MSTR"],
+        "latest_view": "'Bitcoin is the apex property of the human race.' Strategy holds 214,400 BTC. Every corporation, nation, and sovereign fund will allocate to BTC within 10 years.",
+        "stance": "MAX BULLISH",
+        "stance_color": "#FF8C00",
+        "source": "Strategy Q1 2026 investor call",
+        "source_url": "https://www.microstrategy.com/investor-relations/",
+        "date": "May 2026",
+    },
+    {
+        "name": "Robert Kiyosaki",
+        "role": "Author, Rich Dad Poor Dad",
+        "avatar": "🟡",
+        "asset_focus": ["BTC", "Gold", "Silver"],
+        "latest_view": "'The US dollar is dying. Buy BTC, gold, and silver before the crash.' Predicts BTC at $300K by year-end. Warns of USD hyperinflation.",
+        "stance": "BULLISH (Gold/BTC)",
+        "stance_color": "#FFD700",
+        "source": "X (Twitter) / Podcast",
+        "source_url": "https://twitter.com/theRealKiyosaki",
+        "date": "Jun 2026",
+    },
+    {
+        "name": "Donald Trump",
+        "role": "President, United States",
+        "avatar": "🔴",
+        "asset_focus": ["BTC", "Crypto", "USD", "DJT"],
+        "latest_view": "US Strategic Bitcoin Reserve signed by executive order. 'America will be the crypto capital of the world.' Pro-deregulation stance; SEC crypto enforcement scaled back.",
+        "stance": "PRO-CRYPTO",
+        "stance_color": "#FF4B4B",
+        "source": "White House EO / Mar-a-Lago Crypto Summit",
+        "source_url": "https://www.whitehouse.gov/",
+        "date": "Feb 2026",
+    },
+    {
+        "name": "Cathie Wood",
+        "role": "CEO & CIO, ARK Invest",
+        "avatar": "🔵",
+        "asset_focus": ["BTC", "ETH", "TSLA", "AI", "ARKK"],
+        "latest_view": "'BTC will reach $1.5M by 2030.' ARK 5-year forecast: AI + crypto convergence creates largest wealth creation in history. Conviction buys in TSLA and COIN dips.",
+        "stance": "BULLISH",
+        "stance_color": "#00D4AA",
+        "source": "ARK Big Ideas 2026",
+        "source_url": "https://ark-invest.com/big-ideas-2026/",
+        "date": "Jan 2026",
+    },
+    {
+        "name": "BlackRock (Larry Fink)",
+        "role": "CEO, BlackRock",
+        "avatar": "⚫",
+        "asset_focus": ["BTC", "IB1T", "ETFs", "Tokenisation"],
+        "latest_view": "'Bitcoin is digital gold.' IB1T now $3.2bn AUM. Tokenisation of real-world assets will be the next revolution — BlackRock leading with BUIDL fund.",
+        "stance": "INSTITUTIONALLY BULLISH",
+        "stance_color": "#5B8FD4",
+        "source": "BlackRock Q1 2026 investor letter",
+        "source_url": "https://www.blackrock.com/us/individual/literature/whitepaper/bii-bitcoin-etf.pdf",
+        "date": "Apr 2026",
+    },
+    {
+        "name": "Warren Buffett / Berkshire",
+        "role": "Chairman, Berkshire Hathaway",
+        "avatar": "🟤",
+        "asset_focus": ["AAPL", "OXY", "BAC", "Cash"],
+        "latest_view": "'We don't understand crypto and don't need to.' Berkshire holds $190bn in cash. Warnings about AI valuation bubble. Still long AAPL, OXY, financial stocks.",
+        "stance": "CRYPTO BEARISH",
+        "stance_color": "#888",
+        "source": "Berkshire Hathaway Annual Meeting 2026",
+        "source_url": "https://www.berkshirehathaway.com/meet26/2026ar.pdf",
+        "date": "May 2026",
+    },
+]
+
+_ASSET_MANAGERS: list[dict] = [
+    {"name": "BlackRock", "aum": "$11.5tn", "crypto_exposure": "IB1T (BTC ETP, £3.2bn AUM)", "view": "Bullish BTC; tokenisation of RWAs; FCA authorisation in progress", "color": "#5B8FD4"},
+    {"name": "Vanguard", "aum": "$9.3tn", "crypto_exposure": "None — policy excludes crypto", "view": "No crypto ETF planned; index focus", "color": "#888"},
+    {"name": "Fidelity", "aum": "$5.4tn", "crypto_exposure": "FBTC (BTC ETF, US), Digital Assets division", "view": "Bullish BTC; building crypto custody infrastructure", "color": "#9B59B6"},
+    {"name": "ARK Invest", "aum": "$12bn", "crypto_exposure": "ARKB (BTC ETF), ARKW, ARKK holdings", "view": "Max bullish BTC ($1.5M target); AI+crypto convergence thesis", "color": "#00D4AA"},
+    {"name": "WisdomTree", "aum": "$100bn", "crypto_exposure": "WBTC, WETH, SOLW, XRPL (LSE ETPs)", "view": "Active crypto ETP issuer; FCA VoP in preparation", "color": "#FFA500"},
+    {"name": "CoinShares", "aum": "$5.5bn", "crypto_exposure": "BITB, ETHE (LSE ETPs); largest European crypto ETP manager", "view": "Crypto-native; regulatory compliant; expanding product range", "color": "#2ECC71"},
+]
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _hub_prices(tickers: tuple) -> dict[str, dict]:
+    try:
+        import math
+        import yfinance as yf
+        import pandas as pd
+
+        def _clean(v) -> Optional[float]:
+            try:
+                f = float(v)
+                return None if (math.isnan(f) or math.isinf(f)) else f
+            except Exception:
+                return None
+
+        batch = yf.download(list(tickers), period="5d", auto_adjust=True,
+                            progress=False, threads=True)
+        closes = batch.get("Close", batch)
+        if closes is None or closes.empty:
+            return {}
+        if isinstance(closes, pd.Series):
+            closes = closes.to_frame(name=tickers[0])
+        closes = closes.dropna(how="all")
+        if closes.empty:
+            return {}
+        last = closes.iloc[-1]
+        prev = closes.iloc[-2] if len(closes) >= 2 else closes.iloc[-1]
+        data: dict[str, dict] = {}
+        for t in tickers:
+            try:
+                p  = _clean(last.get(t))
+                p0 = _clean(prev.get(t))
+                if p is None:
+                    continue
+                pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
+                data[t] = {"price": p, "chg_pct": pct}
+            except Exception:
+                pass
+        return data
+    except Exception:
+        return {}
+
+
+def _price_card(ticker: str, prices: dict, nav_target: str) -> None:
+    meta = _HUB_TICKER_META.get(ticker, {})
+    name = meta.get("name", ticker)
+    color = _HUB_TICKER_COLOR.get(nav_target, "#888")
+    p_data = prices.get(ticker, {})
+    price = p_data.get("price")
+    chg   = p_data.get("chg_pct")
+
+    if price is not None:
+        if price > 1000:
+            price_str = f"${price:,.0f}"
+        elif price > 1:
+            price_str = f"${price:,.2f}"
+        else:
+            price_str = f"${price:.4f}"
+    else:
+        price_str = "—"
+
+    if chg is not None:
+        chg_color = "#00D4AA" if chg >= 0 else "#FF4B4B"
+        chg_str   = f'<span style="color:{chg_color};font-size:0.72rem">{"▲" if chg >= 0 else "▼"} {abs(chg):.2f}%</span>'
+    else:
+        chg_str = '<span style="color:#555;font-size:0.72rem">—</span>'
+
+    st.markdown(
+        f'<div style="background:#1A1D24;border:1px solid #2E3140;border-top:2px solid {color};'
+        f'border-radius:8px;padding:0.6rem 0.75rem;text-align:center">'
+        f'<div style="color:{color};font-size:0.68rem;font-weight:700;letter-spacing:0.06em">{ticker}</div>'
+        f'<div style="color:#ccc;font-size:0.72rem;margin:0.1rem 0">{name}</div>'
+        f'<div style="color:#fff;font-size:1.05rem;font-weight:700">{price_str}</div>'
+        f'{chg_str}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    if st.button("→", key=f"hub_nav_{ticker}", use_container_width=True):
+        st.session_state["sidebar_nav"] = nav_target
+        st.rerun()
+
+
+def render_hub() -> None:
+    today = date.today()
+    alerts       = load_cassandra_alerts()
+    endorsements = load_kingmaker_endorsements()
+
+    # ── Top row: refresh + phase indicator ───────────────────────────────────
+    rc1, rc2, rc3 = st.columns([2, 2, 1])
+    with rc1:
+        auto_refresh = st.toggle("Auto-refresh (5 min)", value=False, key="hub_autorefresh")
+        if auto_refresh:
+            st.cache_data.clear()
+            st.rerun()
+    with rc3:
+        phase = current_phase(today)
+        phase_colors = {"PRE_GATEWAY": "#4A7C59", "GATEWAY_OPEN": "#FFA500",
+                        "POST_GATEWAY": "#CC5500", "ENFORCEMENT_CLIFF": "#CC0000"}
+        pc = phase_colors.get(phase, "#888")
+        st.markdown(
+            f'<div style="text-align:right"><span style="background:{pc}22;border:1px solid {pc};'
+            f'color:{pc};border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;font-weight:700">'
+            f'{phase.replace("_", " ")}</span></div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Section 1: Market Snapshot Cards ────────────────────────────────────
+    st.markdown(
+        '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
+        '📊 MARKET SNAPSHOT</p>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("⚙️ Customise Instruments", expanded=False):
+        cust_c1, cust_c2, cust_c3 = st.columns(3)
+        with cust_c1:
+            st.multiselect(
+                "Cryptocurrencies", ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "DOGE-USD", "ADA-USD", "AVAX-USD"],
+                default=st.session_state.get("hub_crypto_picks", _HUB_DEFAULT_CRYPTO),
+                key="hub_crypto_picks",
+            )
+        with cust_c2:
+            st.multiselect(
+                "Thematic ETFs", ["BOTZ", "ARKK", "CIBR", "ICLN", "QCLN", "ROBO", "DRIV", "WCLD"],
+                default=st.session_state.get("hub_thematic_picks", _HUB_DEFAULT_THEMATIC),
+                key="hub_thematic_picks",
+            )
+        with cust_c3:
+            st.multiselect(
+                "Core Equity ETFs", ["SPY", "QQQ", "VWRP.L", "IWDA.L", "VTI", "IVV", "SWDA.L", "CSPX.L", "GLD", "SLV"],
+                default=st.session_state.get("hub_equity_picks", _HUB_DEFAULT_EQUITY),
+                key="hub_equity_picks",
+            )
+
+    crypto_picks   = st.session_state.get("hub_crypto_picks",   _HUB_DEFAULT_CRYPTO) or _HUB_DEFAULT_CRYPTO
+    thematic_picks = st.session_state.get("hub_thematic_picks", _HUB_DEFAULT_THEMATIC) or _HUB_DEFAULT_THEMATIC
+    equity_picks   = st.session_state.get("hub_equity_picks",   _HUB_DEFAULT_EQUITY) or _HUB_DEFAULT_EQUITY
+
+    all_tickers = tuple(dict.fromkeys(crypto_picks + thematic_picks + equity_picks))
+    prices = _hub_prices(all_tickers)
+
+    for row_label, row_tickers, row_nav in [
+        ("₿ Sovereign Crypto",  crypto_picks,   "₿ Sovereign Crypto"),
+        ("📊 Thematic Sectors", thematic_picks, "📊 Thematic Sectors"),
+        ("📈 Core Equity",      equity_picks,   "📈 Core Equity"),
+    ]:
+        row_color = _HUB_TICKER_COLOR.get(row_nav, "#888")
+        st.markdown(
+            f'<div style="font-size:0.68rem;color:{row_color};font-weight:700;'
+            f'letter-spacing:0.08em;margin:0.5rem 0 0.2rem 0">{row_label}</div>',
+            unsafe_allow_html=True,
+        )
+        cols = st.columns(len(row_tickers))
+        for col, ticker in zip(cols, row_tickers):
+            with col:
+                nav_mod = _HUB_TICKER_META.get(ticker, {}).get("module", row_nav)
+                _price_card(ticker, prices, nav_mod)
+
+    st.divider()
+
+    # ── Section 2 & 3: Cassandra + Kingmaker side by side ───────────────────
+    left_col, right_col = st.columns([1, 1], gap="medium")
+
+    with left_col:
+        st.markdown(
+            '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.4rem">'
+            '🔴 CASSANDRA ALERTS — Live macro threats</p>',
+            unsafe_allow_html=True,
+        )
+        for a in alerts[:6]:
+            score   = int(a.get("risk_score") or a.get("Systemic_Risk_Score") or 0)
+            title   = a.get("title") or a.get("Title") or "—"
+            vector  = (a.get("vector") or a.get("Risk_Vector") or "").replace("_", " ").upper()
+            src_url = a.get("source_url") or a.get("Source_URL") or ""
+            raw_src = a.get("source") or ""
+
+            bar_color = "#FF4B4B" if score >= 8 else "#FFA500" if score >= 6 else "#4A7C59"
+            bar_pct   = int(score * 10)
+
+            title_html = (
+                f'<a href="{src_url}" target="_blank" style="color:#ddd;text-decoration:none">{title}</a>'
+                if src_url else f'<span style="color:#ddd">{title}</span>'
+            )
+            src_html = (
+                f'<a href="{src_url}" target="_blank" style="color:#00D4AA;font-size:0.68rem;text-decoration:none">↗ {raw_src}</a>'
+                if src_url else f'<span style="color:#666;font-size:0.68rem">{raw_src}</span>'
+            )
+
+            with st.expander(f"{'🔴' if score >= 8 else '🟡' if score >= 6 else '🟢'} {score}/10 · {title[:55]}{'…' if len(title) > 55 else ''}", expanded=False):
+                st.markdown(
+                    f'<div style="background:#1A1D24;border-left:3px solid {bar_color};padding:0.5rem 0.8rem;border-radius:0 6px 6px 0;margin-bottom:0.4rem">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">'
+                    f'<span style="color:{bar_color};font-size:0.7rem;font-weight:700">{vector}</span>'
+                    f'<span style="color:{bar_color};font-weight:700;font-size:0.8rem">{score}/10</span></div>'
+                    f'<div style="background:#2E3140;border-radius:3px;height:4px;margin-bottom:0.35rem">'
+                    f'<div style="background:{bar_color};width:{bar_pct}%;height:4px;border-radius:3px"></div></div>'
+                    f'<div style="font-size:0.78rem;color:#bbb;line-height:1.4">{title_html}</div>'
+                    f'<div style="margin-top:0.3rem">{src_html}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                v_key = (a.get("vector") or a.get("Risk_Vector") or "").lower()
+                bullets = _cassandra_assessment(v_key, title, score)
+                for b in bullets:
+                    st.markdown(b)
+
+    with right_col:
+        st.markdown(
+            '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.4rem">'
+            '🚀 KINGMAKER — Named-exec endorsement signals</p>',
+            unsafe_allow_html=True,
+        )
+        for e in endorsements[:5]:
+            titan_name = e.get("titan_name")  or e.get("Titan_Ticker")         or "—"
+            exec_name  = e.get("executive")   or e.get("Endorsement_Source")   or "Executive"
+            vendor     = e.get("vendor")      or e.get("Counterparty_Name")    or "—"
+            vticker    = e.get("vendor_ticker") or e.get("Counterparty_Ticker") or ""
+            conn_type  = (e.get("type") or e.get("Connection_Type") or "Supplier").replace("_", " ")
+            conf       = int(e.get("confidence") or e.get("Confidence_Score") or 7)
+            quote      = e.get("quote") or e.get("Extracted_Text") or ""
+            src_url    = e.get("source_url") or e.get("Endorsement_Source") or ""
+
+            conf_color = "#FF4B4B" if conf >= 9 else "#FFA500" if conf >= 7 else "#00D4AA"
+            vtag = f" ({vticker})" if vticker else ""
+            vendor_str = f"{vendor}{vtag}"
+
+            with st.expander(f"🏆 {titan_name} → {vendor}{vtag} · {conf}/10", expanded=False):
+                vendor_html = (
+                    f'<a href="{src_url}" target="_blank" style="color:#00D4AA;font-weight:700;text-decoration:none">{vendor_str}</a>'
+                    if src_url and src_url.startswith("http") else f'<b style="color:#00D4AA">{vendor_str}</b>'
+                )
+                st.markdown(
+                    f'<div style="background:#1A1D24;border-left:3px solid {conf_color};padding:0.5rem 0.8rem;border-radius:0 6px 6px 0;margin-bottom:0.4rem">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">'
+                    f'<span style="color:#ccc;font-size:0.78rem"><b>{titan_name}</b> <span style="color:#888">→</span> {vendor_html}</span>'
+                    f'<span style="color:{conf_color};font-weight:700;font-size:0.82rem">{conf}/10</span></div>'
+                    f'<div style="color:#888;font-size:0.7rem">{exec_name} · {conn_type}</div>'
+                    f'<div style="color:#aaa;font-size:0.76rem;font-style:italic;margin-top:0.3rem;border-top:1px solid #2E3140;padding-top:0.3rem">'
+                    f'&ldquo;{quote[:160]}{"…" if len(quote) > 160 else ""}&rdquo;</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                raw_conn = e.get("type") or e.get("Connection_Type") or "Supplier"
+                bullets = _kingmaker_assessment(raw_conn, vendor, titan_name, conf)
+                for b in bullets:
+                    st.markdown(b)
+
+    st.divider()
+
+    # ── Section 4: Influential People Tracker ───────────────────────────────
+    st.markdown(
+        '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.4rem">'
+        '👥 INFLUENTIAL VOICES — Market movers & latest views</p>',
+        unsafe_allow_html=True,
+    )
+
+    tab_people, tab_managers = st.tabs(["Key Individuals", "Asset Managers & Institutions"])
+
+    with tab_people:
+        p_cols = st.columns(2)
+        for i, person in enumerate(_INFLUENTIAL_PEOPLE):
+            with p_cols[i % 2]:
+                sc = person["stance_color"]
+                asset_tags = "".join(
+                    f'<span style="background:#2E3140;color:#aaa;border-radius:3px;padding:0 5px;'
+                    f'font-size:0.65rem;margin-right:3px">{a}</span>'
+                    for a in person["asset_focus"][:4]
+                )
+                src_link = (
+                    f'<a href="{person["source_url"]}" target="_blank" '
+                    f'style="color:#00D4AA;font-size:0.68rem;text-decoration:none">↗ {person["source"]}</a>'
+                    if person.get("source_url") else
+                    f'<span style="color:#666;font-size:0.68rem">{person["source"]}</span>'
+                )
+                st.markdown(
+                    f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {sc};'
+                    f'border-radius:0 8px 8px 0;padding:0.65rem 0.9rem;margin-bottom:0.5rem">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                    f'<span style="color:#fff;font-weight:700;font-size:0.85rem">{person["avatar"]} {person["name"]}</span>'
+                    f'<span style="background:{sc}22;color:{sc};border-radius:3px;padding:0.1rem 0.4rem;'
+                    f'font-size:0.66rem;font-weight:700">{person["stance"]}</span></div>'
+                    f'<div style="color:#888;font-size:0.7rem;margin:0.1rem 0">{person["role"]} · {person["date"]}</div>'
+                    f'<div style="margin:0.3rem 0">{asset_tags}</div>'
+                    f'<div style="color:#bbb;font-size:0.76rem;line-height:1.45;margin:0.35rem 0">'
+                    f'{person["latest_view"]}</div>'
+                    f'<div style="margin-top:0.3rem">{src_link}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+    with tab_managers:
+        for mgr in _ASSET_MANAGERS:
+            mc = mgr["color"]
+            st.markdown(
+                f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {mc};'
+                f'border-radius:0 8px 8px 0;padding:0.6rem 0.9rem;margin-bottom:0.4rem">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                f'<span style="color:{mc};font-weight:700;font-size:0.82rem">{mgr["name"]}</span>'
+                f'<span style="color:#666;font-size:0.72rem">AUM: {mgr["aum"]}</span></div>'
+                f'<div style="color:#888;font-size:0.72rem;margin:0.15rem 0">Crypto: <span style="color:#aaa">{mgr["crypto_exposure"]}</span></div>'
+                f'<div style="color:#bbb;font-size:0.76rem;margin-top:0.2rem">{mgr["view"]}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -669,17 +1118,7 @@ def main() -> None:
         _mod_regulatory.render()
 
     else:
-        # Intelligence Hub — Zone 1 + Horizon Pipeline + Regulatory summary
-        refresh_col, _ = st.columns([1, 4])
-        with refresh_col:
-            auto_refresh = st.toggle("Auto-refresh (5 min)", value=False)
-        if auto_refresh:
-            st.cache_data.clear()
-            st.rerun()
-
-        render_zone1()
-        render_zone2()
-        render_zone3()
+        render_hub()
 
     # ── Footer ────────────────────────────────────────────────────────────────
     st.divider()
