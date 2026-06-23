@@ -160,17 +160,7 @@ st.markdown(
     }
     .stButton button[kind="primary"] { background: var(--accent) !important; border-color: var(--accent) !important; }
 
-    /* ── Hide empty hidden trigger buttons (card click wiring) ─ */
-    div[data-testid="stButton"]:has(button p:empty),
-    div[data-testid="stButton"]:has(button:not([aria-label])[title=""]) {
-        height: 0 !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    button.hub-hidden-btn, div.hub-hidden-wrapper {
-        height: 0 !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important;
-    }
+    /* (trigger-button hiding is handled by the :has(.iw-price-card) + [stButton] rule below) */
 
     /* ── Secondary / inactive chip buttons → soft slate style ─ */
     .stButton button[kind="secondary"] {
@@ -201,10 +191,10 @@ st.markdown(
         line-height: 1.4 !important;
     }
 
-    /* ── Hidden card-trigger button ─────────────── */
-    .iw-hidden-btn-wrap,
-    .iw-hidden-btn-wrap > div,
-    .iw-hidden-btn-wrap button {
+    /* ── Hide trigger buttons that follow price cards — CSS-first, no flash ─ */
+    /* The stButton directly after a stMarkdownContainer containing .iw-price-card is our hidden trigger */
+    [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"],
+    [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"] * {
         height: 0 !important;
         min-height: 0 !important;
         overflow: hidden !important;
@@ -213,14 +203,18 @@ st.markdown(
         border: none !important;
         opacity: 0 !important;
         pointer-events: none !important;
-        display: block !important;
+        position: absolute !important;
         line-height: 0 !important;
     }
 
     /* ── Price card hover ────────────────────────── */
+    .iw-price-card {
+        transition: transform 0.13s ease, box-shadow 0.13s ease !important;
+    }
     .iw-price-card:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.13) !important;
+        box-shadow: 0 5px 18px rgba(0,0,0,0.13) !important;
+        border-color: #cbd5e1 !important;
     }
 
     /* ── Toggle ─────────────────────────────────── */
@@ -1064,7 +1058,7 @@ def render_hub() -> None:
                         f'<div id="{card_id}" class="iw-price-card" '
                         f'style="background:{bg};border:1px solid #e2e8f0;'
                         f'border-top:{bt};border-radius:12px;padding:0.6rem 0.4rem;'
-                        f'text-align:center;cursor:pointer;transition:all 0.15s ease;{shadow}">'
+                        f'text-align:center;cursor:pointer;">'
                         f'<div style="color:{row_color};font-size:0.62rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase">{ticker}</div>'
                         f'<div style="color:#64748b;font-size:0.59rem;margin:0.05rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name_s}</div>'
                         f'<div style="color:#0a0f1d;font-size:0.88rem;font-weight:800;line-height:1.25;margin:0.1rem 0">{price_str}</div>'
@@ -1072,79 +1066,46 @@ def render_hub() -> None:
                         f'</div>',
                         unsafe_allow_html=True,
                     )
-                    # Hidden trigger button — styled invisible via CSS + JS
-                    st.markdown('<div class="iw-hidden-btn-wrap">', unsafe_allow_html=True)
+                    # Hidden trigger — CSS hides this via :has(.iw-price-card) + [stButton] rule
                     if st.button("​", key=f"hub_btn_{ticker}", use_container_width=True):
                         st.session_state["hub_news_ticker"] = (
                             None if is_sel else ticker
                         )
                         st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
 
-    # JS: wire card click → hidden button, aggressively hide wrappers
+    # JS: wire card click → the adjacent hidden trigger button
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
   var doc = window.parent.document;
 
-  function hideWrappers(){
-    /* Hide every .iw-hidden-btn-wrap container and its children */
-    doc.querySelectorAll('.iw-hidden-btn-wrap').forEach(function(w){
-      w.style.cssText = 'height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;';
-      w.querySelectorAll('*').forEach(function(c){
-        c.style.cssText = 'height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;';
-      });
-    });
-  }
-
   function wireCards(){
     doc.querySelectorAll('[id^="hub_card_"]').forEach(function(card){
       if(card._iwWired) return;
       card._iwWired = true;
-
-      /* Find the hidden button: it's the next sibling wrapper after the card's markdown container */
-      function findBtn(card){
-        var mc = card.closest('[data-testid="stMarkdownContainer"]');
-        if(!mc) return null;
-        var col = mc.parentElement;
-        if(!col) return null;
-        /* Walk forward siblings inside the column to find the next stButton */
-        var els = Array.from(col.children);
-        var idx = els.indexOf(mc.parentElement) >= 0 ? els.indexOf(mc.parentElement) : -1;
-        /* Try the next element directly */
-        for(var i=0; i<els.length; i++){
-          var btn = els[i].querySelector('button');
-          if(btn && els[i] !== mc) return btn;
-        }
-        return null;
-      }
-
       card.addEventListener('click', function(){
-        /* Locate by looking for a button inside .iw-hidden-btn-wrap near this card */
+        // The trigger button's [stButton] is the direct next sibling of [stMarkdownContainer]
         var mc = card.closest('[data-testid="stMarkdownContainer"]');
         if(!mc) return;
-        var col = mc.closest('[data-testid="column"]') || mc.parentElement;
-        if(!col) return;
-        var wrap = col.querySelector('.iw-hidden-btn-wrap');
-        if(wrap){
-          var btn = wrap.querySelector('button');
+        var sibling = mc.nextElementSibling;
+        if(sibling){
+          var btn = sibling.querySelector('button');
           if(btn){ btn.click(); return; }
         }
-        /* Fallback: next stButton sibling in the column */
+        // Fallback: first button in the enclosing column
+        var col = mc.closest('[data-testid="column"]') || mc.parentElement;
+        if(!col) return;
         var stBtns = col.querySelectorAll('[data-testid="stButton"]');
-        if(stBtns.length > 0){
-          var b = stBtns[0].querySelector('button');
-          if(b) b.click();
+        for(var i=0;i<stBtns.length;i++){
+          var b=stBtns[i].querySelector('button');
+          if(b){b.click();return;}
         }
       });
     });
-
-    hideWrappers();
   }
 
   wireCards();
-  new MutationObserver(function(){ wireCards(); hideWrappers(); })
-    .observe(doc.body, {childList:true, subtree:true});
+  new MutationObserver(wireCards).observe(doc.body,{childList:true,subtree:true});
 })();
 </script>""", height=0, scrolling=False)
 

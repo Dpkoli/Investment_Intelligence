@@ -565,8 +565,7 @@ def render() -> None:
                 st.markdown(
                     f'<div id="{card_id}" class="iw-price-card"'
                     f' style="background:{bg};border:{border};border-radius:10px;'
-                    f'padding:0.65rem 0.85rem;margin-bottom:0.3rem;cursor:pointer;{shadow}'
-                    f'transition:all 0.15s ease">'
+                    f'padding:0.65rem 0.85rem;margin-bottom:0.3rem;cursor:pointer;{shadow}">'
                     f'<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem">'
                     f'<span style="font-size:1.1rem">{icon}</span>'
                     f'<span style="font-weight:700;font-size:0.88rem;color:{accent}">{sym}</span>'
@@ -577,11 +576,10 @@ def render() -> None:
                     f'</div>',
                     unsafe_allow_html=True,
                 )
-                st.markdown('<div class="iw-hidden-btn-wrap">', unsafe_allow_html=True)
+                # Hidden trigger — CSS hides via :has(.iw-price-card) + [stButton]
                 if st.button("​", key=f"cr_btn_{yf_t}", use_container_width=True):
                     st.session_state["cr_selected"] = None if is_active else yf_t
                     st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Make cards clickable via JS ───────────────────────────────────────────
     import streamlit.components.v1 as components
@@ -595,12 +593,14 @@ def render() -> None:
       card.addEventListener('click',function(){
         var mc=card.closest('[data-testid="stMarkdownContainer"]');
         if(!mc)return;
+        // Trigger button is the direct next sibling stButton
+        var sibling=mc.nextElementSibling;
+        if(sibling){var btn=sibling.querySelector('button');if(btn){btn.click();return;}}
+        // Fallback: first button in the column
         var col=mc.closest('[data-testid="column"]')||mc.parentElement;
         if(!col)return;
-        var wrap=col.querySelector('.iw-hidden-btn-wrap');
-        if(wrap){var btn=wrap.querySelector('button');if(btn){btn.click();return;}}
         var stBtns=col.querySelectorAll('[data-testid="stButton"]');
-        if(stBtns.length>0){var b=stBtns[0].querySelector('button');if(b)b.click();}
+        for(var i=0;i<stBtns.length;i++){var b=stBtns[i].querySelector('button');if(b){b.click();return;}}
       });
     });
   }
