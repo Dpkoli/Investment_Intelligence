@@ -56,6 +56,7 @@ import modules.precious_metals.ui      as _mod_metals
 import modules.kingmaker_intelligence.ui as _mod_kingmaker
 import modules.regulatory_sandbox.ui   as _mod_regulatory
 import modules.news_feed.ui            as _mod_news
+import modules.technical_analysis.ui   as _mod_ta
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PAGE CONFIG  (must be the first Streamlit call)
@@ -651,6 +652,7 @@ _NAV_OPTIONS = [
     "Precious Metals",
     "Kingmaker Intelligence",
     "Regulatory Sandbox",
+    "Technical Analysis",
 ]
 
 
@@ -1463,6 +1465,9 @@ def main() -> None:
     elif nav == "News Feed":
         _mod_news.render()
 
+    elif nav == "Technical Analysis":
+        _mod_ta.render()
+
     else:
         render_hub()
 
@@ -1470,7 +1475,7 @@ def main() -> None:
     st.divider()
     st.markdown(
         "<p style='text-align:center;color:#5A8EBB;font-size:0.75rem'>"
-        "InvestWise · 7 modules · Data latency ≤ 5 min · "
+        "InvestWise · 8 modules · Data latency ≤ 5 min · "
         "Not investment advice · Regulatory data sourced from FCA CP23/28 &amp; PS24/12"
         "</p>",
         unsafe_allow_html=True,
