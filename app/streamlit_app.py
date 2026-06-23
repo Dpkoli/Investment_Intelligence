@@ -365,6 +365,43 @@ st.markdown(
     h3 { color: var(--text-h) !important; font-weight: 600 !important; }
     p  { color: var(--text-h) !important; }
 
+    /* ── Markdown body text — fix faded/default Streamlit colors ─────────────── */
+    .stMarkdown p,
+    [data-testid="stMarkdownContainer"] p {
+        color: var(--color-text-secondary) !important;   /* #2B5A85 */
+    }
+    .stMarkdown li,
+    [data-testid="stMarkdownContainer"] li,
+    ul li, ol li {
+        color: var(--color-text-secondary) !important;   /* #2B5A85 */
+    }
+    .stMarkdown strong,
+    [data-testid="stMarkdownContainer"] strong {
+        color: var(--color-text-primary) !important;     /* #071D35 */
+    }
+    .stMarkdown h3, .stMarkdown h4,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4 {
+        color: var(--color-text-primary) !important;     /* #071D35 */
+    }
+    /* Table body text inside markdown */
+    .stMarkdown td,
+    [data-testid="stMarkdownContainer"] td {
+        color: var(--color-text-secondary) !important;
+    }
+    .stMarkdown th,
+    [data-testid="stMarkdownContainer"] th {
+        color: var(--color-text-primary) !important;
+        font-weight: 700 !important;
+    }
+    /* Override for sidebar — keep sidebar text white */
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] .stMarkdown li,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] li {
+        color: rgba(255,255,255,0.55) !important;
+    }
+
     /* ── Module headers ──────────────────────────────────────────────────────── */
     .iw-module-header {
         font-size: 1.25rem !important;
