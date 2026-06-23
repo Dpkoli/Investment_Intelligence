@@ -38,26 +38,27 @@ def _news_card(item: dict, accent: str = "#5B8FD4") -> None:
 
     title_html = (
         f'<a href="{link}" target="_blank" '
-        f'style="color:#ddd;text-decoration:none;font-weight:600;font-size:0.81rem;line-height:1.4">'
+        f'style="color:#0a0f1d;text-decoration:none;font-weight:600;font-size:0.81rem;line-height:1.45">'
         f'{title}</a>'
         if link else
-        f'<span style="color:#ddd;font-weight:600;font-size:0.81rem">{title}</span>'
+        f'<span style="color:#0a0f1d;font-weight:600;font-size:0.81rem">{title}</span>'
     )
 
     ticker_chip = (
-        f'<span style="background:{accent}22;color:{accent};border-radius:3px;'
-        f'padding:0 4px;font-size:0.62rem;margin-left:4px">{ticker}</span>'
+        f'<span style="background:{accent}15;color:{accent};border-radius:6px;'
+        f'padding:0 5px;font-size:0.62rem;margin-left:5px;font-weight:700">{ticker}</span>'
         if ticker else ""
     )
 
     st.markdown(
-        f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {accent};'
-        f'border-radius:0 6px 6px 0;padding:0.55rem 0.85rem;margin-bottom:0.3rem">'
+        f'<div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid {accent};'
+        f'border-radius:0 12px 12px 0;padding:0.6rem 0.9rem;margin-bottom:0.35rem;'
+        f'box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
         f'{title_html}'
-        f'<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.22rem">'
-        f'<span style="color:#666;font-size:0.68rem">{pub}</span>'
-        f'<span style="color:#444">·</span>'
-        f'<span style="color:#555;font-size:0.68rem">{time_str}</span>'
+        f'<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem">'
+        f'<span style="color:#64748b;font-size:0.68rem">{pub}</span>'
+        f'<span style="color:#cbd5e1">·</span>'
+        f'<span style="color:#94a3b8;font-size:0.68rem">{time_str}</span>'
         f'{ticker_chip}'
         f'</div></div>',
         unsafe_allow_html=True,
@@ -65,27 +66,25 @@ def _news_card(item: dict, accent: str = "#5B8FD4") -> None:
 
 
 def _render_category(label: str, cat_key: str, accent: str) -> None:
-    top_c, refresh_c = st.columns([5, 1])
-    with top_c:
+    sc1, sc2, sc3 = st.columns([4, 2, 1])
+    with sc1:
         search = st.text_input(
             "Filter", key=f"nf_search_{cat_key}",
             placeholder="Search title or publisher…",
             label_visibility="collapsed",
         )
-    with refresh_c:
+    with sc2:
+        custom = st.text_input(
+            "Extra tickers", key=f"nf_custom_{cat_key}",
+            placeholder="+ TSLA, MSTR, COIN",
+            label_visibility="collapsed",
+        )
+    with sc3:
         if st.button("🔄", key=f"nf_refresh_{cat_key}", help="Refresh news"):
             st.cache_data.clear()
             st.rerun()
 
-    # Custom ticker override
-    with st.expander("⚙️ Custom tickers for this category", expanded=False):
-        default_ticks = CATEGORY_TICKERS.get(cat_key, [])
-        custom = st.text_input(
-            "Add extra tickers (comma-separated)",
-            placeholder="e.g. TSLA, MSTR, COIN",
-            key=f"nf_custom_{cat_key}",
-        )
-        extra_tickers = [t.strip().upper() for t in custom.split(",") if t.strip()] if custom else []
+    extra_tickers = [t.strip().upper() for t in custom.split(",") if t.strip()] if custom else []
 
     with st.spinner("Loading news…"):
         items = fetch_category_news(cat_key)
@@ -114,10 +113,10 @@ def _render_category(label: str, cat_key: str, accent: str) -> None:
 
 
 def render() -> None:
-    st.markdown("## 📰 News Feed — Global Market Intelligence")
-    st.caption(
-        "Live news and views from major financial media across all asset classes. "
-        "Refreshed every 5 minutes. Click any headline to read the full article."
+    st.markdown(
+        "<h2 style='color:#0a0f1d;font-weight:900;margin-bottom:0'>📰 News Feed</h2>"
+        "<p style='color:#64748b;margin-top:2px;font-size:0.85rem'>Global market intelligence across all asset classes · refreshed every 5 min · click any headline to read</p>",
+        unsafe_allow_html=True,
     )
 
     tabs = st.tabs([label for label, _, _ in _CATEGORIES])

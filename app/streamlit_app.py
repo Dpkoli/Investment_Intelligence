@@ -76,71 +76,130 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    html, body, [class*="css"], .stApp, .stMarkdown, .stButton, .stTextInput, .stSelectbox,
+    .stExpander, .stTabs, div, span, p, h1, h2, h3, label {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+    }
+
     :root {
-        --accent:   #00D4AA;
-        --danger:   #FF4B4B;
-        --warn:     #FFA500;
-        --dim:      #888;
-        --card-bg:  #1A1D24;
-        --border:   #2E3140;
+        --canvas:   #f4f6f9;
+        --sidebar:  #111c24;
+        --card:     #ffffff;
+        --border:   #e2e8f0;
+        --text-h:   #0a0f1d;
+        --text-sub: #64748b;
+        --accent:   #00875a;
+        --danger:   #dc2626;
+        --warn:     #ea580c;
+        --info:     #2563eb;
+        --purple:   #7c3aed;
     }
-    .block-container { padding-top: 1rem; }
 
+    /* ── Canvas ─────────────────────────────────── */
+    .stApp { background-color: var(--canvas) !important; }
+    .block-container { padding-top: 1rem; background: transparent; }
+
+    /* ── Sidebar ────────────────────────────────── */
+    section[data-testid="stSidebar"] > div:first-child {
+        background-color: var(--sidebar) !important;
+    }
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] .stCaption,
+    section[data-testid="stSidebar"] label { color: #94a3b8 !important; }
+    section[data-testid="stSidebar"] .stRadio label { color: #94a3b8 !important; }
+    section[data-testid="stSidebar"] .stRadio label:hover { color: #ffffff !important; }
+
+    /* ── Metric containers ──────────────────────── */
     div[data-testid="metric-container"] {
-        background: var(--card-bg);
+        background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 0.6rem 1rem;
+        border-radius: 12px;
+        padding: 0.85rem 1.25rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
     }
+    div[data-testid="metric-container"] label { color: var(--text-sub) !important; font-size: 0.8rem; }
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] { color: var(--text-h) !important; font-weight: 800; }
 
-    .zone-header {
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        color: var(--dim);
-        margin-bottom: 0.4rem;
-    }
-
-    .banner-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
+    /* ── Expanders ──────────────────────────────── */
+    div[data-testid="stExpander"] {
+        background: var(--card);
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
         margin-bottom: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
+    div[data-testid="stExpander"] summary { color: var(--text-h) !important; font-weight: 600; }
+
+    /* ── Tabs ───────────────────────────────────── */
+    .stTabs [data-testid="stTab"] { color: var(--text-sub) !important; }
+    .stTabs [aria-selected="true"] { color: var(--text-h) !important; font-weight: 700; border-bottom-color: var(--info) !important; }
+
+    /* ── Buttons ────────────────────────────────── */
+    .stButton button {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 0.82rem !important;
+    }
+    .stButton button[kind="primary"] { background: var(--accent) !important; border-color: var(--accent) !important; }
+
+    /* ── Text inputs ────────────────────────────── */
+    .stTextInput input {
+        border-radius: 8px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--card) !important;
+        color: var(--text-h) !important;
+    }
+
+    /* ── Cards via classes ──────────────────────── */
+    .cr-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.9rem 1.1rem;
+        margin-bottom: 0.55rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .cr-card-crit { border-left: 4px solid var(--danger); }
+    .cr-card-warn { border-left: 4px solid var(--warn); }
+    .cr-card-ok   { border-left: 4px solid var(--accent); }
+
+    /* ── Legacy .banner-card support ───────────── */
+    .banner-card { background: var(--card); border: 1px solid var(--border); border-radius:12px; padding:0.85rem 1.1rem; margin-bottom:0.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
     .banner-card-critical { border-left: 4px solid var(--danger); }
     .banner-card-warn     { border-left: 4px solid var(--warn); }
     .banner-card-ok       { border-left: 4px solid var(--accent); }
 
-    .badge-green    { background:#1a3d2e; color:#00D4AA; border-radius:4px; padding:2px 8px; font-size:0.75rem; font-weight:700; }
-    .badge-amber    { background:#3d2e1a; color:#FFA500; border-radius:4px; padding:2px 8px; font-size:0.75rem; font-weight:700; }
-    .badge-red      { background:#3d1a1a; color:#FF6B6B; border-radius:4px; padding:2px 8px; font-size:0.75rem; font-weight:700; }
-    .badge-critical { background:#5c1a1a; color:#FF2222; border-radius:4px; padding:2px 8px; font-size:0.75rem; font-weight:700; animation: pulse 1.5s infinite; }
+    /* ── Badges ─────────────────────────────────── */
+    .badge-green    { background:#dcfce7; color:#00875a; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
+    .badge-amber    { background:#fef3c7; color:#d97706; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
+    .badge-red      { background:#fee2e2; color:#dc2626; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; }
+    .badge-critical { background:#fee2e2; color:#b91c1c; border-radius:6px; padding:2px 10px; font-size:0.74rem; font-weight:700; animation:pulse 1.5s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
 
-    .asymmetry-flag {
-        background: linear-gradient(90deg, #1a3d2e, #0E1117);
-        border: 1px solid var(--accent);
-        border-radius: 6px;
-        padding: 0.6rem 1rem;
-        margin-bottom: 0.35rem;
-    }
+    /* ── Score pills ────────────────────────────── */
+    .ticker-item { font-size:0.82rem; margin-bottom:0.3rem; }
+    .score-pill  { display:inline-block; border-radius:999px; padding:2px 10px; font-size:0.72rem; font-weight:700; margin-right:0.4rem; }
+    .pill-9  { background:#fee2e2; color:#b91c1c; }
+    .pill-8  { background:#ffedd5; color:#c2410c; }
+    .pill-7  { background:#fef3c7; color:#a16207; }
+    .pill-6  { background:#dcfce7; color:#166534; }
+    .pill-low{ background:#f1f5f9; color:#64748b; }
 
-    .ticker-item { font-size: 0.82rem; margin-bottom: 0.3rem; }
-    .score-pill {
-        display: inline-block;
-        border-radius: 12px;
-        padding: 1px 8px;
-        font-size: 0.73rem;
-        font-weight: 700;
-        margin-right: 0.4rem;
-    }
-    .pill-9 { background:#7a1a1a; color:#ff4444; }
-    .pill-8 { background:#7a3d1a; color:#ff8c00; }
-    .pill-7 { background:#4a3d00; color:#ffd700; }
-    .pill-6 { background:#1a3d00; color:#7fff00; }
-    .pill-low { background:#1a2a1a; color:#888; }
+    /* ── Section labels ─────────────────────────── */
+    .zone-header { font-size:0.7rem; font-weight:800; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-sub); margin-bottom:0.4rem; }
+
+    /* ── Dividers ───────────────────────────────── */
+    hr { border-color: var(--border) !important; }
+
+    /* ── Page heading ───────────────────────────── */
+    h1 { color: var(--text-h) !important; font-weight: 900 !important; }
+    h2 { color: var(--text-h) !important; font-weight: 800 !important; }
+    h3 { color: var(--text-h) !important; font-weight: 700 !important; }
+    p  { color: var(--text-h) !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -390,13 +449,13 @@ def _kingmaker_assessment(conn_type: str, vendor: str, titan: str, conf: int) ->
 
 _NAV_OPTIONS = [
     "🏠 Intelligence Hub",
+    "📰 News Feed",
     "📈 Core Equity",
     "📊 Thematic Sectors",
     "₿ Sovereign Crypto",
     "🥇 Precious Metals",
     "🔗 Kingmaker Intelligence",
     "🏛️ Regulatory Sandbox",
-    "📰 News Feed",
 ]
 
 
@@ -422,9 +481,9 @@ def render_sidebar() -> str:
 # ═════════════════════════════════════════════════════════════════════════════
 
 _HUB_ROWS = [
-    ("crypto",   "₿ Sovereign Crypto",  "#9B59B6", "₿ Sovereign Crypto"),
-    ("thematic", "📊 Thematic Sectors", "#2ECC71", "📊 Thematic Sectors"),
-    ("equity",   "📈 Core Equity",      "#5B8FD4", "📈 Core Equity"),
+    ("crypto",   "₿ Sovereign Crypto",  "#7c3aed", "₿ Sovereign Crypto"),
+    ("thematic", "📊 Thematic Sectors", "#00875a", "📊 Thematic Sectors"),
+    ("equity",   "📈 Core Equity",      "#2563eb", "📈 Core Equity"),
 ]
 _HUB_DEFAULT_FAVS: dict[str, list[str]] = {
     "crypto":   ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD"],
@@ -472,9 +531,9 @@ _HUB_ALL_TICKERS: dict[str, dict] = {
     "BLK":       {"name": "BlackRock",        "row": "equity"},
 }
 _HUB_ROW_COLOR: dict[str, str] = {
-    "crypto":   "#9B59B6",
-    "thematic": "#2ECC71",
-    "equity":   "#5B8FD4",
+    "crypto":   "#7c3aed",
+    "thematic": "#00875a",
+    "equity":   "#2563eb",
 }
 _HUB_ROW_NAV: dict[str, str] = {
     "crypto":   "₿ Sovereign Crypto",
@@ -709,8 +768,8 @@ def render_hub() -> None:
 
     # ── Market Snapshot Cards ─────────────────────────────────────────────────
     st.markdown(
-        '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.35rem">'
-        '📊 MARKET SNAPSHOT — click a card to view latest news</p>',
+        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;color:#64748b;margin-bottom:0.35rem;text-transform:uppercase">'
+        '📊 Market Snapshot — tap a card to view latest news</p>',
         unsafe_allow_html=True,
     )
 
@@ -726,8 +785,8 @@ def render_hub() -> None:
         h1, h2 = st.columns([10, 1])
         with h1:
             st.markdown(
-                f'<div style="font-size:0.66rem;color:{row_color};font-weight:700;'
-                f'letter-spacing:0.07em;margin:0.45rem 0 0.15rem 0">{row_label}</div>',
+                f'<div style="font-size:0.66rem;color:{row_color};font-weight:800;'
+                f'letter-spacing:0.08em;text-transform:uppercase;margin:0.55rem 0 0.18rem 0">{row_label}</div>',
                 unsafe_allow_html=True,
             )
         with h2:
@@ -803,24 +862,25 @@ def render_hub() -> None:
                         price_str = "—"
 
                     if chg is not None:
-                        cc  = "#00D4AA" if chg >= 0 else "#FF4B4B"
+                        cc  = "#00875a" if chg >= 0 else "#dc2626"
                         arr = "▲" if chg >= 0 else "▼"
-                        chg_str = f'<span style="color:{cc}">{arr}{abs(chg):.1f}%</span>'
+                        chg_str = f'<span style="color:{cc};font-weight:600">{arr}{abs(chg):.1f}%</span>'
                     else:
-                        chg_str = '<span style="color:#444">—</span>'
+                        chg_str = '<span style="color:#94a3b8">—</span>'
 
                     is_sel = st.session_state["hub_news_ticker"] == ticker
                     bt = f"3px solid {row_color}" if is_sel else f"2px solid {row_color}"
-                    bg = f"{row_color}1A" if is_sel else "#1A1D24"
+                    bg = f"{row_color}12" if is_sel else "#ffffff"
+                    shadow = "box-shadow:0 2px 8px rgba(0,0,0,0.10);" if is_sel else "box-shadow:0 1px 3px rgba(0,0,0,0.06);"
 
                     st.markdown(
-                        f'<div id="{card_id}" style="background:{bg};border:1px solid #2E3140;'
-                        f'border-top:{bt};border-radius:6px;padding:0.3rem 0.25rem;'
-                        f'text-align:center;cursor:pointer">'
-                        f'<div style="color:{row_color};font-size:0.57rem;font-weight:700;letter-spacing:0.03em">{ticker}</div>'
-                        f'<div style="color:#999;font-size:0.56rem;margin:0.03rem 0">{name_s}</div>'
-                        f'<div style="color:#fff;font-size:0.8rem;font-weight:700;line-height:1.15">{price_str}</div>'
-                        f'<div style="font-size:0.58rem;margin-top:0.02rem">{chg_str}</div>'
+                        f'<div id="{card_id}" style="background:{bg};border:1px solid #e2e8f0;'
+                        f'border-top:{bt};border-radius:12px;padding:0.55rem 0.35rem;'
+                        f'text-align:center;cursor:pointer;{shadow}">'
+                        f'<div style="color:{row_color};font-size:0.6rem;font-weight:800;letter-spacing:0.04em">{ticker}</div>'
+                        f'<div style="color:#64748b;font-size:0.58rem;margin:0.04rem 0">{name_s}</div>'
+                        f'<div style="color:#0a0f1d;font-size:0.85rem;font-weight:800;line-height:1.2">{price_str}</div>'
+                        f'<div style="font-size:0.6rem;margin-top:0.04rem">{chg_str}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -872,10 +932,10 @@ def render_hub() -> None:
         sel_nav  = _HUB_ROW_NAV.get(sel_row, "📈 Core Equity")
 
         st.markdown(
-            f'<div style="background:{sel_col}11;border:1px solid {sel_col};border-radius:8px;'
-            f'padding:0.5rem 0.9rem;margin-top:0.4rem">'
-            f'<span style="color:{sel_col};font-weight:700;font-size:0.8rem">'
-            f'📰 Latest news — {sel} · {sel_name}</span></div>',
+            f'<div style="background:#ffffff;border:1px solid {sel_col};border-left:4px solid {sel_col};border-radius:12px;'
+            f'padding:0.6rem 1rem;margin-top:0.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.08)">'
+            f'<span style="color:{sel_col};font-weight:800;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.06em">'
+            f'📰 Latest News — {sel} · {sel_name}</span></div>',
             unsafe_allow_html=True,
         )
         cl1, cl2, _ = st.columns([1, 2, 6])
@@ -899,18 +959,18 @@ def render_hub() -> None:
                 pub   = item.get("publisher", "")
                 time_str = _format_ts(item.get("ts", 0))
                 title_html = (
-                    f'<a href="{link}" target="_blank" style="color:#ddd;text-decoration:none;'
-                    f'font-weight:600;font-size:0.79rem;line-height:1.35">{title}</a>'
+                    f'<a href="{link}" target="_blank" style="color:#0a0f1d;text-decoration:none;'
+                    f'font-weight:600;font-size:0.79rem;line-height:1.4">{title}</a>'
                     if link else
-                    f'<span style="color:#ddd;font-size:0.79rem;font-weight:600">{title}</span>'
+                    f'<span style="color:#0a0f1d;font-size:0.79rem;font-weight:600">{title}</span>'
                 )
                 with (nc1 if idx % 2 == 0 else nc2):
                     st.markdown(
-                        f'<div style="background:#1A1D24;border:1px solid #2E3140;'
-                        f'border-left:3px solid {sel_col};border-radius:0 6px 6px 0;'
-                        f'padding:0.48rem 0.7rem;margin-bottom:0.28rem">'
+                        f'<div style="background:#ffffff;border:1px solid #e2e8f0;'
+                        f'border-left:3px solid {sel_col};border-radius:0 10px 10px 0;'
+                        f'padding:0.5rem 0.75rem;margin-bottom:0.3rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
                         f'{title_html}'
-                        f'<div style="color:#555;font-size:0.66rem;margin-top:0.18rem">'
+                        f'<div style="color:#64748b;font-size:0.66rem;margin-top:0.2rem">'
                         f'{pub} · {time_str}</div></div>',
                         unsafe_allow_html=True,
                     )
@@ -926,8 +986,8 @@ def render_hub() -> None:
 
     with left_col:
         st.markdown(
-            '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
-            '🔴 CASSANDRA ALERTS — Live macro threats</p>',
+            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem">'
+            '🔴 Cassandra Alerts — Live macro threats</p>',
             unsafe_allow_html=True,
         )
         for a in alerts[:6]:
@@ -936,21 +996,21 @@ def render_hub() -> None:
             vector  = (a.get("vector") or a.get("Risk_Vector") or "").replace("_", " ").upper()
             src_url = a.get("source_url") or a.get("Source_URL") or ""
             raw_src = a.get("source") or ""
-            bar_col = "#FF4B4B" if score >= 8 else "#FFA500" if score >= 6 else "#4A7C59"
+            bar_col = "#dc2626" if score >= 8 else "#ea580c" if score >= 6 else "#00875a"
             icon    = "🔴" if score >= 8 else "🟡" if score >= 6 else "🟢"
             title_s = title[:60] + ("…" if len(title) > 60 else "")
             src_html = (
-                f'<a href="{src_url}" target="_blank" style="color:#00D4AA;font-size:0.67rem;text-decoration:none">↗ {raw_src}</a>'
-                if src_url else f'<span style="color:#666;font-size:0.67rem">{raw_src}</span>'
+                f'<a href="{src_url}" target="_blank" style="color:#2563eb;font-size:0.67rem;text-decoration:none;font-weight:600">↗ {raw_src}</a>'
+                if src_url else f'<span style="color:#64748b;font-size:0.67rem">{raw_src}</span>'
             )
             with st.expander(f"{icon} {score}/10  ·  {title_s}", expanded=False):
                 st.markdown(
-                    f'<div style="background:#1A1D24;border-left:3px solid {bar_col};padding:0.4rem 0.7rem;'
-                    f'border-radius:0 4px 4px 0;margin-bottom:0.3rem">'
+                    f'<div style="background:#f8fafc;border-left:3px solid {bar_col};padding:0.55rem 0.85rem;'
+                    f'border-radius:0 10px 10px 0;margin-bottom:0.35rem">'
                     f'<span style="color:{bar_col};font-size:0.7rem;font-weight:700">{vector}</span>'
                     f' <span style="color:{bar_col};font-weight:700;font-size:0.78rem">{score}/10</span><br>'
-                    f'<span style="color:#bbb;font-size:0.77rem;line-height:1.4">{title}</span><br>'
-                    f'<div style="margin-top:0.22rem">{src_html}</div>'
+                    f'<span style="color:#374151;font-size:0.77rem;line-height:1.5">{title}</span><br>'
+                    f'<div style="margin-top:0.25rem">{src_html}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -960,8 +1020,8 @@ def render_hub() -> None:
 
     with right_col:
         st.markdown(
-            '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
-            '🚀 KINGMAKER SIGNALS — Named-exec endorsements</p>',
+            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem">'
+            '🚀 Kingmaker Signals — Named-exec endorsements</p>',
             unsafe_allow_html=True,
         )
         for e in endorsements[:5]:
@@ -973,23 +1033,23 @@ def render_hub() -> None:
             conf       = int(e.get("confidence") or e.get("Confidence_Score") or 7)
             quote      = e.get("quote") or e.get("Extracted_Text") or ""
             src_url    = e.get("source_url") or e.get("Endorsement_Source") or ""
-            conf_col   = "#FF4B4B" if conf >= 9 else "#FFA500" if conf >= 7 else "#00D4AA"
+            conf_col   = "#dc2626" if conf >= 9 else "#ea580c" if conf >= 7 else "#00875a"
             vtag       = f" ({vticker})" if vticker else ""
             vlink      = (
-                f'<a href="{src_url}" target="_blank" style="color:#00D4AA;text-decoration:none;font-weight:700">{vendor}{vtag}</a>'
+                f'<a href="{src_url}" target="_blank" style="color:#2563eb;text-decoration:none;font-weight:700">{vendor}{vtag}</a>'
                 if src_url and src_url.startswith("http") else
-                f'<b style="color:#00D4AA">{vendor}{vtag}</b>'
+                f'<b style="color:#2563eb">{vendor}{vtag}</b>'
             )
             with st.expander(f"🏆 {titan_name} → {vendor}{vtag}  ·  {conf}/10", expanded=False):
                 st.markdown(
-                    f'<div style="background:#1A1D24;border-left:3px solid {conf_col};padding:0.4rem 0.7rem;'
-                    f'border-radius:0 4px 4px 0;margin-bottom:0.3rem">'
+                    f'<div style="background:#f8fafc;border-left:3px solid {conf_col};padding:0.55rem 0.85rem;'
+                    f'border-radius:0 10px 10px 0;margin-bottom:0.35rem">'
                     f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                    f'<span style="color:#ccc;font-size:0.78rem"><b>{titan_name}</b> → {vlink}</span>'
+                    f'<span style="color:#374151;font-size:0.78rem"><b style="color:#0a0f1d">{titan_name}</b> → {vlink}</span>'
                     f'<span style="color:{conf_col};font-weight:700">{conf}/10</span></div>'
-                    f'<span style="color:#888;font-size:0.7rem">{exec_name} · {conn_type}</span>'
-                    f'<div style="color:#aaa;font-size:0.74rem;font-style:italic;border-top:1px solid #2E3140;'
-                    f'padding-top:0.22rem;margin-top:0.22rem">'
+                    f'<span style="color:#64748b;font-size:0.7rem">{exec_name} · {conn_type}</span>'
+                    f'<div style="color:#4b5563;font-size:0.74rem;font-style:italic;border-top:1px solid #e2e8f0;'
+                    f'padding-top:0.25rem;margin-top:0.25rem">'
                     f'&ldquo;{quote[:160]}{"…" if len(quote) > 160 else ""}&rdquo;</div>'
                     f'</div>',
                     unsafe_allow_html=True,
@@ -1002,8 +1062,8 @@ def render_hub() -> None:
 
     # ── Influential Voices (dynamic news) ─────────────────────────────────────
     st.markdown(
-        '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
-        '👥 INFLUENTIAL VOICES — Latest views & live market news</p>',
+        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem">'
+        '👥 Influential Voices — Latest views & live market news</p>',
         unsafe_allow_html=True,
     )
 
@@ -1014,35 +1074,35 @@ def render_hub() -> None:
             sc           = person["stance_color"]
             news_ticker  = person.get("news_ticker", "")
             asset_tags   = "".join(
-                f'<span style="background:#2E3140;color:#aaa;border-radius:3px;padding:0 4px;'
-                f'font-size:0.62rem;margin-right:2px">{a}</span>'
+                f'<span style="background:#f1f5f9;color:#64748b;border-radius:6px;padding:1px 6px;'
+                f'font-size:0.62rem;margin-right:3px;font-weight:600">{a}</span>'
                 for a in person["asset_focus"][:4]
             )
             src_link = (
-                f'<a href="{person["source_url"]}" target="_blank" style="color:#00D4AA;font-size:0.67rem;text-decoration:none">↗ {person["source"]}</a>'
+                f'<a href="{person["source_url"]}" target="_blank" style="color:#2563eb;font-size:0.67rem;text-decoration:none;font-weight:600">↗ {person["source"]}</a>'
                 if person.get("source_url") else
-                f'<span style="color:#666;font-size:0.67rem">{person["source"]}</span>'
+                f'<span style="color:#64748b;font-size:0.67rem">{person["source"]}</span>'
             )
             header = f'{person["avatar"]} {person["name"]}  ·  {person["role"]}  ·  {person["date"]}'
             with st.expander(header, expanded=False):
                 pv1, pv2 = st.columns([5, 4])
                 with pv1:
                     st.markdown(
-                        f'<div style="background:#1A1D24;border-left:3px solid {sc};border-radius:0 8px 8px 0;padding:0.6rem 0.8rem">'
-                        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">'
-                        f'<span style="color:#fff;font-weight:700;font-size:0.82rem">{person["name"]}</span>'
-                        f'<span style="background:{sc}22;color:{sc};border-radius:3px;padding:0.1rem 0.4rem;font-size:0.64rem;font-weight:700">{person["stance"]}</span></div>'
-                        f'<div style="color:#888;font-size:0.7rem;margin-bottom:0.25rem">{person["role"]}</div>'
-                        f'<div style="margin-bottom:0.3rem">{asset_tags}</div>'
-                        f'<div style="color:#bbb;font-size:0.76rem;line-height:1.45">{person["latest_view"]}</div>'
-                        f'<div style="margin-top:0.3rem">{src_link}</div>'
+                        f'<div style="background:#f8fafc;border-left:4px solid {sc};border-radius:0 12px 12px 0;padding:0.7rem 0.9rem">'
+                        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">'
+                        f'<span style="color:#0a0f1d;font-weight:800;font-size:0.85rem">{person["name"]}</span>'
+                        f'<span style="background:{sc}18;color:{sc};border-radius:6px;padding:0.15rem 0.5rem;font-size:0.64rem;font-weight:700">{person["stance"]}</span></div>'
+                        f'<div style="color:#64748b;font-size:0.71rem;margin-bottom:0.28rem">{person["role"]}</div>'
+                        f'<div style="margin-bottom:0.35rem">{asset_tags}</div>'
+                        f'<div style="color:#374151;font-size:0.77rem;line-height:1.55">{person["latest_view"]}</div>'
+                        f'<div style="margin-top:0.35rem">{src_link}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
                 with pv2:
                     if news_ticker:
                         st.markdown(
-                            f'<div style="color:#888;font-size:0.66rem;font-weight:700;margin-bottom:0.2rem">LIVE NEWS · {news_ticker}</div>',
+                            f'<div style="color:#64748b;font-size:0.65rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.25rem">Live News · {news_ticker}</div>',
                             unsafe_allow_html=True,
                         )
                         for ni in _fetch_hub_news(news_ticker)[:4]:
@@ -1051,19 +1111,19 @@ def render_hub() -> None:
                             npub  = ni.get("publisher", "")
                             ntime = _format_ts(ni.get("ts", 0))
                             nt_html = (
-                                f'<a href="{nl}" target="_blank" style="color:#ccc;text-decoration:none;font-size:0.71rem;line-height:1.3">{nt[:90]}{"…" if len(nt)>90 else ""}</a>'
+                                f'<a href="{nl}" target="_blank" style="color:#0a0f1d;text-decoration:none;font-size:0.72rem;font-weight:600;line-height:1.4">{nt[:90]}{"…" if len(nt)>90 else ""}</a>'
                                 if nl else
-                                f'<span style="color:#ccc;font-size:0.71rem">{nt[:90]}</span>'
+                                f'<span style="color:#374151;font-size:0.72rem">{nt[:90]}</span>'
                             )
                             st.markdown(
-                                f'<div style="border-bottom:1px solid #2E3140;padding:0.28rem 0">'
+                                f'<div style="border-bottom:1px solid #e2e8f0;padding:0.3rem 0">'
                                 f'{nt_html}'
-                                f'<div style="color:#555;font-size:0.63rem">{npub} · {ntime}</div>'
+                                f'<div style="color:#64748b;font-size:0.63rem;margin-top:0.1rem">{npub} · {ntime}</div>'
                                 f'</div>',
                                 unsafe_allow_html=True,
                             )
                     else:
-                        st.markdown('<span style="color:#555;font-size:0.72rem">No live ticker linked.</span>', unsafe_allow_html=True)
+                        st.markdown('<span style="color:#94a3b8;font-size:0.72rem">No live ticker linked.</span>', unsafe_allow_html=True)
 
     with tab_managers:
         for mgr in _ASSET_MANAGERS:
@@ -1073,18 +1133,18 @@ def render_hub() -> None:
                 mv1, mv2 = st.columns([5, 4])
                 with mv1:
                     st.markdown(
-                        f'<div style="background:#1A1D24;border-left:3px solid {mc};border-radius:0 8px 8px 0;padding:0.55rem 0.8rem">'
-                        f'<div style="color:{mc};font-weight:700;font-size:0.8rem;margin-bottom:0.2rem">{mgr["name"]}</div>'
-                        f'<div style="color:#888;font-size:0.7rem">AUM: {mgr["aum"]}</div>'
-                        f'<div style="color:#aaa;font-size:0.7rem;margin:0.12rem 0">Crypto: {mgr["crypto_exposure"]}</div>'
-                        f'<div style="color:#bbb;font-size:0.74rem;line-height:1.4">{mgr["view"]}</div>'
+                        f'<div style="background:#f8fafc;border-left:4px solid {mc};border-radius:0 12px 12px 0;padding:0.65rem 0.9rem">'
+                        f'<div style="color:{mc};font-weight:800;font-size:0.82rem;margin-bottom:0.22rem">{mgr["name"]}</div>'
+                        f'<div style="color:#64748b;font-size:0.7rem">AUM: <span style="color:#374151;font-weight:600">{mgr["aum"]}</span></div>'
+                        f'<div style="color:#64748b;font-size:0.7rem;margin:0.12rem 0">Crypto: <span style="color:#374151">{mgr["crypto_exposure"]}</span></div>'
+                        f'<div style="color:#374151;font-size:0.75rem;line-height:1.5;margin-top:0.2rem">{mgr["view"]}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
                 with mv2:
                     if news_ticker:
                         st.markdown(
-                            f'<div style="color:#888;font-size:0.66rem;font-weight:700;margin-bottom:0.2rem">LIVE NEWS · {news_ticker}</div>',
+                            f'<div style="color:#64748b;font-size:0.65rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.25rem">Live News · {news_ticker}</div>',
                             unsafe_allow_html=True,
                         )
                         for ni in _fetch_hub_news(news_ticker)[:3]:
@@ -1092,670 +1152,19 @@ def render_hub() -> None:
                             nl    = ni.get("link", "")
                             ntime = _format_ts(ni.get("ts", 0))
                             nt_html = (
-                                f'<a href="{nl}" target="_blank" style="color:#ccc;text-decoration:none;font-size:0.71rem">{nt[:85]}{"…" if len(nt)>85 else ""}</a>'
+                                f'<a href="{nl}" target="_blank" style="color:#0a0f1d;text-decoration:none;font-size:0.72rem;font-weight:600">{nt[:85]}{"…" if len(nt)>85 else ""}</a>'
                                 if nl else
-                                f'<span style="color:#ccc;font-size:0.71rem">{nt[:85]}</span>'
+                                f'<span style="color:#374151;font-size:0.72rem">{nt[:85]}</span>'
                             )
                             st.markdown(
-                                f'<div style="border-bottom:1px solid #2E3140;padding:0.28rem 0">'
+                                f'<div style="border-bottom:1px solid #e2e8f0;padding:0.3rem 0">'
                                 f'{nt_html}'
-                                f'<div style="color:#555;font-size:0.63rem">{ntime}</div>'
+                                f'<div style="color:#64748b;font-size:0.63rem;margin-top:0.1rem">{ntime}</div>'
                                 f'</div>',
                                 unsafe_allow_html=True,
                             )
                     else:
-                        st.markdown('<span style="color:#555;font-size:0.72rem">No linked news ticker.</span>', unsafe_allow_html=True)
-
-
-_HUB_DEFAULT_EQUITY = ["SPY", "QQQ", "VWRP.L", "IWDA.L"]
-
-_HUB_TICKER_META: dict[str, dict] = {
-    "BTC-USD":  {"name": "Bitcoin",       "module": "₿ Sovereign Crypto"},
-    "ETH-USD":  {"name": "Ethereum",      "module": "₿ Sovereign Crypto"},
-    "SOL-USD":  {"name": "Solana",        "module": "₿ Sovereign Crypto"},
-    "XRP-USD":  {"name": "XRP",           "module": "₿ Sovereign Crypto"},
-    "BOTZ":     {"name": "BOTZ AI/Robot", "module": "📊 Thematic Sectors"},
-    "ARKK":     {"name": "ARK Innovation","module": "📊 Thematic Sectors"},
-    "CIBR":     {"name": "CIBR Cyber",    "module": "📊 Thematic Sectors"},
-    "ICLN":     {"name": "iShares Clean Energy","module": "📊 Thematic Sectors"},
-    "SPY":      {"name": "S&P 500 ETF",   "module": "📈 Core Equity"},
-    "QQQ":      {"name": "Nasdaq 100",    "module": "📈 Core Equity"},
-    "VWRP.L":   {"name": "Vanguard All-World","module": "📈 Core Equity"},
-    "IWDA.L":   {"name": "iShares Core MSCI World","module": "📈 Core Equity"},
-    "GLD":      {"name": "SPDR Gold",     "module": "🥇 Precious Metals"},
-    "SLV":      {"name": "iShares Silver","module": "🥇 Precious Metals"},
-    "GC=F":     {"name": "Gold Futures",  "module": "🥇 Precious Metals"},
-    "SI=F":     {"name": "Silver Futures","module": "🥇 Precious Metals"},
-}
-
-_HUB_TICKER_COLOR: dict[str, str] = {
-    "₿ Sovereign Crypto":  "#9B59B6",
-    "📊 Thematic Sectors": "#2ECC71",
-    "📈 Core Equity":      "#5B8FD4",
-    "🥇 Precious Metals":  "#FFD700",
-}
-
-_INFLUENTIAL_PEOPLE: list[dict] = [
-    {
-        "name": "Jensen Huang",
-        "role": "CEO, NVIDIA",
-        "avatar": "🟢",
-        "asset_focus": ["AI chips", "Data centres", "NVDA", "SMCI", "MRVL"],
-        "latest_view": "Blackwell Ultra demand exceeds all supply constraints through 2026; data-centre CAPEX cycle is just beginning. 'We are at an iPhone moment for AI.'",
-        "stance": "BULLISH",
-        "stance_color": "#00D4AA",
-        "source": "NVDA GTC 2026 keynote",
-        "source_url": "https://www.nvidia.com/en-us/events/gtc/",
-        "date": "Mar 2026",
-    },
-    {
-        "name": "Elon Musk",
-        "role": "CEO, Tesla / xAI / SpaceX",
-        "avatar": "🔵",
-        "asset_focus": ["DOGE", "BTC", "AI", "TSLA"],
-        "latest_view": "DOGE remains 'the people's crypto'. xAI Grok integration with X could drive crypto payment adoption. Tesla not currently buying BTC.",
-        "stance": "MIXED",
-        "stance_color": "#FFA500",
-        "source": "X (Twitter) / Tesla Q1 2026 earnings",
-        "source_url": "https://twitter.com/elonmusk",
-        "date": "Apr 2026",
-    },
-    {
-        "name": "Michael J. Saylor",
-        "role": "Chairman, Strategy (MicroStrategy)",
-        "avatar": "🟠",
-        "asset_focus": ["BTC", "MSTR"],
-        "latest_view": "'Bitcoin is the apex property of the human race.' Strategy holds 214,400 BTC. Every corporation, nation, and sovereign fund will allocate to BTC within 10 years.",
-        "stance": "MAX BULLISH",
-        "stance_color": "#FF8C00",
-        "source": "Strategy Q1 2026 investor call",
-        "source_url": "https://www.microstrategy.com/investor-relations/",
-        "date": "May 2026",
-    },
-    {
-        "name": "Robert Kiyosaki",
-        "role": "Author, Rich Dad Poor Dad",
-        "avatar": "🟡",
-        "asset_focus": ["BTC", "Gold", "Silver"],
-        "latest_view": "'The US dollar is dying. Buy BTC, gold, and silver before the crash.' Predicts BTC at $300K by year-end. Warns of USD hyperinflation.",
-        "stance": "BULLISH (Gold/BTC)",
-        "stance_color": "#FFD700",
-        "source": "X (Twitter) / Podcast",
-        "source_url": "https://twitter.com/theRealKiyosaki",
-        "date": "Jun 2026",
-    },
-    {
-        "name": "Donald Trump",
-        "role": "President, United States",
-        "avatar": "🔴",
-        "asset_focus": ["BTC", "Crypto", "USD", "DJT"],
-        "latest_view": "US Strategic Bitcoin Reserve signed by executive order. 'America will be the crypto capital of the world.' Pro-deregulation stance; SEC crypto enforcement scaled back.",
-        "stance": "PRO-CRYPTO",
-        "stance_color": "#FF4B4B",
-        "source": "White House EO / Mar-a-Lago Crypto Summit",
-        "source_url": "https://www.whitehouse.gov/",
-        "date": "Feb 2026",
-    },
-    {
-        "name": "Cathie Wood",
-        "role": "CEO & CIO, ARK Invest",
-        "avatar": "🔵",
-        "asset_focus": ["BTC", "ETH", "TSLA", "AI", "ARKK"],
-        "latest_view": "'BTC will reach $1.5M by 2030.' ARK 5-year forecast: AI + crypto convergence creates largest wealth creation in history. Conviction buys in TSLA and COIN dips.",
-        "stance": "BULLISH",
-        "stance_color": "#00D4AA",
-        "source": "ARK Big Ideas 2026",
-        "source_url": "https://ark-invest.com/big-ideas-2026/",
-        "date": "Jan 2026",
-    },
-    {
-        "name": "BlackRock (Larry Fink)",
-        "role": "CEO, BlackRock",
-        "avatar": "⚫",
-        "asset_focus": ["BTC", "IB1T", "ETFs", "Tokenisation"],
-        "latest_view": "'Bitcoin is digital gold.' IB1T now $3.2bn AUM. Tokenisation of real-world assets will be the next revolution — BlackRock leading with BUIDL fund.",
-        "stance": "INSTITUTIONALLY BULLISH",
-        "stance_color": "#5B8FD4",
-        "source": "BlackRock Q1 2026 investor letter",
-        "source_url": "https://www.blackrock.com/us/individual/literature/whitepaper/bii-bitcoin-etf.pdf",
-        "date": "Apr 2026",
-    },
-    {
-        "name": "Warren Buffett / Berkshire",
-        "role": "Chairman, Berkshire Hathaway",
-        "avatar": "🟤",
-        "asset_focus": ["AAPL", "OXY", "BAC", "Cash"],
-        "latest_view": "'We don't understand crypto and don't need to.' Berkshire holds $190bn in cash. Warnings about AI valuation bubble. Still long AAPL, OXY, financial stocks.",
-        "stance": "CRYPTO BEARISH",
-        "stance_color": "#888",
-        "source": "Berkshire Hathaway Annual Meeting 2026",
-        "source_url": "https://www.berkshirehathaway.com/meet26/2026ar.pdf",
-        "date": "May 2026",
-    },
-]
-
-_ASSET_MANAGERS: list[dict] = [
-    {"name": "BlackRock", "aum": "$11.5tn", "crypto_exposure": "IB1T (BTC ETP, £3.2bn AUM)", "view": "Bullish BTC; tokenisation of RWAs; FCA authorisation in progress", "color": "#5B8FD4"},
-    {"name": "Vanguard", "aum": "$9.3tn", "crypto_exposure": "None — policy excludes crypto", "view": "No crypto ETF planned; index focus", "color": "#888"},
-    {"name": "Fidelity", "aum": "$5.4tn", "crypto_exposure": "FBTC (BTC ETF, US), Digital Assets division", "view": "Bullish BTC; building crypto custody infrastructure", "color": "#9B59B6"},
-    {"name": "ARK Invest", "aum": "$12bn", "crypto_exposure": "ARKB (BTC ETF), ARKW, ARKK holdings", "view": "Max bullish BTC ($1.5M target); AI+crypto convergence thesis", "color": "#00D4AA"},
-    {"name": "WisdomTree", "aum": "$100bn", "crypto_exposure": "WBTC, WETH, SOLW, XRPL (LSE ETPs)", "view": "Active crypto ETP issuer; FCA VoP in preparation", "color": "#FFA500"},
-    {"name": "CoinShares", "aum": "$5.5bn", "crypto_exposure": "BITB, ETHE (LSE ETPs); largest European crypto ETP manager", "view": "Crypto-native; regulatory compliant; expanding product range", "color": "#2ECC71"},
-]
-
-
-@st.cache_data(ttl=300, show_spinner=False)
-def _hub_prices(tickers: tuple) -> dict[str, dict]:
-    try:
-        import math
-        import yfinance as yf
-        import pandas as pd
-
-        def _clean(v) -> Optional[float]:
-            try:
-                f = float(v)
-                return None if (math.isnan(f) or math.isinf(f)) else f
-            except Exception:
-                return None
-
-        batch = yf.download(list(tickers), period="5d", auto_adjust=True,
-                            progress=False, threads=True)
-        closes = batch.get("Close", batch)
-        if closes is None or closes.empty:
-            return {}
-        if isinstance(closes, pd.Series):
-            closes = closes.to_frame(name=tickers[0])
-        closes = closes.dropna(how="all")
-        if closes.empty:
-            return {}
-        last = closes.iloc[-1]
-        prev = closes.iloc[-2] if len(closes) >= 2 else closes.iloc[-1]
-        data: dict[str, dict] = {}
-        for t in tickers:
-            try:
-                p  = _clean(last.get(t))
-                p0 = _clean(prev.get(t))
-                if p is None:
-                    continue
-                pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
-                data[t] = {"price": p, "chg_pct": pct}
-            except Exception:
-                pass
-        return data
-    except Exception:
-        return {}
-
-
-def _price_card(ticker: str, prices: dict, nav_target: str) -> None:
-    meta = _HUB_TICKER_META.get(ticker, {})
-    name = meta.get("name", ticker)
-    color = _HUB_TICKER_COLOR.get(nav_target, "#888")
-    p_data = prices.get(ticker, {})
-    price = p_data.get("price")
-    chg   = p_data.get("chg_pct")
-
-    if price is not None:
-        if price > 1000:
-            price_str = f"${price:,.0f}"
-        elif price > 1:
-            price_str = f"${price:,.2f}"
-        else:
-            price_str = f"${price:.4f}"
-    else:
-        price_str = "—"
-
-    if chg is not None:
-        chg_color = "#00D4AA" if chg >= 0 else "#FF4B4B"
-        chg_str   = f'<span style="color:{chg_color};font-size:0.72rem">{"▲" if chg >= 0 else "▼"} {abs(chg):.2f}%</span>'
-    else:
-        chg_str = '<span style="color:#555;font-size:0.72rem">—</span>'
-
-    st.markdown(
-        f'<div style="background:#1A1D24;border:1px solid #2E3140;border-top:2px solid {color};'
-        f'border-radius:8px;padding:0.6rem 0.75rem;text-align:center">'
-        f'<div style="color:{color};font-size:0.68rem;font-weight:700;letter-spacing:0.06em">{ticker}</div>'
-        f'<div style="color:#ccc;font-size:0.72rem;margin:0.1rem 0">{name}</div>'
-        f'<div style="color:#fff;font-size:1.05rem;font-weight:700">{price_str}</div>'
-        f'{chg_str}'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    if st.button("→", key=f"hub_nav_{ticker}", use_container_width=True):
-        st.session_state["sidebar_nav"] = nav_target
-        st.rerun()
-
-
-def render_hub() -> None:
-    today = date.today()
-    alerts       = load_cassandra_alerts()
-    endorsements = load_kingmaker_endorsements()
-
-    # ── Top row: refresh + phase indicator ───────────────────────────────────
-    rc1, rc2, rc3 = st.columns([2, 2, 1])
-    with rc1:
-        auto_refresh = st.toggle("Auto-refresh (5 min)", value=False, key="hub_autorefresh")
-        if auto_refresh:
-            st.cache_data.clear()
-            st.rerun()
-    with rc3:
-        phase = current_phase(today)
-        phase_colors = {"PRE_GATEWAY": "#4A7C59", "GATEWAY_OPEN": "#FFA500",
-                        "POST_GATEWAY": "#CC5500", "ENFORCEMENT_CLIFF": "#CC0000"}
-        pc = phase_colors.get(phase, "#888")
-        st.markdown(
-            f'<div style="text-align:right"><span style="background:{pc}22;border:1px solid {pc};'
-            f'color:{pc};border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;font-weight:700">'
-            f'{phase.replace("_", " ")}</span></div>',
-            unsafe_allow_html=True,
-        )
-
-    # ── Section 1: Market Snapshot Cards ────────────────────────────────────
-    st.markdown(
-        '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
-        '📊 MARKET SNAPSHOT</p>',
-        unsafe_allow_html=True,
-    )
-
-    with st.expander("⚙️ Customise Instruments", expanded=False):
-        cust_c1, cust_c2, cust_c3 = st.columns(3)
-        with cust_c1:
-            st.multiselect(
-                "Cryptocurrencies", ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "DOGE-USD", "ADA-USD", "AVAX-USD"],
-                default=st.session_state.get("hub_crypto_picks", _HUB_DEFAULT_CRYPTO),
-                key="hub_crypto_picks",
-            )
-        with cust_c2:
-            st.multiselect(
-                "Thematic ETFs", ["BOTZ", "ARKK", "CIBR", "ICLN", "QCLN", "ROBO", "DRIV", "WCLD"],
-                default=st.session_state.get("hub_thematic_picks", _HUB_DEFAULT_THEMATIC),
-                key="hub_thematic_picks",
-            )
-        with cust_c3:
-            st.multiselect(
-                "Core Equity ETFs", ["SPY", "QQQ", "VWRP.L", "IWDA.L", "VTI", "IVV", "SWDA.L", "CSPX.L", "GLD", "SLV"],
-                default=st.session_state.get("hub_equity_picks", _HUB_DEFAULT_EQUITY),
-                key="hub_equity_picks",
-            )
-
-    crypto_picks   = st.session_state.get("hub_crypto_picks",   _HUB_DEFAULT_CRYPTO) or _HUB_DEFAULT_CRYPTO
-    thematic_picks = st.session_state.get("hub_thematic_picks", _HUB_DEFAULT_THEMATIC) or _HUB_DEFAULT_THEMATIC
-    equity_picks   = st.session_state.get("hub_equity_picks",   _HUB_DEFAULT_EQUITY) or _HUB_DEFAULT_EQUITY
-
-    all_tickers = tuple(dict.fromkeys(crypto_picks + thematic_picks + equity_picks))
-    prices = _hub_prices(all_tickers)
-
-    for row_label, row_tickers, row_nav in [
-        ("₿ Sovereign Crypto",  crypto_picks,   "₿ Sovereign Crypto"),
-        ("📊 Thematic Sectors", thematic_picks, "📊 Thematic Sectors"),
-        ("📈 Core Equity",      equity_picks,   "📈 Core Equity"),
-    ]:
-        row_color = _HUB_TICKER_COLOR.get(row_nav, "#888")
-        st.markdown(
-            f'<div style="font-size:0.68rem;color:{row_color};font-weight:700;'
-            f'letter-spacing:0.08em;margin:0.5rem 0 0.2rem 0">{row_label}</div>',
-            unsafe_allow_html=True,
-        )
-        cols = st.columns(len(row_tickers))
-        for col, ticker in zip(cols, row_tickers):
-            with col:
-                nav_mod = _HUB_TICKER_META.get(ticker, {}).get("module", row_nav)
-                _price_card(ticker, prices, nav_mod)
-
-    st.divider()
-
-    # ── Section 2 & 3: Cassandra + Kingmaker side by side ───────────────────
-    left_col, right_col = st.columns([1, 1], gap="medium")
-
-    with left_col:
-        st.markdown(
-            '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.4rem">'
-            '🔴 CASSANDRA ALERTS — Live macro threats</p>',
-            unsafe_allow_html=True,
-        )
-        for a in alerts[:6]:
-            score   = int(a.get("risk_score") or a.get("Systemic_Risk_Score") or 0)
-            title   = a.get("title") or a.get("Title") or "—"
-            vector  = (a.get("vector") or a.get("Risk_Vector") or "").replace("_", " ").upper()
-            src_url = a.get("source_url") or a.get("Source_URL") or ""
-            raw_src = a.get("source") or ""
-
-            bar_color = "#FF4B4B" if score >= 8 else "#FFA500" if score >= 6 else "#4A7C59"
-            bar_pct   = int(score * 10)
-
-            title_html = (
-                f'<a href="{src_url}" target="_blank" style="color:#ddd;text-decoration:none">{title}</a>'
-                if src_url else f'<span style="color:#ddd">{title}</span>'
-            )
-            src_html = (
-                f'<a href="{src_url}" target="_blank" style="color:#00D4AA;font-size:0.68rem;text-decoration:none">↗ {raw_src}</a>'
-                if src_url else f'<span style="color:#666;font-size:0.68rem">{raw_src}</span>'
-            )
-
-            with st.expander(f"{'🔴' if score >= 8 else '🟡' if score >= 6 else '🟢'} {score}/10 · {title[:55]}{'…' if len(title) > 55 else ''}", expanded=False):
-                st.markdown(
-                    f'<div style="background:#1A1D24;border-left:3px solid {bar_color};padding:0.5rem 0.8rem;border-radius:0 6px 6px 0;margin-bottom:0.4rem">'
-                    f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">'
-                    f'<span style="color:{bar_color};font-size:0.7rem;font-weight:700">{vector}</span>'
-                    f'<span style="color:{bar_color};font-weight:700;font-size:0.8rem">{score}/10</span></div>'
-                    f'<div style="background:#2E3140;border-radius:3px;height:4px;margin-bottom:0.35rem">'
-                    f'<div style="background:{bar_color};width:{bar_pct}%;height:4px;border-radius:3px"></div></div>'
-                    f'<div style="font-size:0.78rem;color:#bbb;line-height:1.4">{title_html}</div>'
-                    f'<div style="margin-top:0.3rem">{src_html}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-                v_key = (a.get("vector") or a.get("Risk_Vector") or "").lower()
-                bullets = _cassandra_assessment(v_key, title, score)
-                for b in bullets:
-                    st.markdown(b)
-
-    with right_col:
-        st.markdown(
-            '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.4rem">'
-            '🚀 KINGMAKER — Named-exec endorsement signals</p>',
-            unsafe_allow_html=True,
-        )
-        for e in endorsements[:5]:
-            titan_name = e.get("titan_name")  or e.get("Titan_Ticker")         or "—"
-            exec_name  = e.get("executive")   or e.get("Endorsement_Source")   or "Executive"
-            vendor     = e.get("vendor")      or e.get("Counterparty_Name")    or "—"
-            vticker    = e.get("vendor_ticker") or e.get("Counterparty_Ticker") or ""
-            conn_type  = (e.get("type") or e.get("Connection_Type") or "Supplier").replace("_", " ")
-            conf       = int(e.get("confidence") or e.get("Confidence_Score") or 7)
-            quote      = e.get("quote") or e.get("Extracted_Text") or ""
-            src_url    = e.get("source_url") or e.get("Endorsement_Source") or ""
-
-            conf_color = "#FF4B4B" if conf >= 9 else "#FFA500" if conf >= 7 else "#00D4AA"
-            vtag = f" ({vticker})" if vticker else ""
-            vendor_str = f"{vendor}{vtag}"
-
-            with st.expander(f"🏆 {titan_name} → {vendor}{vtag} · {conf}/10", expanded=False):
-                vendor_html = (
-                    f'<a href="{src_url}" target="_blank" style="color:#00D4AA;font-weight:700;text-decoration:none">{vendor_str}</a>'
-                    if src_url and src_url.startswith("http") else f'<b style="color:#00D4AA">{vendor_str}</b>'
-                )
-                st.markdown(
-                    f'<div style="background:#1A1D24;border-left:3px solid {conf_color};padding:0.5rem 0.8rem;border-radius:0 6px 6px 0;margin-bottom:0.4rem">'
-                    f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">'
-                    f'<span style="color:#ccc;font-size:0.78rem"><b>{titan_name}</b> <span style="color:#888">→</span> {vendor_html}</span>'
-                    f'<span style="color:{conf_color};font-weight:700;font-size:0.82rem">{conf}/10</span></div>'
-                    f'<div style="color:#888;font-size:0.7rem">{exec_name} · {conn_type}</div>'
-                    f'<div style="color:#aaa;font-size:0.76rem;font-style:italic;margin-top:0.3rem;border-top:1px solid #2E3140;padding-top:0.3rem">'
-                    f'&ldquo;{quote[:160]}{"…" if len(quote) > 160 else ""}&rdquo;</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-                raw_conn = e.get("type") or e.get("Connection_Type") or "Supplier"
-                bullets = _kingmaker_assessment(raw_conn, vendor, titan_name, conf)
-                for b in bullets:
-                    st.markdown(b)
-
-    st.divider()
-
-    # ── Section 4: Influential People Tracker ───────────────────────────────
-    st.markdown(
-        '<p style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.4rem">'
-        '👥 INFLUENTIAL VOICES — Market movers & latest views</p>',
-        unsafe_allow_html=True,
-    )
-
-    tab_people, tab_managers = st.tabs(["Key Individuals", "Asset Managers & Institutions"])
-
-    with tab_people:
-        p_cols = st.columns(2)
-        for i, person in enumerate(_INFLUENTIAL_PEOPLE):
-            with p_cols[i % 2]:
-                sc = person["stance_color"]
-                asset_tags = "".join(
-                    f'<span style="background:#2E3140;color:#aaa;border-radius:3px;padding:0 5px;'
-                    f'font-size:0.65rem;margin-right:3px">{a}</span>'
-                    for a in person["asset_focus"][:4]
-                )
-                src_link = (
-                    f'<a href="{person["source_url"]}" target="_blank" '
-                    f'style="color:#00D4AA;font-size:0.68rem;text-decoration:none">↗ {person["source"]}</a>'
-                    if person.get("source_url") else
-                    f'<span style="color:#666;font-size:0.68rem">{person["source"]}</span>'
-                )
-                st.markdown(
-                    f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {sc};'
-                    f'border-radius:0 8px 8px 0;padding:0.65rem 0.9rem;margin-bottom:0.5rem">'
-                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                    f'<span style="color:#fff;font-weight:700;font-size:0.85rem">{person["avatar"]} {person["name"]}</span>'
-                    f'<span style="background:{sc}22;color:{sc};border-radius:3px;padding:0.1rem 0.4rem;'
-                    f'font-size:0.66rem;font-weight:700">{person["stance"]}</span></div>'
-                    f'<div style="color:#888;font-size:0.7rem;margin:0.1rem 0">{person["role"]} · {person["date"]}</div>'
-                    f'<div style="margin:0.3rem 0">{asset_tags}</div>'
-                    f'<div style="color:#bbb;font-size:0.76rem;line-height:1.45;margin:0.35rem 0">'
-                    f'{person["latest_view"]}</div>'
-                    f'<div style="margin-top:0.3rem">{src_link}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-
-    with tab_managers:
-        for mgr in _ASSET_MANAGERS:
-            mc = mgr["color"]
-            st.markdown(
-                f'<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {mc};'
-                f'border-radius:0 8px 8px 0;padding:0.6rem 0.9rem;margin-bottom:0.4rem">'
-                f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                f'<span style="color:{mc};font-weight:700;font-size:0.82rem">{mgr["name"]}</span>'
-                f'<span style="color:#666;font-size:0.72rem">AUM: {mgr["aum"]}</span></div>'
-                f'<div style="color:#888;font-size:0.72rem;margin:0.15rem 0">Crypto: <span style="color:#aaa">{mgr["crypto_exposure"]}</span></div>'
-                f'<div style="color:#bbb;font-size:0.76rem;margin-top:0.2rem">{mgr["view"]}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# ZONE 1 — CASSANDRA ALERT TICKER + KINGMAKER BANNER  (enhanced)
-# ═════════════════════════════════════════════════════════════════════════════
-
-def render_zone1() -> None:
-    st.markdown('<p class="zone-header">⚡ ZONE 1 — LIVE INTELLIGENCE FEED</p>', unsafe_allow_html=True)
-
-    alerts       = load_cassandra_alerts()
-    endorsements = load_kingmaker_endorsements()
-
-    left, right = st.columns([1, 1], gap="medium")
-
-    with left:
-        st.markdown("**🔴 CASSANDRA ALERT TICKER** — Live macro threats ranked by severity")
-        for idx, a in enumerate(alerts[:8]):
-            score   = int(a.get("risk_score") or a.get("Systemic_Risk_Score") or 0)
-            title   = a.get("title") or a.get("Title") or "—"
-            vector  = (a.get("vector") or a.get("Risk_Vector") or "").replace("_", " ")
-            raw_src = a.get("source") or ""
-            src_url = a.get("source_url") or a.get("Source_URL") or ""
-
-            severity_cls = (
-                "banner-card-critical" if score >= 8 else
-                "banner-card-warn"     if score >= 6 else
-                "banner-card-ok"
-            )
-
-            title_html = (
-                f'<a href="{src_url}" target="_blank" '
-                f'style="color:inherit;text-decoration:none;border-bottom:1px dotted #555">'
-                f'{title}</a>'
-            ) if src_url else title
-
-            source_html = (
-                f'<a href="{src_url}" target="_blank" '
-                f'style="color:#00D4AA;font-size:0.70rem;text-decoration:none">↗ {raw_src}</a>'
-            ) if src_url else f'<span style="color:#888;font-size:0.70rem">{raw_src}</span>'
-
-            st.markdown(
-                f"""<div class="banner-card {severity_cls}">
-                    <span class="ticker-item">
-                        {_pill(score)} <b>{title_html}</b><br>
-                        <span style="color:#888;font-size:0.72rem">
-                            {vector.upper()}&nbsp;&nbsp;·&nbsp;&nbsp;{source_html}
-                        </span>
-                    </span>
-                </div>""",
-                unsafe_allow_html=True,
-            )
-
-            with st.expander("📊 Systemic Assessment & Strategic Recommendation", expanded=False):
-                v_key = (a.get("vector") or a.get("Risk_Vector") or "").lower()
-                bullets = _cassandra_assessment(v_key, title, score)
-                for b in bullets:
-                    st.markdown(b)
-
-    with right:
-        st.markdown("**🚀 KINGMAKER ENDORSEMENT ALERTS** — Named-exec catalyst detections")
-        for idx, e in enumerate(endorsements[:5]):
-            titan_name = e.get("titan_name")  or e.get("Titan_Ticker")         or "—"
-            exec_name  = e.get("executive")   or e.get("Endorsement_Source")   or "Executive"
-            vendor     = e.get("vendor")      or e.get("Counterparty_Name")    or "—"
-            vticker    = e.get("vendor_ticker") or e.get("Counterparty_Ticker") or ""
-            conn_type  = (e.get("type") or e.get("Connection_Type") or "Supplier").replace("_", " ")
-            conf       = int(e.get("confidence") or e.get("Confidence_Score") or 7)
-            quote      = e.get("quote") or e.get("Extracted_Text") or ""
-            src_url    = e.get("source_url") or e.get("Endorsement_Source") or ""
-
-            vtag = f"({vticker})" if vticker else ""
-
-            vendor_html = (
-                f'<a href="{src_url}" target="_blank" style="color:#00D4AA;text-decoration:none">'
-                f'{vendor} {vtag}</a>'
-            ) if src_url and src_url.startswith("http") else f'<b style="color:#00D4AA">{vendor} {vtag}</b>'
-
-            st.markdown(
-                f"""<div class="banner-card banner-card-ok">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                        <span style="font-size:1.1rem">🏆</span>
-                        <b>{titan_name}</b>
-                        <span style="color:#888">→</span>
-                        {vendor_html}
-                        <span style="color:#888;font-size:0.75rem">{conn_type}</span>
-                        {_pill(conf)}
-                    </div>
-                    <div style="color:#888;font-size:0.77rem;font-style:italic;margin-left:28px">
-                        {exec_name}: &ldquo;{quote[:120]}{"…" if len(quote) > 120 else ""}&rdquo;
-                    </div>
-                </div>""",
-                unsafe_allow_html=True,
-            )
-
-            raw_conn = e.get("type") or e.get("Connection_Type") or "Supplier"
-            with st.expander("📊 Systemic Assessment & Strategic Recommendation", expanded=False):
-                bullets = _kingmaker_assessment(raw_conn, vendor, titan_name, conf)
-                for b in bullets:
-                    st.markdown(b)
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# ZONE 2 — HORIZON PIPELINE & ASYMMETRY FINDER
-# ═════════════════════════════════════════════════════════════════════════════
-
-def render_zone2() -> None:
-    st.divider()
-    st.markdown('<p class="zone-header">🔭 ZONE 2 — HORIZON PIPELINE & ASYMMETRY FINDER</p>',
-                unsafe_allow_html=True)
-    st.caption(
-        "Institutional asset registrations scraped from SEC EDGAR and the FCA Register. "
-        "Asymmetry plays = Pv ≥ 4.0 **and** Cc ≤ 0.30 (institutional ramp, low crowding)."
-    )
-
-    pipeline = load_horizon_pipeline()
-    df = pd.DataFrame(pipeline)
-
-    if "Pv" in df.columns and "Cc" in df.columns:
-        df["Asymmetry Play"] = (df["Pv"] >= 4.0) & (df["Cc"] <= 0.30)
-    else:
-        df["Asymmetry Play"] = False
-
-    n_total     = len(df)
-    n_asymmetry = int(df["Asymmetry Play"].sum()) if "Asymmetry Play" in df.columns else 0
-
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Total Pipeline Filings", n_total)
-    m2.metric("Asymmetry Plays (Pv≥4.0, Cc≤0.30)", n_asymmetry)
-    m3.metric("Horizon Issuers Tracked", 17)
-
-    if "Pv" in df.columns and "Cc" in df.columns:
-        fig = px.scatter(
-            df, x="Cc", y="Pv",
-            color="Asymmetry Play",
-            color_discrete_map={True: "#00D4AA", False: "#888"},
-            hover_name="Asset" if "Asset" in df.columns else df.index,
-            hover_data=["Filer", "Class"] if "Filer" in df.columns else {},
-            template="plotly_dark",
-            title="Asymmetry Scatter — Pv vs Cc  (top-left quadrant = deep asymmetry)",
-            height=320,
-            labels={"Cc": "Consensus Crowding (Cc)", "Pv": "Pipeline Velocity (Pv)"},
-        )
-        fig.add_vline(x=0.30, line_dash="dot", line_color="#FFA500", line_width=1,
-                      annotation_text="Cc ≤ 0.30", annotation_position="top")
-        fig.add_hline(y=4.0,  line_dash="dot", line_color="#FFA500", line_width=1,
-                      annotation_text="Pv ≥ 4.0", annotation_position="right")
-        fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            margin={"t": 40, "b": 20},
-        )
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-    st.markdown("**All Pipeline Filings**  _(Asymmetry plays highlighted in green)_")
-
-    def _horizon_color(row):
-        if row.get("Asymmetry Play"):
-            return ["background-color: #1a3d2e"] * len(row)
-        return [""] * len(row)
-
-    display_cols = [c for c in ["Asset", "Filer", "Form", "Filed", "Class", "Pv", "Cc", "Asymmetry Play"] if c in df.columns]
-    if display_cols:
-        st.dataframe(
-            df[display_cols].sort_values("Pv", ascending=False).style.apply(_horizon_color, axis=1)
-            if "Pv" in df.columns else df[display_cols],
-            use_container_width=True, hide_index=True,
-        )
-    else:
-        st.dataframe(df, use_container_width=True, hide_index=True)
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# ZONE 3 — UK 2026-2027 REGULATORY SANDBOX  (legacy inline; module page is richer)
-# ═════════════════════════════════════════════════════════════════════════════
-
-def render_zone3() -> None:
-    st.divider()
-    st.markdown('<p class="zone-header">⚖️ ZONE 3 — UK 2026-2027 REGULATORY SANDBOX</p>',
-                unsafe_allow_html=True)
-
-    today = date.today()
-    phase = current_phase(today)
-
-    phase_col = _phase_color(phase)
-    st.markdown(
-        f"<div style='background:{phase_col}22; border:1px solid {phase_col}; "
-        f"border-radius:8px; padding:0.7rem 1rem; margin-bottom:1rem;'>"
-        f"<b style='color:{phase_col}'>{phase.replace('_', ' ')}</b>&emsp;"
-        f"<span style='color:#ccc;font-size:0.87rem'>{phase_narrative(phase)}</span>"
-        f"</div>",
-        unsafe_allow_html=True,
-    )
-
-    cd_open  = days_to_gateway_open(today)
-    cd_close = days_to_gateway_close(today)
-    cd_enf   = days_to_enforcement(today)
-
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("📅 Today", str(today), delta=phase.replace("_", " "))
-    m2.metric("🟢 Gateway Opens",   str(GATEWAY_OPEN_DATE),
-              delta=f"{cd_open}d" if cd_open else "OPEN",
-              delta_color="normal" if cd_open else "off")
-    m3.metric("🔴 Gateway Closes",  str(GATEWAY_CLOSE_DATE),
-              delta=f"{cd_close}d" if cd_close else "CLOSED",
-              delta_color="inverse" if cd_close and cd_close < 60 else "normal")
-    m4.metric("⚠️ Enforcement Cliff", str(ENFORCEMENT_DATE),
-              delta=f"{cd_enf}d" if cd_enf else "IN EFFECT",
-              delta_color="inverse" if cd_enf and cd_enf < 180 else "normal")
-
-    st.info("💡 For the full interactive compliance matrix, date simulator, and 19-instrument deep-dive, navigate to **🏛️ Regulatory Sandbox** via the sidebar.", icon=None)
+                        st.markdown('<span style="color:#94a3b8;font-size:0.72rem">No linked news ticker.</span>', unsafe_allow_html=True)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1769,17 +1178,18 @@ def main() -> None:
     h1, h2 = st.columns([3, 1])
     with h1:
         st.markdown(
-            "<h1 style='margin-bottom:0'>📡 Contrarian Radar</h1>"
-            "<p style='color:#888;margin-top:2px'>Institutional asymmetric intelligence platform — v2.0 modular</p>",
+            "<h1 style='margin-bottom:0;color:#0a0f1d;font-weight:900;font-size:2rem'>📡 Contrarian Radar</h1>"
+            "<p style='color:#64748b;margin-top:2px;font-size:0.85rem'>Institutional asymmetric intelligence platform — v2.0 modular</p>",
             unsafe_allow_html=True,
         )
     with h2:
+        _pc = _phase_color(current_phase())
         st.markdown(
             f"<div style='text-align:right;padding-top:0.5rem'>"
-            f"<span style='color:#888;font-size:0.8rem'>Phase</span><br>"
-            f"<b style='color:{_phase_color(current_phase())}'>"
-            f"{current_phase().replace('_', ' ')}</b><br>"
-            f"<span style='color:#666;font-size:0.75rem'>{date.today()}</span>"
+            f"<span style='color:#64748b;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em'>Phase</span><br>"
+            f"<span style='background:{_pc}15;border:1px solid {_pc};border-radius:6px;padding:0.15rem 0.55rem;"
+            f"color:{_pc};font-size:0.74rem;font-weight:700'>{current_phase().replace('_', ' ')}</span><br>"
+            f"<span style='color:#94a3b8;font-size:0.72rem'>{date.today()}</span>"
             f"</div>",
             unsafe_allow_html=True,
         )
