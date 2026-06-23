@@ -238,16 +238,35 @@ st.markdown(
         margin-bottom: 0.5rem;
         box-shadow: var(--shadow-card);
     }
-    div[data-testid="stExpander"] summary {
-        color: var(--text-h) !important; font-weight: 600;
-        cursor: pointer; align-items: center; gap: 0.5rem;
+    /* Keep summary header white at all states — collapsed, expanded, focused */
+    div[data-testid="stExpander"] summary,
+    div[data-testid="stExpander"] summary:hover,
+    div[data-testid="stExpander"] summary:focus,
+    div[data-testid="stExpander"] summary:focus-visible,
+    div[data-testid="stExpander"] summary:active,
+    div[data-testid="stExpander"] details[open] > summary {
+        background: var(--card) !important;
+        background-color: var(--card) !important;
+        color: var(--text-h) !important;
+        font-weight: 600 !important;
+        font-size: 0.88rem !important;
+        cursor: pointer;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 12px !important;
+        outline: none !important;
     }
     div[data-testid="stExpander"] summary svg {
         display: inline-block !important; flex-shrink: 0;
         min-width: 16px; min-height: 16px;
+        color: var(--text-sub) !important;
     }
     div[data-testid="stExpander"] summary p {
-        margin: 0 !important; line-height: 1.4 !important;
+        margin: 0 !important;
+        line-height: 1.4 !important;
+        font-size: 0.88rem !important;
+        color: var(--text-h) !important;
+        font-weight: 600 !important;
     }
 
     /* ── Tabs ────────────────────────────────────────────────────────────────── */
@@ -365,36 +384,46 @@ st.markdown(
     h3 { color: var(--text-h) !important; font-weight: 600 !important; }
     p  { color: var(--text-h) !important; }
 
-    /* ── Markdown body text — fix faded/default Streamlit colors ─────────────── */
+    /* ── Markdown body text — color + size ──────────────────────────────────── */
     .stMarkdown p,
     [data-testid="stMarkdownContainer"] p {
-        color: var(--color-text-secondary) !important;   /* #2B5A85 */
+        color: var(--color-text-secondary) !important;
+        font-size: 0.84rem !important;
+        line-height: 1.6 !important;
     }
     .stMarkdown li,
     [data-testid="stMarkdownContainer"] li,
     ul li, ol li {
-        color: var(--color-text-secondary) !important;   /* #2B5A85 */
+        color: var(--color-text-secondary) !important;
+        font-size: 0.84rem !important;
+        line-height: 1.6 !important;
     }
     .stMarkdown strong,
     [data-testid="stMarkdownContainer"] strong {
-        color: var(--color-text-primary) !important;     /* #071D35 */
+        color: var(--color-text-primary) !important;
+        font-size: inherit !important;
     }
     .stMarkdown h3, .stMarkdown h4,
     [data-testid="stMarkdownContainer"] h3,
     [data-testid="stMarkdownContainer"] h4 {
-        color: var(--color-text-primary) !important;     /* #071D35 */
+        color: var(--color-text-primary) !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        margin: 0.75rem 0 0.35rem 0 !important;
     }
-    /* Table body text inside markdown */
+    /* Table text */
     .stMarkdown td,
     [data-testid="stMarkdownContainer"] td {
         color: var(--color-text-secondary) !important;
+        font-size: 0.82rem !important;
     }
     .stMarkdown th,
     [data-testid="stMarkdownContainer"] th {
         color: var(--color-text-primary) !important;
         font-weight: 700 !important;
+        font-size: 0.78rem !important;
     }
-    /* Override for sidebar — keep sidebar text white */
+    /* Sidebar override — keep sidebar text white */
     section[data-testid="stSidebar"] .stMarkdown p,
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
     section[data-testid="stSidebar"] .stMarkdown li,
