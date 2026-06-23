@@ -27,6 +27,22 @@ _CATEGORIES = [
     ("⚖️ Regulatory",     "regulatory", "#FFA500"),
 ]
 
+# Known instruments for ticker-aware search suggestions
+_KNOWN_INSTRUMENTS: dict[str, str] = {
+    "BTC-USD": "Bitcoin", "ETH-USD": "Ethereum", "SOL-USD": "Solana",
+    "XRP-USD": "XRP", "DOGE-USD": "Dogecoin", "ADA-USD": "Cardano",
+    "BNB-USD": "BNB", "AVAX-USD": "Avalanche", "LINK-USD": "Chainlink",
+    "SPY": "S&P 500 ETF", "QQQ": "Nasdaq 100 ETF", "NVDA": "NVIDIA",
+    "AAPL": "Apple", "MSFT": "Microsoft", "AMZN": "Amazon",
+    "GOOGL": "Alphabet", "TSLA": "Tesla", "META": "Meta",
+    "BOTZ": "AI & Robotics ETF", "ARKK": "ARK Innovation ETF",
+    "CIBR": "Cybersecurity ETF", "ICLN": "Clean Energy ETF",
+    "BLOK": "Blockchain ETF", "ROBO": "ROBO Global ETF",
+    "GLD": "SPDR Gold", "SLV": "iShares Silver", "GC=F": "Gold Futures",
+    "MSTR": "MicroStrategy", "COIN": "Coinbase", "MARA": "Marathon Digital",
+    "VWRP.L": "Vanguard All-World", "IWDA.L": "iShares MSCI World",
+}
+
 
 def _news_card(item: dict, accent: str = "#5B8FD4") -> None:
     title = item.get("title", "—")
@@ -65,36 +81,70 @@ def _news_card(item: dict, accent: str = "#5B8FD4") -> None:
     )
 
 
+def _match_ticker_in_query(q: str) -> list[str]:
+    """Return any known tickers that match the search query."""
+    q_up = q.upper().strip()
+    matched = []
+    for ticker, name in _KNOWN_INSTRUMENTS.items():
+        if q_up == ticker or q_up in ticker or q_up in name.upper():
+            matched.append(ticker)
+    return matched[:4]
+
+
 def _render_category(label: str, cat_key: str, accent: str) -> None:
-    sc1, sc2, sc3 = st.columns([4, 2, 1])
-    with sc1:
+    sb1, sb2 = st.columns([8, 1])
+    with sb1:
         search = st.text_input(
-            "Filter", key=f"nf_search_{cat_key}",
-            placeholder="Search title or publisher…",
+            "Search", key=f"nf_search_{cat_key}",
+            placeholder="🔍  Search by title, publisher, ticker or ETF — e.g. Bitcoin, NVDA, Gold…",
             label_visibility="collapsed",
         )
-    with sc2:
-        custom = st.text_input(
-            "Extra tickers", key=f"nf_custom_{cat_key}",
-            placeholder="+ TSLA, MSTR, COIN",
-            label_visibility="collapsed",
-        )
-    with sc3:
+    with sb2:
         if st.button("🔄", key=f"nf_refresh_{cat_key}", help="Refresh news"):
             st.cache_data.clear()
             st.rerun()
 
-    extra_tickers = [t.strip().upper() for t in custom.split(",") if t.strip()] if custom else []
+    q = (search or "").strip()
+
+    # Detect if query looks like a ticker/instrument and fetch its news too
+    extra_tickers: list[str] = []
+    if q and len(q) >= 2:
+        extra_tickers = _match_ticker_in_query(q)
+        # Also support raw comma-separated tickers: "TSLA, COIN"
+        if "," in q:
+            for part in q.split(","):
+                t = part.strip().upper()
+                if t and t not in extra_tickers:
+                    extra_tickers.append(t)
 
     with st.spinner("Loading news…"):
         items = fetch_category_news(cat_key)
-        for extra in extra_tickers:
-            extra_news = fetch_ticker_news(extra, limit=8)
-            items = extra_news + items
+        seen_titles: set[str] = {i["title"] for i in items}
+        for tick in extra_tickers:
+            for ni in fetch_ticker_news(tick, limit=8):
+                if ni["title"] not in seen_titles:
+                    seen_titles.add(ni["title"])
+                    items.insert(0, ni)
 
-    if search:
-        q = search.lower()
-        items = [i for i in items if q in i.get("title", "").lower() or q in i.get("publisher", "").lower()]
+    # Show typeahead suggestion if query matches instruments
+    if extra_tickers and q and "," not in q:
+        matched_names = [_KNOWN_INSTRUMENTS.get(t, t) for t in extra_tickers[:3]]
+        st.markdown(
+            f'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;'
+            f'padding:0.35rem 0.75rem;margin-bottom:0.4rem;font-size:0.75rem;color:#166534">'
+            f'📡 Fetching live news for: <b>{", ".join(matched_names)}</b></div>',
+            unsafe_allow_html=True,
+        )
+
+    if q:
+        ql = q.lower()
+        items = [
+            i for i in items
+            if ql in i.get("title", "").lower()
+            or ql in i.get("publisher", "").lower()
+            or ql in i.get("ticker", "").lower()
+            or any(ql in n.lower() for n in [_KNOWN_INSTRUMENTS.get(i.get("ticker", ""), "")])
+        ]
 
     if not items:
         st.info(f"No news available for {label}. Markets may be closed or data unavailable.")
@@ -114,8 +164,8 @@ def _render_category(label: str, cat_key: str, accent: str) -> None:
 
 def render() -> None:
     st.markdown(
-        "<h2 style='color:#0a0f1d;font-weight:900;margin-bottom:0'>📰 News Feed</h2>"
-        "<p style='color:#64748b;margin-top:2px;font-size:0.85rem'>Global market intelligence across all asset classes · refreshed every 5 min · click any headline to read</p>",
+        "<h2 class='iw-module-header'>📰 News Feed</h2>"
+        "<p style='color:#64748b;margin-top:2px;font-size:0.82rem'>Global market intelligence across all asset classes · refreshed every 5 min · click any headline to read</p>",
         unsafe_allow_html=True,
     )
 

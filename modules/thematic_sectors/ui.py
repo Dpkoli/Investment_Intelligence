@@ -521,7 +521,7 @@ def _apply_treemap_sel(new_sel: dict) -> None:
 
 
 def render() -> None:
-    st.markdown("## 📊 Thematic Sectors — Global Sector & Thematic ETF Grid")
+    st.markdown("<h2 class='iw-module-header'>📊 Thematic Sectors — Global Sector & Thematic ETF Grid</h2>", unsafe_allow_html=True)
     st.caption(
         f"{len(THEMATIC_REGISTRY)} products across {len(ALL_SECTORS)} sectors "
         f"and {len(ALL_SUB_THEMES)} sub-themes — "
@@ -610,10 +610,10 @@ def render() -> None:
             else treemap_sel["sector"]
         )
         st.markdown(
-            f'<div style="background:#1a3d2e;border:1px solid #00D4AA;border-radius:6px;'
+            f'<div style="background:#f0fdf4;border:1px solid #00D4AA;border-radius:6px;'
             f'padding:0.35rem 0.9rem;font-size:0.79rem;margin-top:0.4rem">'
-            f'&#x1F5C2; <b style="color:#00D4AA">Active filter:</b> '
-            f'<span style="color:#1e293b">{crumb}</span> — '
+            f'&#x1F5C2; <b style="color:#00875a">Active filter:</b> '
+            f'<span style="color:#0a0f1d">{crumb}</span> — '
             f'<span style="color:#64748b;font-size:0.7rem">click ✓ button above to clear</span>'
             f'</div>',
             unsafe_allow_html=True,

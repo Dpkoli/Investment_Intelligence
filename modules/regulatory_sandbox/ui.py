@@ -125,7 +125,7 @@ def _section_header(text: str, color: str = "#5B8FD4") -> None:
     )
 
 
-def _info_card(title: str, body: str, color: str = "#2E3140") -> None:
+def _info_card(title: str, body: str, color: str = "#e2e8f0") -> None:
     st.markdown(
         f'<div style="background:#ffffff;border:1px solid {color};border-radius:8px;'
         f'padding:0.8rem 1rem;margin-bottom:0.5rem">'
@@ -790,14 +790,15 @@ def _render_compliance_matrix(today: date) -> None:
                 retail_warn = " · ⚠️ Retail Access at Risk" if item["Retail at Risk"] == "Yes" else ""
                 wind_warn   = " · ☠️ Wind-Down Risk" if item["Wind-Down Risk"] == "Yes" else ""
                 st.markdown(
-                    f"""<div style="background:#2A1A1A;border:1px solid {color};border-radius:6px;padding:0.65rem;margin-bottom:0.4rem">
-                        <div style="display:flex;justify-content:space-between;align-items:center">
-                            <span style="color:{color};font-weight:700">{item['ID']} — {item['Name']}</span>
-                            {_flag_badge(item['Survival'])}
-                        </div>
-                        <span style="color:#64748b;font-size:0.78rem">{item['Category']} · {item['Auth Status']}{retail_warn}{wind_warn}</span><br>
-                        <span style="color:#64748b;font-size:0.78rem">⚡ {item['Action Required']}</span>
-                    </div>""",
+                    f'<div style="background:#fff5f5;border:1px solid {color};border-left:3px solid {color};'
+                    f'border-radius:6px;padding:0.65rem;margin-bottom:0.4rem">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                    f'<span style="color:{color};font-weight:700">{item["ID"]} — {item["Name"]}</span>'
+                    f'{_flag_badge(item["Survival"])}'
+                    f'</div>'
+                    f'<span style="color:#64748b;font-size:0.78rem">{item["Category"]} · {item["Auth Status"]}{retail_warn}{wind_warn}</span><br>'
+                    f'<span style="color:#64748b;font-size:0.78rem">⚡ {item["Action Required"]}</span>'
+                    f'</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -930,26 +931,26 @@ def _render_timeline(today: date) -> None:
         is_critical = m["status"] == "CRITICAL"
 
         if is_passed:
-            border_color = "#2E3140"
-            date_color = "#555"
-            label_color = "#666"
-            status_chip = '<span style="color:#64748b;font-size:0.68rem">✓ PASSED</span>'
-            bg = "#161920"
+            border_color = "#cbd5e1"
+            date_color = "#94a3b8"
+            label_color = "#94a3b8"
+            status_chip = '<span style="color:#94a3b8;font-size:0.68rem">✓ PASSED</span>'
+            bg = "#f8fafc"
         elif is_critical:
-            border_color = "#FF4B4B"
-            date_color = "#FF4B4B"
-            label_color = "#FF6B6B"
-            status_chip = f'<span style="color:#FF4B4B;font-weight:700;font-size:0.72rem">⚠ {days_delta}d REMAINING</span>'
-            bg = "#2A1A1A"
+            border_color = "#dc2626"
+            date_color = "#dc2626"
+            label_color = "#dc2626"
+            status_chip = f'<span style="color:#dc2626;font-weight:700;font-size:0.72rem">⚠ {days_delta}d REMAINING</span>'
+            bg = "#fff5f5"
         else:
-            phase_col = _PHASE_COLOR.get(m["phase"], "#5B8FD4")
+            phase_col = _PHASE_COLOR.get(m["phase"], "#2563eb")
             border_color = phase_col
             date_color = phase_col
-            label_color = "#ccc"
+            label_color = "#0a0f1d"
             status_chip = f'<span style="color:{phase_col};font-size:0.72rem">{days_delta}d</span>'
-            bg = "#1A1D24"
+            bg = "#ffffff"
 
-        connector = '<div style="width:2px;height:1rem;background:#2E3140;margin-left:1.2rem"></div>' if i < len(ALL_MILESTONES) - 1 else ""
+        connector = '<div style="width:2px;height:1rem;background:#e2e8f0;margin-left:1.2rem"></div>' if i < len(ALL_MILESTONES) - 1 else ""
 
         st.markdown(
             f'<div style="background:{bg};border:1px solid {border_color};border-left:4px solid {border_color};'
@@ -1080,7 +1081,7 @@ def render() -> None:
     phase = current_phase(today)
     phase_color = _PHASE_COLOR.get(phase, "#666")
 
-    st.markdown("## 🏛️ Regulatory Sandbox — UK FSMA 2026/2027 FCA Compliance Intelligence")
+    st.markdown("<h2 class='iw-module-header'>🏛️ Regulatory Sandbox — UK FSMA 2026/2027 FCA Compliance Intelligence</h2>", unsafe_allow_html=True)
 
     tab1, tab2, tab3, tab4 = st.tabs([
         "📊 Overview",

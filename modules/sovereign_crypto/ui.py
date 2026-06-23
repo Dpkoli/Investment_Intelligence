@@ -509,7 +509,7 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
-    st.markdown("## ₿ Sovereign Crypto Networks")
+    st.markdown("<h2 class='iw-module-header'>₿ Sovereign Crypto Networks</h2>", unsafe_allow_html=True)
     st.caption("Top-10 digital assets · Institutional holders · Live prices · Analyst predictions")
 
     # Session state
@@ -559,56 +559,53 @@ def render() -> None:
 
             with col:
                 card_id = f"cr_card_{yf_t.replace('-', '_')}"
-                active_border = f"2px solid {accent}" if is_active else f"1px solid #2E3140"
+                bg = f"{accent}12" if is_active else "#ffffff"
+                border = f"2px solid {accent}" if is_active else "1px solid #e2e8f0"
+                shadow = "box-shadow:0 3px 10px rgba(0,0,0,0.10);" if is_active else "box-shadow:0 1px 3px rgba(0,0,0,0.06);"
                 st.markdown(
-                    f"""<div id="{card_id}"
-  style="background:#ffffff;border:{active_border};border-radius:10px;
-         padding:0.9rem 1.1rem;margin-bottom:0.3rem;cursor:pointer">
-  <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">
-    <span style="font-size:1.4rem">{icon}</span>
-    <span style="font-weight:700;font-size:1rem;color:{accent}">{sym}</span>
-    <span style="color:#64748b;font-size:0.75rem;margin-left:auto">{name}</span>
-  </div>
-  <div style="font-size:1.45rem;font-weight:700">{price_str}</div>
-  <div style="font-size:0.9rem;color:{chg_color};margin-top:0.1rem">{chg_str} today</div>
-</div>""",
+                    f'<div id="{card_id}" class="iw-price-card"'
+                    f' style="background:{bg};border:{border};border-radius:10px;'
+                    f'padding:0.65rem 0.85rem;margin-bottom:0.3rem;cursor:pointer;{shadow}'
+                    f'transition:all 0.15s ease">'
+                    f'<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem">'
+                    f'<span style="font-size:1.1rem">{icon}</span>'
+                    f'<span style="font-weight:700;font-size:0.88rem;color:{accent}">{sym}</span>'
+                    f'<span style="color:#64748b;font-size:0.68rem;margin-left:auto">{name}</span>'
+                    f'</div>'
+                    f'<div style="font-size:1.15rem;font-weight:800;color:#0a0f1d">{price_str}</div>'
+                    f'<div style="font-size:0.75rem;color:{chg_color};margin-top:0.05rem">{chg_str} today</div>'
+                    f'</div>',
                     unsafe_allow_html=True,
                 )
-                if st.button("▼" if is_active else "▶", key=f"cr_btn_{yf_t}",
-                             use_container_width=True,
-                             type="primary" if is_active else "secondary"):
+                st.markdown('<div class="iw-hidden-btn-wrap">', unsafe_allow_html=True)
+                if st.button("​", key=f"cr_btn_{yf_t}", use_container_width=True):
                     st.session_state["cr_selected"] = None if is_active else yf_t
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Make cards clickable via JS (hides small trigger buttons) ───────────
+    # ── Make cards clickable via JS ───────────────────────────────────────────
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
-  function setup(){
-    var cards=window.parent.document.querySelectorAll('[id^="cr_card_"]');
-    cards.forEach(function(card){
-      if(card._crReady)return;
-      card._crReady=true;
-      // Hide the trigger button directly below the card
-      var mc=card.closest('[data-testid="stMarkdownContainer"]');
-      var vb=mc&&mc.parentElement;
-      if(vb){
-        var bd=vb.querySelector('[data-testid="stButton"]');
-        if(bd){bd.style.height='0';bd.style.overflow='hidden';bd.style.margin='0';bd.style.padding='0';}
-      }
-      card.addEventListener('mouseenter',function(){card.style.opacity='0.82';});
-      card.addEventListener('mouseleave',function(){card.style.opacity='1';});
+  var doc=window.parent.document;
+  function wireCards(){
+    doc.querySelectorAll('[id^="cr_card_"]').forEach(function(card){
+      if(card._crWired)return;
+      card._crWired=true;
       card.addEventListener('click',function(){
-        var mc2=card.closest('[data-testid="stMarkdownContainer"]');
-        var vb2=mc2&&mc2.parentElement;
-        if(!vb2)return;
-        var btn=vb2.querySelector('button');
-        if(btn)btn.click();
+        var mc=card.closest('[data-testid="stMarkdownContainer"]');
+        if(!mc)return;
+        var col=mc.closest('[data-testid="column"]')||mc.parentElement;
+        if(!col)return;
+        var wrap=col.querySelector('.iw-hidden-btn-wrap');
+        if(wrap){var btn=wrap.querySelector('button');if(btn){btn.click();return;}}
+        var stBtns=col.querySelectorAll('[data-testid="stButton"]');
+        if(stBtns.length>0){var b=stBtns[0].querySelector('button');if(b)b.click();}
       });
     });
   }
-  setup();
-  new MutationObserver(setup).observe(window.parent.document.body,{childList:true,subtree:true});
+  wireCards();
+  new MutationObserver(wireCards).observe(doc.body,{childList:true,subtree:true});
 })();
 </script>""", height=0, scrolling=False)
 

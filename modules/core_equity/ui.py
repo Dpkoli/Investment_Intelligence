@@ -441,7 +441,7 @@ def _render_detail_panel(p: IndexProduct, prices: dict) -> None:
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
-    st.markdown("## 🌐 Core Equity — Global Index & ETF Intelligence")
+    st.markdown("<h2 class='iw-module-header'>🌐 Core Equity — Global Index & ETF Intelligence</h2>", unsafe_allow_html=True)
     st.caption(f"{len(CORE_EQUITY_REGISTRY)} instruments tracked across 25+ countries and regions")
 
     # ── Session state ─────────────────────────────────────────────────────────

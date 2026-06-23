@@ -445,7 +445,7 @@ def _render_detail_panel(p, prices: dict) -> None:
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
-    st.markdown("## 🥇 Precious Metals — Spot, Physical ETPs & Mining Equity Intelligence")
+    st.markdown("<h2 class='iw-module-header'>🥇 Precious Metals — Spot, Physical ETPs & Mining Equity Intelligence</h2>", unsafe_allow_html=True)
     st.caption(f"{len(METALS_REGISTRY)} products tracked — Gold · Silver · Platinum · Palladium")
 
     if "pm_page" not in st.session_state:

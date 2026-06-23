@@ -280,6 +280,71 @@ st.markdown(
     h2 { color: var(--text-h) !important; font-weight: 800 !important; }
     h3 { color: var(--text-h) !important; font-weight: 700 !important; }
     p  { color: var(--text-h) !important; }
+
+    /* ── Sidebar navigation — pill-style active highlighting ─ */
+    section[data-testid="stSidebar"] .stRadio > div {
+        gap: 0 !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.45rem 0.85rem !important;
+        border-radius: 8px !important;
+        color: #94a3b8 !important;
+        cursor: pointer !important;
+        border-left: 3px solid transparent !important;
+        transition: background 0.12s, color 0.12s !important;
+        font-size: 0.84rem !important;
+        margin: 0.1rem 0 !important;
+        font-weight: 500 !important;
+        width: 100% !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label:hover {
+        background: rgba(255,255,255,0.07) !important;
+        color: #e2e8f0 !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label:has(input[type="radio"]:checked) {
+        background: rgba(59,130,246,0.18) !important;
+        color: #60a5fa !important;
+        border-left-color: #3b82f6 !important;
+        font-weight: 700 !important;
+    }
+    section[data-testid="stSidebar"] .stRadio input[type="radio"] {
+        position: absolute !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* ── Module page headers (smaller than main InvestWise h1) ─ */
+    .iw-module-header {
+        font-size: 1.3rem !important;
+        font-weight: 800 !important;
+        color: var(--text-h) !important;
+        margin-bottom: 0 !important;
+        margin-top: 0.25rem !important;
+        line-height: 1.3 !important;
+    }
+
+    /* ── Dataframe / table theme ────────────────── */
+    [data-testid="stDataFrame"] table, [data-testid="stDataFrame"] thead,
+    [data-testid="stDataFrame"] tbody, [data-testid="stDataFrame"] th,
+    [data-testid="stDataFrame"] td {
+        background-color: var(--card) !important;
+        color: var(--text-h) !important;
+        border-color: var(--border) !important;
+    }
+    [data-testid="stDataFrame"] thead th {
+        background-color: #f1f5f9 !important;
+        color: var(--text-sub) !important;
+        font-weight: 700 !important;
+        font-size: 0.78rem !important;
+    }
+    [data-testid="stDataFrame"] tbody tr:hover td {
+        background-color: #f8fafc !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
