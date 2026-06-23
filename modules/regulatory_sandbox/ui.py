@@ -184,7 +184,7 @@ def render() -> None:
     st.plotly_chart(fig_gantt, use_container_width=True, config={"displayModeBar": False})
 
     # ── Compliance matrix table ───────────────────────────────────────────────
-    st.markdown("### 19-Instrument Compliance Matrix")
+    st.markdown(f"### {len(reports) if hasattr(matrix_data, 'reports') else 19}-Instrument Compliance Matrix")
     if hasattr(matrix_data, "reports"):
         reports = matrix_data.reports
     elif isinstance(matrix_data, dict):
@@ -195,26 +195,35 @@ def render() -> None:
     if reports:
         summary_counts: dict = {}
         table_rows = []
+        d_enforcement = days_to_enforcement(ref_date)
         for r in reports:
+            # survival_flag is a plain string ("RED", "AMBER", "GREEN", "CRITICAL")
             flag = str(r.survival_flag.value) if hasattr(r.survival_flag, "value") else str(r.survival_flag)
             summary_counts[flag] = summary_counts.get(flag, 0) + 1
+            # category and auth_status are plain strings with underscores → prettify
+            cat       = getattr(r, "category", None) or "—"
+            cat       = str(cat.value) if hasattr(cat, "value") else str(cat).replace("_", " ")
+            auth      = getattr(r, "auth_status", None) or "—"
+            auth      = str(auth.value) if hasattr(auth, "value") else str(auth).replace("_", " ")
+            phase_val = getattr(r, "current_phase", None) or getattr(r, "phase", None) or "—"
+            phase_val = str(phase_val.value) if hasattr(phase_val, "value") else str(phase_val).replace("_", " ")
             table_rows.append({
-                "Ticker":   r.ticker if hasattr(r, "ticker") else "—",
-                "Name":     r.name if hasattr(r, "name") else "—",
-                "Category": str(r.category.value) if hasattr(r, "category") and hasattr(r.category, "value") else "—",
-                "Auth Status": str(r.auth_status.value) if hasattr(r, "auth_status") and hasattr(r.auth_status, "value") else "—",
-                "Phase":    str(r.phase.value) if hasattr(r, "phase") and hasattr(r.phase, "value") else "—",
-                "Survival": flag,
-                "Days to Enforcement": str(days_to_enforcement(ref_date)),
-                "Action Required": r.action_required if hasattr(r, "action_required") else "—",
+                "ID":          getattr(r, "instrument_id", None) or getattr(r, "ticker", "—"),
+                "Name":        getattr(r, "instrument_name", None) or getattr(r, "name", "—"),
+                "Category":    cat,
+                "Auth Status": auth,
+                "Phase":       phase_val,
+                "Survival":    flag,
+                "Days Left":   str(d_enforcement) if d_enforcement is not None else "ACTIVE",
+                "Action Required": getattr(r, "next_action", None) or getattr(r, "action_required", "—"),
             })
 
         # Summary badges
         badge_cols = st.columns(4)
-        for col, (flag, count) in zip(badge_cols, [("GREEN", summary_counts.get("GREEN", 0)),
-                                                     ("AMBER", summary_counts.get("AMBER", 0)),
-                                                     ("RED", summary_counts.get("RED", 0)),
-                                                     ("CRITICAL", summary_counts.get("CRITICAL", 0))]):
+        for col, (flag, count) in zip(badge_cols, [("GREEN",    summary_counts.get("GREEN", 0)),
+                                                    ("AMBER",    summary_counts.get("AMBER", 0)),
+                                                    ("RED",      summary_counts.get("RED", 0)),
+                                                    ("CRITICAL", summary_counts.get("CRITICAL", 0))]):
             color = _SURVIVAL_COLOR.get(flag, "#888")
             with col:
                 st.markdown(
@@ -232,8 +241,9 @@ def render() -> None:
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Survival": st.column_config.TextColumn("Survival Flag"),
-                "Days to Enforcement": st.column_config.TextColumn("Days to Enforcement"),
+                "Survival":         st.column_config.TextColumn("Survival Flag"),
+                "Days Left":        st.column_config.TextColumn("Days to Enforcement"),
+                "Action Required":  st.column_config.TextColumn("Action Required"),
             },
         )
 
@@ -245,7 +255,7 @@ def render() -> None:
                     color = "#FF2222" if item["Survival"] == "CRITICAL" else "#FF6B6B"
                     st.markdown(
                         f"""<div style="background:#2A1A1A;border:1px solid {color};border-radius:6px;padding:0.65rem;margin-bottom:0.4rem">
-                            <span style="color:{color};font-weight:700">{item['Ticker']} — {item['Name']}</span>
+                            <span style="color:{color};font-weight:700">{item['ID']} — {item['Name']}</span>
                             <span style="color:#888;font-size:0.78rem;margin-left:1rem">{item['Category']} · {item['Auth Status']}</span><br>
                             <span style="color:#aaa;font-size:0.78rem">⚡ {item['Action Required']}</span>
                         </div>""",
@@ -260,7 +270,7 @@ def render() -> None:
         for m in milestones[:5]:
             label = m.get("label", "—")
             dt    = m.get("date") or m.get("deadline") or "—"
-            desc  = m.get("description", "")
+            desc  = m.get("detail") or m.get("description", "")
             urgency_color = "#FF4B4B" if "ENFORCEMENT" in label.upper() else "#FFA500" if "GATEWAY" in label.upper() else "#00D4AA"
             st.markdown(
                 f"""<div style="background:#1A1D24;border:1px solid #2E3140;border-left:3px solid {urgency_color};
