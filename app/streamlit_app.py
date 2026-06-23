@@ -55,6 +55,7 @@ import modules.sovereign_crypto.ui     as _mod_crypto
 import modules.precious_metals.ui      as _mod_metals
 import modules.kingmaker_intelligence.ui as _mod_kingmaker
 import modules.regulatory_sandbox.ui   as _mod_regulatory
+import modules.news_feed.ui            as _mod_news
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PAGE CONFIG  (must be the first Streamlit call)
@@ -395,6 +396,7 @@ _NAV_OPTIONS = [
     "🥇 Precious Metals",
     "🔗 Kingmaker Intelligence",
     "🏛️ Regulatory Sandbox",
+    "📰 News Feed",
 ]
 
 
@@ -419,8 +421,692 @@ def render_sidebar() -> str:
 # INTELLIGENCE HUB — helpers and data
 # ═════════════════════════════════════════════════════════════════════════════
 
-_HUB_DEFAULT_CRYPTO = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD"]
-_HUB_DEFAULT_THEMATIC = ["BOTZ", "ARKK", "CIBR", "ICLN"]
+_HUB_ROWS = [
+    ("crypto",   "₿ Sovereign Crypto",  "#9B59B6", "₿ Sovereign Crypto"),
+    ("thematic", "📊 Thematic Sectors", "#2ECC71", "📊 Thematic Sectors"),
+    ("equity",   "📈 Core Equity",      "#5B8FD4", "📈 Core Equity"),
+]
+_HUB_DEFAULT_FAVS: dict[str, list[str]] = {
+    "crypto":   ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD"],
+    "thematic": ["BOTZ", "ARKK", "CIBR", "ICLN"],
+    "equity":   ["SPY", "QQQ", "VWRP.L", "IWDA.L"],
+}
+_HUB_ALL_TICKERS: dict[str, dict] = {
+    "BTC-USD":   {"name": "Bitcoin",          "row": "crypto"},
+    "ETH-USD":   {"name": "Ethereum",         "row": "crypto"},
+    "SOL-USD":   {"name": "Solana",           "row": "crypto"},
+    "XRP-USD":   {"name": "XRP",              "row": "crypto"},
+    "DOGE-USD":  {"name": "Dogecoin",         "row": "crypto"},
+    "ADA-USD":   {"name": "Cardano",          "row": "crypto"},
+    "AVAX-USD":  {"name": "Avalanche",        "row": "crypto"},
+    "MATIC-USD": {"name": "Polygon",          "row": "crypto"},
+    "LINK-USD":  {"name": "Chainlink",        "row": "crypto"},
+    "DOT-USD":   {"name": "Polkadot",         "row": "crypto"},
+    "BOTZ":      {"name": "AI & Robotics",    "row": "thematic"},
+    "ARKK":      {"name": "ARK Innovation",   "row": "thematic"},
+    "CIBR":      {"name": "Cybersecurity",    "row": "thematic"},
+    "ICLN":      {"name": "Clean Energy",     "row": "thematic"},
+    "ROBO":      {"name": "ROBO Global",      "row": "thematic"},
+    "QCLN":      {"name": "Clean Edge",       "row": "thematic"},
+    "DRIV":      {"name": "EV & Mobility",    "row": "thematic"},
+    "WCLD":      {"name": "Cloud Computing",  "row": "thematic"},
+    "BLOK":      {"name": "Blockchain",       "row": "thematic"},
+    "HACK":      {"name": "Cyber ETFMG",      "row": "thematic"},
+    "SPY":       {"name": "S&P 500",          "row": "equity"},
+    "QQQ":       {"name": "Nasdaq 100",       "row": "equity"},
+    "VWRP.L":    {"name": "VG All-World",     "row": "equity"},
+    "IWDA.L":    {"name": "iShs MSCI World",  "row": "equity"},
+    "VTI":       {"name": "Total US Mkt",     "row": "equity"},
+    "IVV":       {"name": "iShs S&P 500",     "row": "equity"},
+    "SWDA.L":    {"name": "iShs World GBP",   "row": "equity"},
+    "CSPX.L":    {"name": "iShs Core S&P500", "row": "equity"},
+    "GLD":       {"name": "SPDR Gold",        "row": "equity"},
+    "SLV":       {"name": "iShs Silver",      "row": "equity"},
+    "GC=F":      {"name": "Gold Futures",     "row": "equity"},
+    "NVDA":      {"name": "NVIDIA",           "row": "equity"},
+    "AAPL":      {"name": "Apple",            "row": "equity"},
+    "MSFT":      {"name": "Microsoft",        "row": "equity"},
+    "TSLA":      {"name": "Tesla",            "row": "equity"},
+    "MSTR":      {"name": "Strategy",         "row": "equity"},
+    "COIN":      {"name": "Coinbase",         "row": "equity"},
+    "BLK":       {"name": "BlackRock",        "row": "equity"},
+}
+_HUB_ROW_COLOR: dict[str, str] = {
+    "crypto":   "#9B59B6",
+    "thematic": "#2ECC71",
+    "equity":   "#5B8FD4",
+}
+_HUB_ROW_NAV: dict[str, str] = {
+    "crypto":   "₿ Sovereign Crypto",
+    "thematic": "📊 Thematic Sectors",
+    "equity":   "📈 Core Equity",
+}
+
+_INFLUENTIAL_PEOPLE: list[dict] = [
+    {
+        "name": "Jensen Huang", "role": "CEO, NVIDIA", "avatar": "🟢",
+        "news_ticker": "NVDA",
+        "asset_focus": ["NVDA", "SMCI", "MRVL", "AI chips"],
+        "latest_view": "Blackwell Ultra demand exceeds all supply constraints through 2026. 'We are at an iPhone moment for AI.' Every company must become an AI company.",
+        "stance": "BULLISH", "stance_color": "#00D4AA",
+        "source": "NVDA GTC 2026", "source_url": "https://www.nvidia.com/en-us/events/gtc/", "date": "Mar 2026",
+    },
+    {
+        "name": "Elon Musk", "role": "CEO, Tesla / xAI / SpaceX", "avatar": "🔵",
+        "news_ticker": "TSLA",
+        "asset_focus": ["DOGE-USD", "BTC-USD", "TSLA", "AI"],
+        "latest_view": "DOGE remains 'the people's crypto'. xAI Grok integration with X to drive crypto adoption. Tesla FSD V14 autonomy revenue expected 2026.",
+        "stance": "MIXED", "stance_color": "#FFA500",
+        "source": "X (Twitter) / Tesla Q1 2026", "source_url": "https://twitter.com/elonmusk", "date": "Apr 2026",
+    },
+    {
+        "name": "Michael J. Saylor", "role": "Chairman, Strategy (MicroStrategy)", "avatar": "🟠",
+        "news_ticker": "MSTR",
+        "asset_focus": ["BTC-USD", "MSTR"],
+        "latest_view": "'Bitcoin is the apex property of the human race.' Strategy holds 214,400 BTC. Every corporation and sovereign fund will allocate within 10 years.",
+        "stance": "MAX BULLISH", "stance_color": "#FF8C00",
+        "source": "Strategy Q1 2026 call", "source_url": "https://www.microstrategy.com/investor-relations/", "date": "May 2026",
+    },
+    {
+        "name": "Robert Kiyosaki", "role": "Author, Rich Dad Poor Dad", "avatar": "🟡",
+        "news_ticker": "GLD",
+        "asset_focus": ["BTC-USD", "GLD", "SLV"],
+        "latest_view": "'The US dollar is dying. Buy BTC, gold and silver before the crash.' Predicts BTC at $300K by year-end. Warns of USD hyperinflation.",
+        "stance": "BULLISH (Gold/BTC)", "stance_color": "#FFD700",
+        "source": "X (Twitter) / Podcast", "source_url": "https://twitter.com/theRealKiyosaki", "date": "Jun 2026",
+    },
+    {
+        "name": "Donald Trump", "role": "President, United States", "avatar": "🔴",
+        "news_ticker": "BTC-USD",
+        "asset_focus": ["BTC-USD", "Crypto policy", "USD"],
+        "latest_view": "US Strategic Bitcoin Reserve signed via executive order. 'America will be the crypto capital of the world.' SEC crypto enforcement scaled back under new leadership.",
+        "stance": "PRO-CRYPTO", "stance_color": "#FF4B4B",
+        "source": "White House EO", "source_url": "https://www.whitehouse.gov/", "date": "Feb 2026",
+    },
+    {
+        "name": "Cathie Wood", "role": "CEO & CIO, ARK Invest", "avatar": "🔵",
+        "news_ticker": "ARKK",
+        "asset_focus": ["BTC-USD", "TSLA", "COIN", "ARKK"],
+        "latest_view": "'BTC will reach $1.5M by 2030.' ARK Big Ideas 2026: AI + crypto convergence creates the largest wealth creation event in history.",
+        "stance": "BULLISH", "stance_color": "#00D4AA",
+        "source": "ARK Big Ideas 2026", "source_url": "https://ark-invest.com/big-ideas-2026/", "date": "Jan 2026",
+    },
+    {
+        "name": "Larry Fink / BlackRock", "role": "CEO, BlackRock", "avatar": "⚫",
+        "news_ticker": "BLK",
+        "asset_focus": ["BTC-USD", "IB1T", "Tokenisation", "BLK"],
+        "latest_view": "'Bitcoin is digital gold.' IB1T now £3.2bn AUM. Tokenisation of real-world assets will be the next revolution — BlackRock leading with BUIDL fund.",
+        "stance": "INSTITUTIONALLY BULLISH", "stance_color": "#5B8FD4",
+        "source": "BlackRock Q1 2026 letter", "source_url": "https://www.blackrock.com/", "date": "Apr 2026",
+    },
+    {
+        "name": "Warren Buffett / Berkshire", "role": "Chairman, Berkshire Hathaway", "avatar": "🟤",
+        "news_ticker": "BRK-B",
+        "asset_focus": ["AAPL", "OXY", "BAC", "Cash"],
+        "latest_view": "'We don't understand crypto and don't need to.' Berkshire holds $190bn cash. Still long AAPL, OXY, financials. Warns on AI valuation bubble.",
+        "stance": "CRYPTO BEARISH", "stance_color": "#888",
+        "source": "Berkshire AGM 2026", "source_url": "https://www.berkshirehathaway.com/", "date": "May 2026",
+    },
+]
+
+_ASSET_MANAGERS: list[dict] = [
+    {"name": "BlackRock", "news_ticker": "BLK", "aum": "$11.5tn",
+     "crypto_exposure": "IB1T (BTC ETP, £3.2bn AUM)", "color": "#5B8FD4",
+     "view": "Bullish BTC; tokenisation of RWAs; FCA authorisation in progress"},
+    {"name": "Vanguard", "news_ticker": None, "aum": "$9.3tn",
+     "crypto_exposure": "None — policy excludes crypto", "color": "#888",
+     "view": "No crypto ETF planned; index-only focus"},
+    {"name": "Fidelity", "news_ticker": None, "aum": "$5.4tn",
+     "crypto_exposure": "FBTC (BTC ETF, US), Digital Assets division", "color": "#9B59B6",
+     "view": "Bullish BTC; building crypto custody infrastructure"},
+    {"name": "ARK Invest", "news_ticker": "ARKK", "aum": "$12bn",
+     "crypto_exposure": "ARKB (BTC ETF), ARKW, ARKK holdings", "color": "#00D4AA",
+     "view": "Max bullish BTC ($1.5M target); AI+crypto convergence thesis"},
+    {"name": "WisdomTree", "news_ticker": None, "aum": "$100bn",
+     "crypto_exposure": "WBTC, WETH, SOLW, XRPL (LSE ETPs)", "color": "#FFA500",
+     "view": "Active crypto ETP issuer; FCA VoP in preparation"},
+    {"name": "CoinShares", "news_ticker": None, "aum": "$5.5bn",
+     "crypto_exposure": "BITB, ETHE (LSE ETPs); largest European crypto ETP manager", "color": "#2ECC71",
+     "view": "Crypto-native; regulatory compliant; expanding product range"},
+]
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _hub_prices(tickers: tuple) -> dict[str, dict]:
+    try:
+        import math
+        import yfinance as yf
+        import pandas as pd
+
+        def _clean(v) -> Optional[float]:
+            try:
+                f = float(v)
+                return None if (math.isnan(f) or math.isinf(f)) else f
+            except Exception:
+                return None
+
+        batch = yf.download(list(tickers), period="5d", auto_adjust=True,
+                            progress=False, threads=True)
+        closes = batch.get("Close", batch)
+        if closes is None or closes.empty:
+            return {}
+        if isinstance(closes, pd.Series):
+            closes = closes.to_frame(name=tickers[0])
+        closes = closes.dropna(how="all")
+        if closes.empty:
+            return {}
+        last = closes.iloc[-1]
+        prev = closes.iloc[-2] if len(closes) >= 2 else closes.iloc[-1]
+        data: dict[str, dict] = {}
+        for t in tickers:
+            try:
+                p  = _clean(last.get(t))
+                p0 = _clean(prev.get(t))
+                if p is None:
+                    continue
+                pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
+                data[t] = {"price": p, "chg_pct": pct}
+            except Exception:
+                pass
+        return data
+    except Exception:
+        return {}
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _fetch_hub_news(ticker: str) -> list[dict]:
+    try:
+        import yfinance as yf
+        from datetime import datetime as _dt
+        raw = yf.Ticker(ticker).news or []
+        results = []
+        for item in raw[:10]:
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content") or item
+            if not isinstance(content, dict):
+                content = item
+            title = str(content.get("title") or item.get("title", "")).strip()
+            if not title:
+                continue
+            canon = content.get("canonicalUrl") or {}
+            click = content.get("clickThroughUrl") or {}
+            link = (
+                (canon.get("url") if isinstance(canon, dict) else "")
+                or (click.get("url") if isinstance(click, dict) else "")
+                or item.get("link", "")
+            )
+            provider  = content.get("provider") or {}
+            publisher = (
+                (provider.get("displayName") if isinstance(provider, dict) else str(provider or ""))
+                or item.get("publisher", "")
+            )
+            ts_raw = content.get("pubDate") or item.get("providerPublishTime") or 0
+            ts: int = 0
+            if isinstance(ts_raw, str):
+                try:
+                    ts = int(_dt.fromisoformat(ts_raw.replace("Z", "+00:00")).timestamp())
+                except Exception:
+                    ts = 0
+            else:
+                ts = int(ts_raw or 0)
+            results.append({
+                "title":     title,
+                "link":      str(link).strip(),
+                "publisher": str(publisher).strip(),
+                "ts":        ts,
+            })
+        return results
+    except Exception:
+        return []
+
+
+def _format_ts(ts: int) -> str:
+    if not ts:
+        return "—"
+    try:
+        from datetime import datetime as _dt
+        dt    = _dt.fromtimestamp(ts)
+        now   = _dt.now()
+        delta = now - dt
+        if delta.days == 0 and delta.seconds < 3600:
+            return f"{max(delta.seconds // 60, 1)}m ago"
+        if delta.days == 0:
+            return f"{delta.seconds // 3600}h ago"
+        if delta.days < 7:
+            return f"{delta.days}d ago"
+        return dt.strftime("%b %d")
+    except Exception:
+        return "—"
+
+
+def render_hub() -> None:
+    today = date.today()
+
+    # ── Session state init ────────────────────────────────────────────────────
+    if "hub_favs" not in st.session_state:
+        st.session_state["hub_favs"] = {k: list(v) for k, v in _HUB_DEFAULT_FAVS.items()}
+    if "hub_news_ticker" not in st.session_state:
+        st.session_state["hub_news_ticker"] = None
+    if "hub_add_mode" not in st.session_state:
+        st.session_state["hub_add_mode"] = None
+
+    # ── Header row ────────────────────────────────────────────────────────────
+    rc1, _, rc3 = st.columns([2, 3, 1])
+    with rc1:
+        if st.toggle("Auto-refresh (5 min)", value=False, key="hub_autorefresh"):
+            st.cache_data.clear()
+            st.rerun()
+    with rc3:
+        phase = current_phase(today)
+        pc = _phase_color(phase)
+        st.markdown(
+            f'<div style="text-align:right"><span style="background:{pc}22;border:1px solid {pc};'
+            f'color:{pc};border-radius:4px;padding:0.18rem 0.45rem;font-size:0.67rem;font-weight:700">'
+            f'{phase.replace("_"," ")}</span></div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Market Snapshot Cards ─────────────────────────────────────────────────
+    st.markdown(
+        '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.35rem">'
+        '📊 MARKET SNAPSHOT — click a card to view latest news</p>',
+        unsafe_allow_html=True,
+    )
+
+    all_favs = list(dict.fromkeys(
+        t for favs in st.session_state["hub_favs"].values() for t in favs
+    ))
+    prices = _hub_prices(tuple(all_favs))
+
+    for row_key, row_label, row_color, _ in _HUB_ROWS:
+        favs = st.session_state["hub_favs"].get(row_key, [])
+
+        # Row header + ➕ icon
+        h1, h2 = st.columns([10, 1])
+        with h1:
+            st.markdown(
+                f'<div style="font-size:0.66rem;color:{row_color};font-weight:700;'
+                f'letter-spacing:0.07em;margin:0.45rem 0 0.15rem 0">{row_label}</div>',
+                unsafe_allow_html=True,
+            )
+        with h2:
+            if st.button("➕", key=f"hub_add_btn_{row_key}",
+                         help="Add / remove instruments from this row"):
+                st.session_state["hub_add_mode"] = (
+                    None if st.session_state["hub_add_mode"] == row_key else row_key
+                )
+                st.rerun()
+
+        # Add/remove search panel
+        if st.session_state["hub_add_mode"] == row_key:
+            s1, s2 = st.columns([4, 1])
+            with s1:
+                search = st.text_input(
+                    "Search", key=f"hub_srch_{row_key}",
+                    placeholder="Type ticker or name (e.g. NVDA, Bitcoin)…",
+                    label_visibility="collapsed",
+                )
+            with s2:
+                if st.button("✕ Done", key=f"hub_done_{row_key}"):
+                    st.session_state["hub_add_mode"] = None
+                    st.rerun()
+
+            q = search.strip().upper() if search else ""
+            matches = {
+                k: v for k, v in _HUB_ALL_TICKERS.items()
+                if not q or q in k or q in v["name"].upper()
+            }
+            matches = dict(list(matches.items())[:16])
+
+            if matches:
+                chip_cols = st.columns(min(8, len(matches)))
+                for ci, (tick, meta) in enumerate(matches.items()):
+                    in_row = tick in favs
+                    with chip_cols[ci % 8]:
+                        if st.button(
+                            f"{'✓ ' if in_row else ''}{tick}",
+                            key=f"hub_chip_{row_key}_{tick}",
+                            type="primary" if in_row else "secondary",
+                            use_container_width=True,
+                        ):
+                            nf = list(favs)
+                            if in_row:
+                                nf.remove(tick)
+                            else:
+                                nf.append(tick)
+                            st.session_state["hub_favs"][row_key] = nf
+                            st.rerun()
+
+        # Compact price cards
+        if favs:
+            card_cols = st.columns(len(favs))
+            for col, ticker in zip(card_cols, favs):
+                with col:
+                    card_id = (
+                        "hub_card_"
+                        + ticker.replace("-", "_").replace(".", "_").replace("=", "_")
+                    )
+                    p_data = prices.get(ticker, {})
+                    price  = p_data.get("price")
+                    chg    = p_data.get("chg_pct")
+                    name   = _HUB_ALL_TICKERS.get(ticker, {}).get("name", ticker)
+                    name_s = (name[:9] + "…") if len(name) > 10 else name
+
+                    if price is not None:
+                        price_str = (
+                            f"${price:,.0f}" if price >= 1000 else
+                            f"${price:.2f}"  if price >= 1    else
+                            f"${price:.4f}"
+                        )
+                    else:
+                        price_str = "—"
+
+                    if chg is not None:
+                        cc  = "#00D4AA" if chg >= 0 else "#FF4B4B"
+                        arr = "▲" if chg >= 0 else "▼"
+                        chg_str = f'<span style="color:{cc}">{arr}{abs(chg):.1f}%</span>'
+                    else:
+                        chg_str = '<span style="color:#444">—</span>'
+
+                    is_sel = st.session_state["hub_news_ticker"] == ticker
+                    bt = f"3px solid {row_color}" if is_sel else f"2px solid {row_color}"
+                    bg = f"{row_color}1A" if is_sel else "#1A1D24"
+
+                    st.markdown(
+                        f'<div id="{card_id}" style="background:{bg};border:1px solid #2E3140;'
+                        f'border-top:{bt};border-radius:6px;padding:0.3rem 0.25rem;'
+                        f'text-align:center;cursor:pointer">'
+                        f'<div style="color:{row_color};font-size:0.57rem;font-weight:700;letter-spacing:0.03em">{ticker}</div>'
+                        f'<div style="color:#999;font-size:0.56rem;margin:0.03rem 0">{name_s}</div>'
+                        f'<div style="color:#fff;font-size:0.8rem;font-weight:700;line-height:1.15">{price_str}</div>'
+                        f'<div style="font-size:0.58rem;margin-top:0.02rem">{chg_str}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                    # Hidden trigger button — wired by JS below
+                    if st.button("", key=f"hub_btn_{ticker}", use_container_width=True):
+                        st.session_state["hub_news_ticker"] = (
+                            None if is_sel else ticker
+                        )
+                        st.rerun()
+
+    # JS: wire card click → hidden button, hide buttons visually
+    import streamlit.components.v1 as components
+    components.html("""<script>
+(function(){
+  function setup(){
+    var cards=window.parent.document.querySelectorAll('[id^="hub_card_"]');
+    cards.forEach(function(card){
+      if(card._hubReady)return;
+      card._hubReady=true;
+      var mc=card.closest('[data-testid="stMarkdownContainer"]');
+      var vb=mc&&mc.parentElement;
+      if(vb){
+        var bd=vb.querySelector('[data-testid="stButton"]');
+        if(bd)bd.style.cssText='height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;';
+      }
+      card.addEventListener('click',function(){
+        var mc2=card.closest('[data-testid="stMarkdownContainer"]');
+        var vb2=mc2&&mc2.parentElement;
+        if(!vb2)return;
+        var btn=vb2.querySelector('button');
+        if(btn)btn.click();
+      });
+      card.addEventListener('mouseenter',function(){card.style.opacity='0.8';});
+      card.addEventListener('mouseleave',function(){card.style.opacity='1';});
+    });
+  }
+  setup();
+  new MutationObserver(setup).observe(window.parent.document.body,{childList:true,subtree:true});
+})();
+</script>""", height=0, scrolling=False)
+
+    # ── News panel (below all rows, shown on card click) ──────────────────────
+    sel = st.session_state.get("hub_news_ticker")
+    if sel:
+        sel_meta = _HUB_ALL_TICKERS.get(sel, {})
+        sel_name = sel_meta.get("name", sel)
+        sel_row  = sel_meta.get("row", "equity")
+        sel_col  = _HUB_ROW_COLOR.get(sel_row, "#5B8FD4")
+        sel_nav  = _HUB_ROW_NAV.get(sel_row, "📈 Core Equity")
+
+        st.markdown(
+            f'<div style="background:{sel_col}11;border:1px solid {sel_col};border-radius:8px;'
+            f'padding:0.5rem 0.9rem;margin-top:0.4rem">'
+            f'<span style="color:{sel_col};font-weight:700;font-size:0.8rem">'
+            f'📰 Latest news — {sel} · {sel_name}</span></div>',
+            unsafe_allow_html=True,
+        )
+        cl1, cl2, _ = st.columns([1, 2, 6])
+        with cl1:
+            if st.button("✕ Close", key="hub_news_close"):
+                st.session_state["hub_news_ticker"] = None
+                st.rerun()
+        with cl2:
+            if st.button(f"Open in {sel_nav}", key="hub_news_nav"):
+                st.session_state["sidebar_nav"] = sel_nav
+                st.rerun()
+
+        with st.spinner(f"Loading news for {sel}…"):
+            news_items = _fetch_hub_news(sel)
+
+        if news_items:
+            nc1, nc2 = st.columns(2)
+            for idx, item in enumerate(news_items[:8]):
+                title = item.get("title", "—")
+                link  = item.get("link", "")
+                pub   = item.get("publisher", "")
+                time_str = _format_ts(item.get("ts", 0))
+                title_html = (
+                    f'<a href="{link}" target="_blank" style="color:#ddd;text-decoration:none;'
+                    f'font-weight:600;font-size:0.79rem;line-height:1.35">{title}</a>'
+                    if link else
+                    f'<span style="color:#ddd;font-size:0.79rem;font-weight:600">{title}</span>'
+                )
+                with (nc1 if idx % 2 == 0 else nc2):
+                    st.markdown(
+                        f'<div style="background:#1A1D24;border:1px solid #2E3140;'
+                        f'border-left:3px solid {sel_col};border-radius:0 6px 6px 0;'
+                        f'padding:0.48rem 0.7rem;margin-bottom:0.28rem">'
+                        f'{title_html}'
+                        f'<div style="color:#555;font-size:0.66rem;margin-top:0.18rem">'
+                        f'{pub} · {time_str}</div></div>',
+                        unsafe_allow_html=True,
+                    )
+        else:
+            st.info(f"No recent news for {sel}. News is available for most major ETFs and US stocks.")
+
+    st.divider()
+
+    # ── Cassandra + Kingmaker ─────────────────────────────────────────────────
+    alerts       = load_cassandra_alerts()
+    endorsements = load_kingmaker_endorsements()
+    left_col, right_col = st.columns([1, 1], gap="medium")
+
+    with left_col:
+        st.markdown(
+            '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
+            '🔴 CASSANDRA ALERTS — Live macro threats</p>',
+            unsafe_allow_html=True,
+        )
+        for a in alerts[:6]:
+            score   = int(a.get("risk_score") or a.get("Systemic_Risk_Score") or 0)
+            title   = a.get("title") or a.get("Title") or "—"
+            vector  = (a.get("vector") or a.get("Risk_Vector") or "").replace("_", " ").upper()
+            src_url = a.get("source_url") or a.get("Source_URL") or ""
+            raw_src = a.get("source") or ""
+            bar_col = "#FF4B4B" if score >= 8 else "#FFA500" if score >= 6 else "#4A7C59"
+            icon    = "🔴" if score >= 8 else "🟡" if score >= 6 else "🟢"
+            title_s = title[:60] + ("…" if len(title) > 60 else "")
+            src_html = (
+                f'<a href="{src_url}" target="_blank" style="color:#00D4AA;font-size:0.67rem;text-decoration:none">↗ {raw_src}</a>'
+                if src_url else f'<span style="color:#666;font-size:0.67rem">{raw_src}</span>'
+            )
+            with st.expander(f"{icon} {score}/10  ·  {title_s}", expanded=False):
+                st.markdown(
+                    f'<div style="background:#1A1D24;border-left:3px solid {bar_col};padding:0.4rem 0.7rem;'
+                    f'border-radius:0 4px 4px 0;margin-bottom:0.3rem">'
+                    f'<span style="color:{bar_col};font-size:0.7rem;font-weight:700">{vector}</span>'
+                    f' <span style="color:{bar_col};font-weight:700;font-size:0.78rem">{score}/10</span><br>'
+                    f'<span style="color:#bbb;font-size:0.77rem;line-height:1.4">{title}</span><br>'
+                    f'<div style="margin-top:0.22rem">{src_html}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                v_key = (a.get("vector") or a.get("Risk_Vector") or "").lower()
+                for b in _cassandra_assessment(v_key, title, score):
+                    st.markdown(b)
+
+    with right_col:
+        st.markdown(
+            '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
+            '🚀 KINGMAKER SIGNALS — Named-exec endorsements</p>',
+            unsafe_allow_html=True,
+        )
+        for e in endorsements[:5]:
+            titan_name = e.get("titan_name")    or e.get("Titan_Ticker")        or "—"
+            exec_name  = e.get("executive")     or e.get("Endorsement_Source")  or "Exec"
+            vendor     = e.get("vendor")        or e.get("Counterparty_Name")   or "—"
+            vticker    = e.get("vendor_ticker") or e.get("Counterparty_Ticker") or ""
+            conn_type  = (e.get("type") or e.get("Connection_Type") or "Supplier").replace("_", " ")
+            conf       = int(e.get("confidence") or e.get("Confidence_Score") or 7)
+            quote      = e.get("quote") or e.get("Extracted_Text") or ""
+            src_url    = e.get("source_url") or e.get("Endorsement_Source") or ""
+            conf_col   = "#FF4B4B" if conf >= 9 else "#FFA500" if conf >= 7 else "#00D4AA"
+            vtag       = f" ({vticker})" if vticker else ""
+            vlink      = (
+                f'<a href="{src_url}" target="_blank" style="color:#00D4AA;text-decoration:none;font-weight:700">{vendor}{vtag}</a>'
+                if src_url and src_url.startswith("http") else
+                f'<b style="color:#00D4AA">{vendor}{vtag}</b>'
+            )
+            with st.expander(f"🏆 {titan_name} → {vendor}{vtag}  ·  {conf}/10", expanded=False):
+                st.markdown(
+                    f'<div style="background:#1A1D24;border-left:3px solid {conf_col};padding:0.4rem 0.7rem;'
+                    f'border-radius:0 4px 4px 0;margin-bottom:0.3rem">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                    f'<span style="color:#ccc;font-size:0.78rem"><b>{titan_name}</b> → {vlink}</span>'
+                    f'<span style="color:{conf_col};font-weight:700">{conf}/10</span></div>'
+                    f'<span style="color:#888;font-size:0.7rem">{exec_name} · {conn_type}</span>'
+                    f'<div style="color:#aaa;font-size:0.74rem;font-style:italic;border-top:1px solid #2E3140;'
+                    f'padding-top:0.22rem;margin-top:0.22rem">'
+                    f'&ldquo;{quote[:160]}{"…" if len(quote) > 160 else ""}&rdquo;</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                raw_conn = e.get("type") or e.get("Connection_Type") or "Supplier"
+                for b in _kingmaker_assessment(raw_conn, vendor, titan_name, conf):
+                    st.markdown(b)
+
+    st.divider()
+
+    # ── Influential Voices (dynamic news) ─────────────────────────────────────
+    st.markdown(
+        '<p style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:#888;margin-bottom:0.3rem">'
+        '👥 INFLUENTIAL VOICES — Latest views & live market news</p>',
+        unsafe_allow_html=True,
+    )
+
+    tab_people, tab_managers = st.tabs(["Key Individuals", "Asset Managers"])
+
+    with tab_people:
+        for person in _INFLUENTIAL_PEOPLE:
+            sc           = person["stance_color"]
+            news_ticker  = person.get("news_ticker", "")
+            asset_tags   = "".join(
+                f'<span style="background:#2E3140;color:#aaa;border-radius:3px;padding:0 4px;'
+                f'font-size:0.62rem;margin-right:2px">{a}</span>'
+                for a in person["asset_focus"][:4]
+            )
+            src_link = (
+                f'<a href="{person["source_url"]}" target="_blank" style="color:#00D4AA;font-size:0.67rem;text-decoration:none">↗ {person["source"]}</a>'
+                if person.get("source_url") else
+                f'<span style="color:#666;font-size:0.67rem">{person["source"]}</span>'
+            )
+            header = f'{person["avatar"]} {person["name"]}  ·  {person["role"]}  ·  {person["date"]}'
+            with st.expander(header, expanded=False):
+                pv1, pv2 = st.columns([5, 4])
+                with pv1:
+                    st.markdown(
+                        f'<div style="background:#1A1D24;border-left:3px solid {sc};border-radius:0 8px 8px 0;padding:0.6rem 0.8rem">'
+                        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">'
+                        f'<span style="color:#fff;font-weight:700;font-size:0.82rem">{person["name"]}</span>'
+                        f'<span style="background:{sc}22;color:{sc};border-radius:3px;padding:0.1rem 0.4rem;font-size:0.64rem;font-weight:700">{person["stance"]}</span></div>'
+                        f'<div style="color:#888;font-size:0.7rem;margin-bottom:0.25rem">{person["role"]}</div>'
+                        f'<div style="margin-bottom:0.3rem">{asset_tags}</div>'
+                        f'<div style="color:#bbb;font-size:0.76rem;line-height:1.45">{person["latest_view"]}</div>'
+                        f'<div style="margin-top:0.3rem">{src_link}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                with pv2:
+                    if news_ticker:
+                        st.markdown(
+                            f'<div style="color:#888;font-size:0.66rem;font-weight:700;margin-bottom:0.2rem">LIVE NEWS · {news_ticker}</div>',
+                            unsafe_allow_html=True,
+                        )
+                        for ni in _fetch_hub_news(news_ticker)[:4]:
+                            nt    = ni.get("title", "—")
+                            nl    = ni.get("link", "")
+                            npub  = ni.get("publisher", "")
+                            ntime = _format_ts(ni.get("ts", 0))
+                            nt_html = (
+                                f'<a href="{nl}" target="_blank" style="color:#ccc;text-decoration:none;font-size:0.71rem;line-height:1.3">{nt[:90]}{"…" if len(nt)>90 else ""}</a>'
+                                if nl else
+                                f'<span style="color:#ccc;font-size:0.71rem">{nt[:90]}</span>'
+                            )
+                            st.markdown(
+                                f'<div style="border-bottom:1px solid #2E3140;padding:0.28rem 0">'
+                                f'{nt_html}'
+                                f'<div style="color:#555;font-size:0.63rem">{npub} · {ntime}</div>'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+                    else:
+                        st.markdown('<span style="color:#555;font-size:0.72rem">No live ticker linked.</span>', unsafe_allow_html=True)
+
+    with tab_managers:
+        for mgr in _ASSET_MANAGERS:
+            mc          = mgr["color"]
+            news_ticker = mgr.get("news_ticker")
+            with st.expander(f'{mgr["name"]}  ·  AUM: {mgr["aum"]}', expanded=False):
+                mv1, mv2 = st.columns([5, 4])
+                with mv1:
+                    st.markdown(
+                        f'<div style="background:#1A1D24;border-left:3px solid {mc};border-radius:0 8px 8px 0;padding:0.55rem 0.8rem">'
+                        f'<div style="color:{mc};font-weight:700;font-size:0.8rem;margin-bottom:0.2rem">{mgr["name"]}</div>'
+                        f'<div style="color:#888;font-size:0.7rem">AUM: {mgr["aum"]}</div>'
+                        f'<div style="color:#aaa;font-size:0.7rem;margin:0.12rem 0">Crypto: {mgr["crypto_exposure"]}</div>'
+                        f'<div style="color:#bbb;font-size:0.74rem;line-height:1.4">{mgr["view"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                with mv2:
+                    if news_ticker:
+                        st.markdown(
+                            f'<div style="color:#888;font-size:0.66rem;font-weight:700;margin-bottom:0.2rem">LIVE NEWS · {news_ticker}</div>',
+                            unsafe_allow_html=True,
+                        )
+                        for ni in _fetch_hub_news(news_ticker)[:3]:
+                            nt    = ni.get("title", "—")
+                            nl    = ni.get("link", "")
+                            ntime = _format_ts(ni.get("ts", 0))
+                            nt_html = (
+                                f'<a href="{nl}" target="_blank" style="color:#ccc;text-decoration:none;font-size:0.71rem">{nt[:85]}{"…" if len(nt)>85 else ""}</a>'
+                                if nl else
+                                f'<span style="color:#ccc;font-size:0.71rem">{nt[:85]}</span>'
+                            )
+                            st.markdown(
+                                f'<div style="border-bottom:1px solid #2E3140;padding:0.28rem 0">'
+                                f'{nt_html}'
+                                f'<div style="color:#555;font-size:0.63rem">{ntime}</div>'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+                    else:
+                        st.markdown('<span style="color:#555;font-size:0.72rem">No linked news ticker.</span>', unsafe_allow_html=True)
+
+
 _HUB_DEFAULT_EQUITY = ["SPY", "QQQ", "VWRP.L", "IWDA.L"]
 
 _HUB_TICKER_META: dict[str, dict] = {
@@ -1116,6 +1802,9 @@ def main() -> None:
 
     elif nav == "🏛️ Regulatory Sandbox":
         _mod_regulatory.render()
+
+    elif nav == "📰 News Feed":
+        _mod_news.render()
 
     else:
         render_hub()
