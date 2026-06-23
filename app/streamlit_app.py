@@ -238,15 +238,15 @@ st.markdown(
         margin-bottom: 0.5rem;
         box-shadow: var(--shadow-card);
     }
-    /* Keep summary header white at all states — collapsed, expanded, focused */
+    /* Keep summary header subtly shaded at all states — collapsed, expanded, focused */
     div[data-testid="stExpander"] summary,
     div[data-testid="stExpander"] summary:hover,
     div[data-testid="stExpander"] summary:focus,
     div[data-testid="stExpander"] summary:focus-visible,
     div[data-testid="stExpander"] summary:active,
     div[data-testid="stExpander"] details[open] > summary {
-        background: var(--card) !important;
-        background-color: var(--card) !important;
+        background: var(--navy-50) !important;
+        background-color: var(--navy-50) !important;
         color: var(--text-h) !important;
         font-weight: 600 !important;
         font-size: 0.88rem !important;
