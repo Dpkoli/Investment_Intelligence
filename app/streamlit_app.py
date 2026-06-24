@@ -305,6 +305,16 @@ st.markdown(
     }
 
 
+    /* ── Snap-card: hide hidden toggle buttons + hover lift ─────────────────── */
+    [data-testid="stMarkdownContainer"]:has(.snap-card) + [data-testid="stButton"] {
+        display: none !important;
+    }
+    .snap-card { transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
+    .snap-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px rgba(7,29,53,0.11) !important;
+    }
+
     /* ── Selectbox / Multiselect ─────────────────────────────────────────────── */
     .stSelectbox [data-baseweb="select"] > div:first-child,
     .stMultiSelect [data-baseweb="select"] > div:first-child {
@@ -856,6 +866,7 @@ _HUB_ROW_NAV: dict[str, str] = {
     "thematic": "Thematic Sectors",
     "equity":   "Core Equity",
 }
+_SNAP_DEFAULTS: list[str] = ["BTC-USD", "ETH-USD", "SPY", "NVDA", "VWRP.L", "GC=F"]
 
 _INFLUENTIAL_PEOPLE: list[dict] = [
     {
@@ -1084,6 +1095,223 @@ def render_hub() -> None:
             f'{phase.replace("_"," ")}</span></div>',
             unsafe_allow_html=True,
         )
+
+    # ── Market Snapshot hero ──────────────────────────────────────────────────
+    if "snap_favs" not in st.session_state:
+        st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
+    if "snap_open" not in st.session_state:
+        st.session_state["snap_open"] = None
+    if "snap_edit" not in st.session_state:
+        st.session_state["snap_edit"] = False
+
+    snap_favs  = st.session_state["snap_favs"]
+    snap_open  = st.session_state["snap_open"]
+    snap_prices = _hub_prices(tuple(snap_favs))
+
+    # Section label + edit toggle
+    sh1, sh2 = st.columns([9, 1])
+    with sh1:
+        st.markdown(
+            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;'
+            'color:#5A8EBB;margin-bottom:0.3rem;text-transform:uppercase">Market Snapshot</p>',
+            unsafe_allow_html=True,
+        )
+    with sh2:
+        if st.button("Edit" if not st.session_state["snap_edit"] else "Done",
+                     key="snap_edit_toggle", use_container_width=True):
+            st.session_state["snap_edit"] = not st.session_state["snap_edit"]
+            st.rerun()
+
+    # ── Edit panel ────────────────────────────────────────────────────────────
+    if st.session_state["snap_edit"]:
+        st.markdown(
+            '<div style="font-size:0.67rem;color:#5A8EBB;font-weight:600;margin-bottom:0.25rem">'
+            'Click to remove  ·  Max 6 instruments</div>',
+            unsafe_allow_html=True,
+        )
+        rm_cols = st.columns(min(6, max(1, len(snap_favs))))
+        for ci, tick in enumerate(snap_favs):
+            with rm_cols[ci]:
+                if st.button(f"✕ {tick}", key=f"snap_rm_{tick}", use_container_width=True):
+                    nf = [t for t in snap_favs if t != tick]
+                    st.session_state["snap_favs"] = nf
+                    if st.session_state["snap_open"] == tick:
+                        st.session_state["snap_open"] = None
+                    st.rerun()
+
+        if len(snap_favs) < 6:
+            st.markdown(
+                '<div style="font-size:0.67rem;color:#5A8EBB;font-weight:600;'
+                'margin:0.4rem 0 0.2rem">Add instrument</div>',
+                unsafe_allow_html=True,
+            )
+            srch = st.text_input(
+                "Search", key="snap_add_srch",
+                placeholder="Ticker or name — e.g. BTC, NVDA, Gold…",
+                label_visibility="collapsed",
+            )
+            q = srch.strip().upper() if srch else ""
+            if q:
+                candidates = [
+                    (k, v) for k, v in _HUB_ALL_TICKERS.items()
+                    if k not in snap_favs and (q in k.upper() or q in v["name"].upper())
+                ][:8]
+                if candidates:
+                    add_cols = st.columns(min(4, len(candidates)))
+                    for ci, (tick, meta) in enumerate(candidates):
+                        with add_cols[ci % 4]:
+                            if st.button(
+                                f"+ {tick}", key=f"snap_add_{tick}",
+                                help=meta["name"], use_container_width=True,
+                            ):
+                                st.session_state["snap_favs"] = list(snap_favs) + [tick]
+                                st.rerun()
+                else:
+                    st.caption("No matches — try a different ticker or name.")
+
+    st.markdown('<div style="height:0.15rem"></div>', unsafe_allow_html=True)
+
+    # ── 3 × N card grid with inline accordion news ───────────────────────────
+    import streamlit.components.v1 as components
+    SNAP_COLS = 3
+    rows = [snap_favs[i:i+SNAP_COLS] for i in range(0, len(snap_favs), SNAP_COLS)]
+
+    for row_tickers in rows:
+        card_cols = st.columns(SNAP_COLS)
+        for col, ticker in zip(card_cols, row_tickers):
+            with col:
+                meta    = _HUB_ALL_TICKERS.get(ticker, {})
+                name    = meta.get("name", ticker)
+                row_key = meta.get("row", "equity")
+                color   = _HUB_ROW_COLOR.get(row_key, "#3A72A0")
+                card_id = "snap_card_" + ticker.replace("-","_").replace(".","_").replace("=","_")
+
+                p_data    = snap_prices.get(ticker, {})
+                price     = p_data.get("price")
+                chg       = p_data.get("chg_pct")
+                is_open   = snap_open == ticker
+
+                if price is not None:
+                    price_str = (
+                        f"${price:,.0f}" if price >= 1000 else
+                        f"${price:.2f}"  if price >= 1    else
+                        f"${price:.4f}"
+                    )
+                else:
+                    price_str = "—"
+
+                if chg is not None:
+                    cc  = "#149453" if chg >= 0 else "#E53535"
+                    arr = "▲" if chg >= 0 else "▼"
+                    chg_html = (
+                        f'<span style="color:{cc};font-weight:600;'
+                        f'font-family:\'JetBrains Mono\',monospace;font-size:0.73rem">'
+                        f'{arr}{abs(chg):.2f}%</span>'
+                    )
+                else:
+                    chg_html = '<span style="color:#5A8EBB;font-size:0.73rem">—</span>'
+
+                bg         = f"{color}0D" if is_open else "#ffffff"
+                border_top = f"3px solid {color}" if is_open else f"2px solid {color}"
+
+                st.markdown(
+                    f'<div id="{card_id}" class="snap-card" style="'
+                    f'background:{bg};border:1px solid #D9E8F5;border-top:{border_top};'
+                    f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;cursor:pointer">'
+                    f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.63rem;'
+                    f'font-weight:800;color:{color};letter-spacing:0.06em;text-transform:uppercase">'
+                    f'{ticker}</div>'
+                    f'<div style="font-size:0.59rem;color:#5A8EBB;margin:0.07rem 0;'
+                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name}</div>'
+                    f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.55rem;'
+                    f'font-weight:400;color:#071D35;letter-spacing:-0.02em;line-height:1.1;'
+                    f'margin:0.18rem 0">{price_str}</div>'
+                    f'<div>{chg_html}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                # Hidden accordion toggle — display:none via CSS; JS wires the card click to this
+                if st.button("​", key=f"snap_btn_{ticker}"):
+                    st.session_state["snap_open"] = None if is_open else ticker
+                    st.rerun()
+
+        # Inline news accordion — only for the card that is open in this row
+        open_in_row = snap_open if (snap_open and snap_open in row_tickers) else None
+        if open_in_row:
+            meta    = _HUB_ALL_TICKERS.get(open_in_row, {})
+            name    = meta.get("name", open_in_row)
+            row_key = meta.get("row", "equity")
+            color   = _HUB_ROW_COLOR.get(row_key, "#3A72A0")
+
+            ph, px = st.columns([11, 1])
+            with ph:
+                st.markdown(
+                    f'<div style="margin:0.3rem 0 0.2rem;font-size:0.68rem;font-weight:800;'
+                    f'text-transform:uppercase;letter-spacing:0.1em;color:{color}">'
+                    f'Latest News — {open_in_row} · {name}</div>',
+                    unsafe_allow_html=True,
+                )
+            with px:
+                if st.button("×", key=f"snap_close_{open_in_row}"):
+                    st.session_state["snap_open"] = None
+                    st.rerun()
+
+            with st.spinner(f"Loading news for {open_in_row}…"):
+                news_items = _fetch_hub_news(open_in_row)
+
+            if news_items:
+                nc1, nc2 = st.columns(2)
+                for idx, item in enumerate(news_items[:6]):
+                    title    = item.get("title", "—")
+                    link     = item.get("link", "")
+                    pub      = item.get("publisher", "")
+                    time_str = _format_ts(item.get("ts", 0))
+                    title_html = (
+                        f'<a href="{link}" target="_blank" style="color:#071D35;'
+                        f'text-decoration:none;font-weight:600;font-size:0.78rem;line-height:1.45">'
+                        f'{title}</a>'
+                        if link else
+                        f'<span style="color:#071D35;font-size:0.78rem;font-weight:600">{title}</span>'
+                    )
+                    with (nc1 if idx % 2 == 0 else nc2):
+                        st.markdown(
+                            f'<div style="background:#ffffff;border:1px solid #D9E8F5;'
+                            f'border-left:3px solid {color};border-radius:0 10px 10px 0;'
+                            f'padding:0.45rem 0.7rem;margin-bottom:0.28rem">'
+                            f'{title_html}'
+                            f'<div style="color:#5A8EBB;font-size:0.64rem;margin-top:0.12rem">'
+                            f'{pub} · {time_str}</div></div>',
+                            unsafe_allow_html=True,
+                        )
+            else:
+                st.info(f"No recent news for {open_in_row}.")
+
+    # JS: wire snap-card div clicks → the adjacent hidden toggle button
+    components.html("""<script>
+(function(){
+  var doc = window.parent.document;
+  function wireSnapCards(){
+    doc.querySelectorAll('.snap-card').forEach(function(card){
+      if(card._snapWired) return;
+      card._snapWired = true;
+      card.addEventListener('click', function(){
+        var mc = card.closest('[data-testid="stMarkdownContainer"]');
+        if(!mc) return;
+        var sib = mc.nextElementSibling;
+        while(sib){
+          var btn = sib.querySelector('button');
+          if(btn){ btn.click(); return; }
+          sib = sib.nextElementSibling;
+        }
+      });
+    });
+  }
+  wireSnapCards();
+  new MutationObserver(wireSnapCards).observe(doc.body,{childList:true,subtree:true});
+})();
+</script>""", height=0, scrolling=False)
+
+    st.divider()
 
     # ── Cassandra + Kingmaker ─────────────────────────────────────────────────
     alerts       = load_cassandra_alerts()
