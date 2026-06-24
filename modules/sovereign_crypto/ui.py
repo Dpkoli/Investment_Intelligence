@@ -516,6 +516,30 @@ def render() -> None:
     if "cr_selected" not in st.session_state:
         st.session_state["cr_selected"] = None
 
+    # ── Click channel (deferred clear) ───────────────────────────────────────
+    if st.session_state.pop("_cr_click_clear", False):
+        st.session_state.pop("cr_click_ch", None)
+
+    st.markdown("""<style>
+[data-testid="stTextInput"]:has(input[placeholder="iw-cr-click-v1"]) {
+  position: fixed !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}
+</style>""", unsafe_allow_html=True)
+
+    _click_raw = st.text_input("c", key="cr_click_ch", placeholder="iw-cr-click-v1",
+                                label_visibility="collapsed")
+    if _click_raw and any(_click_raw == t for t, *_ in _TOP10):
+        _prev = st.session_state.get("cr_selected")
+        st.session_state["cr_selected"] = None if _prev == _click_raw else _click_raw
+        st.session_state["_cr_click_clear"] = True
+        st.rerun()
+
     # Fetch live prices for top 10
     top10_tickers = tuple(t for t, *_ in _TOP10)
     prices = _live_prices(top10_tickers)
@@ -538,13 +562,15 @@ def render() -> None:
     selected = st.session_state["cr_selected"]
 
     for idx in range(0, len(_TOP10), 2):
+        row_entries = _TOP10[idx: idx + 2]
+        row_tickers = [e[0] for e in row_entries]
         col_a, col_b = st.columns(2)
-        for col, entry in zip([col_a, col_b], _TOP10[idx: idx + 2]):
+        for col, entry in zip([col_a, col_b], row_entries):
             yf_t, name, sym, icon = entry
-            accent    = _CRYPTO_COLOR.get(yf_t, "#888")
-            px_data   = prices.get(yf_t, {})
-            price     = _safe_num(px_data.get("price"))
-            chg       = _safe_num(px_data.get("chg_pct"))
+            accent  = _CRYPTO_COLOR.get(yf_t, "#888")
+            px_data = prices.get(yf_t, {})
+            price   = _safe_num(px_data.get("price"))
+            chg     = _safe_num(px_data.get("chg_pct"))
 
             price_str = (
                 f"${price:,.6f}".rstrip("0").rstrip(".")
@@ -554,16 +580,15 @@ def render() -> None:
             )
             chg_color = "#1AB868" if (chg is not None and chg >= 0) else "#E53535"
             chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
-            is_active  = selected == yf_t
-            border_style = f"border:2px solid {accent}" if is_active else "border:1px solid #D9E8F5"
+            is_active = selected == yf_t
 
             with col:
                 card_id = f"cr_card_{yf_t.replace('-', '_')}"
-                bg = f"{accent}12" if is_active else "#ffffff"
+                bg     = f"{accent}12" if is_active else "#ffffff"
                 border = f"2px solid {accent}" if is_active else "1px solid #D9E8F5"
                 shadow = "box-shadow:0 3px 10px rgba(0,0,0,0.10);" if is_active else "box-shadow:0 1px 3px rgba(0,0,0,0.06);"
                 st.markdown(
-                    f'<div id="{card_id}" class="iw-price-card"'
+                    f'<div id="{card_id}" class="iw-price-card" data-ticker="{yf_t}"'
                     f' style="background:{bg};border:{border};border-radius:10px;'
                     f'padding:0.65rem 0.85rem;margin-bottom:0.3rem;cursor:pointer;{shadow}">'
                     f'<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem">'
@@ -576,47 +601,62 @@ def render() -> None:
                     f'</div>',
                     unsafe_allow_html=True,
                 )
-                # Hidden trigger — CSS hides via :has(.iw-price-card) + [stButton]
-                if st.button("​", key=f"cr_btn_{yf_t}", use_container_width=True):
-                    st.session_state["cr_selected"] = None if is_active else yf_t
-                    st.rerun()
 
-    # ── Make cards clickable via JS ───────────────────────────────────────────
+        # ── Inline accordion: render detail panel below this row if selected ──
+        open_ticker = selected if selected in row_tickers else None
+        if open_ticker:
+            open_entry = next(e for e in _TOP10 if e[0] == open_ticker)
+            _ot, _oname, _osym, _ = open_entry
+            st.markdown(f"#### 🔍 {_osym} ({_oname}) — Deep Dive")
+            _render_detail_panel(_ot, _osym, _oname, prices)
+
+    # ── Make cards clickable via JS (click-channel pattern) ──────────────────
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
   var doc=window.parent.document;
+  var PH="iw-cr-click-v1";
+
+  function setReactVal(inp,val){
+    var setter=Object.getOwnPropertyDescriptor(
+      window.parent.HTMLInputElement.prototype,'value').set;
+    setter.call(inp,val);
+    inp.dispatchEvent(new Event('input',{bubbles:true,composed:true}));
+  }
+
+  function findChannel(){
+    var els=doc.querySelectorAll('[data-testid="stTextInput"] input');
+    for(var i=0;i<els.length;i++){if(els[i].placeholder===PH)return els[i];}
+    return null;
+  }
+
   function wireCards(){
-    doc.querySelectorAll('[id^="cr_card_"]').forEach(function(card){
+    doc.querySelectorAll('.iw-price-card[data-ticker]').forEach(function(card){
       if(card._crWired)return;
       card._crWired=true;
       card.addEventListener('click',function(){
-        var mc=card.closest('[data-testid="stMarkdownContainer"]');
-        if(!mc)return;
-        // Trigger button is the direct next sibling stButton
-        var sibling=mc.nextElementSibling;
-        if(sibling){var btn=sibling.querySelector('button');if(btn){btn.click();return;}}
-        // Fallback: first button in the column
-        var col=mc.closest('[data-testid="column"]')||mc.parentElement;
-        if(!col)return;
-        var stBtns=col.querySelectorAll('[data-testid="stButton"]');
-        for(var i=0;i<stBtns.length;i++){var b=stBtns[i].querySelector('button');if(b){b.click();return;}}
+        var ticker=card.getAttribute('data-ticker');
+        if(!ticker)return;
+        var ch=findChannel();
+        if(!ch)return;
+        ch.focus();
+        setReactVal(ch,ticker);
+        ch.dispatchEvent(new Event('change',{bubbles:true,composed:true}));
+        setTimeout(function(){
+          ch.dispatchEvent(new KeyboardEvent('keydown',{
+            key:'Enter',code:'Enter',keyCode:13,which:13,
+            bubbles:true,cancelable:true,composed:true
+          }));
+          setTimeout(function(){ch.blur();},50);
+        },80);
       });
     });
   }
+
   wireCards();
   new MutationObserver(wireCards).observe(doc.body,{childList:true,subtree:true});
 })();
 </script>""", height=0, scrolling=False)
-
-    # ── Detail panel ──────────────────────────────────────────────────────────
-    if selected:
-        entry = next((e for e in _TOP10 if e[0] == selected), None)
-        if entry:
-            yf_t, name, sym, _ = entry
-            st.divider()
-            st.markdown(f"#### 🔍 {sym} ({name}) — Deep Dive")
-            _render_detail_panel(yf_t, sym, name, prices)
 
     # ── Global Crypto News ────────────────────────────────────────────────────
     st.divider()
