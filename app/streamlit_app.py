@@ -1193,7 +1193,12 @@ def render_hub() -> None:
     snap_favs = st.session_state["snap_favs"]
 
     # ── Card click channel (hidden via CSS) ───────────────────────────────────
-    # JS fires the clicked ticker into this input; Python toggles snap_open.
+    # Clear the channel BEFORE the widget renders on the post-click rerun.
+    # Streamlit raises StreamlitAPIException if you set a widget key after
+    # the widget has already been rendered in the same run, so we use a flag.
+    if st.session_state.pop("_snap_click_clear", False):
+        st.session_state.pop("snap_click_ch", None)
+
     _click_raw = st.text_input(
         "c", key="snap_click_ch", placeholder="iw-snap-click-v1",
         label_visibility="collapsed",
@@ -1201,7 +1206,7 @@ def render_hub() -> None:
     if _click_raw and _click_raw in _HUB_ALL_TICKERS:
         _prev_open = st.session_state.get("snap_open")
         st.session_state["snap_open"] = None if _prev_open == _click_raw else _click_raw
-        st.session_state["snap_click_ch"] = ""
+        st.session_state["_snap_click_clear"] = True  # cleared before widget next run
         st.rerun()
 
     snap_open   = st.session_state["snap_open"]
