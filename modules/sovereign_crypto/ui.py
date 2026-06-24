@@ -550,18 +550,23 @@ def render() -> None:
 
     # ── Click channel (nonce-based — prevents re-processing retained input on rerun) ──
     st.markdown("""<style>
+/* Visually hidden but still focusable — required for reliable focus()/blur() submission */
 [data-testid="stTextInput"]:has(input[placeholder="iw-cr-click-v1"]) {
   position: fixed !important;
-  left: -9999px !important;
-  top: -9999px !important;
+  top: 0 !important;
+  left: 0 !important;
   width: 1px !important;
   height: 1px !important;
   overflow: hidden !important;
-  opacity: 0 !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
 }
 /* Card hover lift */
 .iw-price-card {
   transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  user-select: none !important;
 }
 .iw-price-card:hover {
   transform: translateY(-3px) !important;
@@ -571,7 +576,7 @@ def render() -> None:
 
     _click_raw = st.text_input("c", key="cr_click_ch", placeholder="iw-cr-click-v1",
                                 label_visibility="collapsed")
-    # Payload format: "BTC-USD|<timestamp>" — nonce prevents re-firing on radio reruns
+    # Payload format: "TICKER|<timestamp>" — nonce prevents re-firing on radio reruns
     if _click_raw and "|" in _click_raw:
         _raw_ticker, _nonce = _click_raw.rsplit("|", 1)
         if any(_raw_ticker == t for t, *_ in _TOP10):
@@ -660,52 +665,59 @@ def render() -> None:
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
-  var doc=window.parent.document;
-  var PH="iw-cr-click-v1";
+  var doc = window.parent.document;
+  var PH  = "iw-cr-click-v1";
+  /* Capture HTMLInputElement.prototype NOW while this iframe is alive.
+     Avoids dereferencing window.parent from a stale closure if the iframe
+     is later swapped by Streamlit. */
+  var IHP = window.parent.HTMLInputElement.prototype;
 
-  /* Guard: only attach the document-level listener once, even across iframe recreations */
-  if(doc._crDelegated) return;
-  doc._crDelegated=true;
-
-  function setReactVal(inp,val){
-    var setter=Object.getOwnPropertyDescriptor(
-      window.parent.HTMLInputElement.prototype,'value').set;
-    setter.call(inp,val);
-    inp.dispatchEvent(new Event('input',{bubbles:true,composed:true}));
+  /* Always remove any previously-registered handler before adding a new one.
+     This replaces the old _crDelegated guard which left dead closures when
+     the components.html iframe was recreated by Streamlit. */
+  if (doc._crClickHandler) {
+    doc.removeEventListener('click', doc._crClickHandler, true);
+    doc._crClickHandler = null;
   }
 
-  function findChannel(){
-    var els=doc.querySelectorAll('[data-testid="stTextInput"] input');
-    for(var i=0;i<els.length;i++){if(els[i].placeholder===PH)return els[i];}
+  function setReactVal(inp, val) {
+    var setter = Object.getOwnPropertyDescriptor(IHP, 'value').set;
+    setter.call(inp, val);
+    inp.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
+  }
+
+  function findChannel() {
+    var els = doc.querySelectorAll('[data-testid="stTextInput"] input');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].placeholder === PH) return els[i];
+    }
     return null;
   }
 
-  /* Retry until the channel input is available — it may be mid-rerender */
-  function sendTicker(ticker, attempt){
-    var ch=findChannel();
-    if(!ch){
-      if(attempt<10) setTimeout(function(){sendTicker(ticker,attempt+1);},150);
+  /* Set the value first, then focus→blur — focus() is reliable because
+     the input is at top:0/left:0 (in-viewport, just clipped) not off-screen. */
+  function sendTicker(ticker, attempt) {
+    var ch = findChannel();
+    if (!ch) {
+      if (attempt < 15) setTimeout(function(){sendTicker(ticker, attempt+1);}, 100);
       return;
     }
-    ch.focus();
-    setReactVal(ch, ticker+'|'+Date.now());
-    ch.dispatchEvent(new Event('change',{bubbles:true,composed:true}));
-    setTimeout(function(){
-      ch.dispatchEvent(new KeyboardEvent('keydown',{
-        key:'Enter',code:'Enter',keyCode:13,which:13,
-        bubbles:true,cancelable:true,composed:true
-      }));
-      setTimeout(function(){ch.blur();},30);
-    },50);
+    setReactVal(ch, ticker + '|' + Date.now());
+    ch.dispatchEvent(new Event('change', {bubbles: true, composed: true}));
+    setTimeout(function() {
+      ch.focus();
+      setTimeout(function() { ch.blur(); }, 50);
+    }, 30);
   }
 
-  /* Single delegated listener on document — survives all DOM replacements */
-  doc.addEventListener('click',function(e){
-    var card=e.target && e.target.closest && e.target.closest('.iw-price-card[data-ticker]');
-    if(!card) return;
-    e.stopPropagation();
-    sendTicker(card.getAttribute('data-ticker'),0);
-  },true); /* capture phase so we get it before any bubbling handlers */
+  function clickHandler(e) {
+    var card = e.target && e.target.closest && e.target.closest('.iw-price-card[data-ticker]');
+    if (!card) return;
+    sendTicker(card.getAttribute('data-ticker'), 0);
+  }
+
+  doc._crClickHandler = clickHandler;
+  doc.addEventListener('click', clickHandler, true);
 })();
 </script>""", height=0, scrolling=False)
 
