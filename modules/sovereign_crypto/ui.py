@@ -559,6 +559,14 @@ def render() -> None:
   overflow: hidden !important;
   opacity: 0 !important;
 }
+/* Card hover lift */
+.iw-price-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+.iw-price-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.13) !important;
+}
 </style>""", unsafe_allow_html=True)
 
     _click_raw = st.text_input("c", key="cr_click_ch", placeholder="iw-cr-click-v1",
@@ -668,25 +676,32 @@ def render() -> None:
     return null;
   }
 
+  /* Retry up to 8× at 120ms intervals — channel may be absent during DOM churn */
+  function sendTicker(ticker, attempt){
+    var ch=findChannel();
+    if(!ch){
+      if(attempt<8) setTimeout(function(){sendTicker(ticker,attempt+1);},120);
+      return;
+    }
+    ch.focus();
+    setReactVal(ch, ticker+'|'+Date.now());
+    ch.dispatchEvent(new Event('change',{bubbles:true,composed:true}));
+    setTimeout(function(){
+      ch.dispatchEvent(new KeyboardEvent('keydown',{
+        key:'Enter',code:'Enter',keyCode:13,which:13,
+        bubbles:true,cancelable:true,composed:true
+      }));
+      setTimeout(function(){ch.blur();},50);
+    },80);
+  }
+
   function wireCards(){
     doc.querySelectorAll('.iw-price-card[data-ticker]').forEach(function(card){
       if(card._crWired)return;
       card._crWired=true;
       card.addEventListener('click',function(){
         var ticker=card.getAttribute('data-ticker');
-        if(!ticker)return;
-        var ch=findChannel();
-        if(!ch)return;
-        ch.focus();
-        setReactVal(ch, ticker + "|" + Date.now());
-        ch.dispatchEvent(new Event('change',{bubbles:true,composed:true}));
-        setTimeout(function(){
-          ch.dispatchEvent(new KeyboardEvent('keydown',{
-            key:'Enter',code:'Enter',keyCode:13,which:13,
-            bubbles:true,cancelable:true,composed:true
-          }));
-          setTimeout(function(){ch.blur();},50);
-        },80);
+        if(ticker) sendTicker(ticker,0);
       });
     });
   }
