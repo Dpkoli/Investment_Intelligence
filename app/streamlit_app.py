@@ -855,11 +855,23 @@ _HUB_ALL_TICKERS: dict[str, dict] = {
     "MSTR":      {"name": "Strategy",         "row": "equity"},
     "COIN":      {"name": "Coinbase",         "row": "equity"},
     "BLK":       {"name": "BlackRock",        "row": "equity"},
+    # Additional sovereign crypto
+    "LTC-USD":   {"name": "Litecoin",         "row": "crypto"},
+    "BCH-USD":   {"name": "Bitcoin Cash",     "row": "crypto"},
+    "BNB-USD":   {"name": "BNB",              "row": "crypto"},
+    "UNI-USD":   {"name": "Uniswap",          "row": "crypto"},
+    "ATOM-USD":  {"name": "Cosmos",           "row": "crypto"},
+    "FIL-USD":   {"name": "Filecoin",         "row": "crypto"},
+    "NEAR-USD":  {"name": "NEAR Protocol",    "row": "crypto"},
+    "ARB-USD":   {"name": "Arbitrum",         "row": "crypto"},
+    "OP-USD":    {"name": "Optimism",         "row": "crypto"},
+    "INJ-USD":   {"name": "Injective",        "row": "crypto"},
 }
 _HUB_ROW_COLOR: dict[str, str] = {
-    "crypto":   "#7c3aed",
-    "thematic": "#1AB868",
-    "equity":   "#3A72A0",
+    "crypto":          "#7c3aed",
+    "thematic":        "#1AB868",
+    "equity":          "#3A72A0",
+    "precious_metal":  "#C98900",
 }
 _HUB_ROW_NAV: dict[str, str] = {
     "crypto":   "Sovereign Crypto",
@@ -867,6 +879,19 @@ _HUB_ROW_NAV: dict[str, str] = {
     "equity":   "Core Equity",
 }
 _SNAP_DEFAULTS: list[str] = ["BTC-USD", "ETH-USD", "SPY", "NVDA", "VWRP.L", "GC=F"]
+
+# Extend the ticker catalogue with all precious metals from the metals module
+try:
+    from modules.precious_metals.data import METALS_REGISTRY as _PM_REGISTRY
+    for _pm in _PM_REGISTRY:
+        # Skip OTC spot-price labels (XAU/USD, XAG/USD) — not valid yfinance tickers
+        if "/" not in _pm.ticker and _pm.ticker not in _HUB_ALL_TICKERS:
+            _HUB_ALL_TICKERS[_pm.ticker] = {
+                "name": _pm.name,
+                "row":  "precious_metal",
+            }
+except Exception:
+    pass
 
 _INFLUENTIAL_PEOPLE: list[dict] = [
     {
@@ -1153,7 +1178,7 @@ def render_hub() -> None:
                     "l": f"{k} — {v['name']}",
                     "v": k,
                     "b": v.get("row", "equity").replace("_", " ").title(),
-                    "s": f"{k.lower()} {v['name'].lower()}",
+                    "s": f"{k.lower()} {v['name'].lower()} {v.get('row','').replace('_',' ').lower()}",
                 }
                 for k, v in _HUB_ALL_TICKERS.items()
                 if k not in snap_favs
