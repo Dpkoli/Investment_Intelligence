@@ -304,16 +304,8 @@ st.markdown(
         color: var(--navy-800) !important;
     }
 
-    /* ── Hide trigger buttons that follow price cards ────────────────────────── */
+    /* ── Hide all hidden trigger buttons (price cards + news close) ─────────── */
     [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"],
-    [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"] * {
-        height: 0 !important; min-height: 0 !important;
-        overflow: hidden !important; margin: 0 !important;
-        padding: 0 !important; border: none !important;
-        opacity: 0 !important; pointer-events: none !important;
-        position: absolute !important; line-height: 0 !important;
-    }
-    /* ── Hide the news-close hidden trigger button (display:none = zero space) ── */
     [data-testid="stMarkdownContainer"]:has(#hub-news-header) + [data-testid="stButton"] {
         display: none !important;
     }
