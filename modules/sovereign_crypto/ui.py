@@ -363,29 +363,38 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
     chg_color = "#1AB868" if (chg is not None and chg >= 0) else "#E53535"
     chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
 
-    st.markdown(
-        f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:4px solid {accent};
+    # Header banner with close button
+    hdr_col, close_col = st.columns([10, 1])
+    with hdr_col:
+        st.markdown(
+            f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:4px solid {accent};
  border-radius:10px;padding:1rem 1.2rem;margin:0.4rem 0 0.8rem 0">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
     <div>
       <span style="color:{accent};font-size:2rem;font-weight:700">{symbol}</span>&nbsp;
-      <span style="color:#2B5A85;font-size:1rem">{name}</span>
+      <span style="color:#2B5A85;font-size:1rem;font-weight:500">{name}</span>
     </div>
     <div style="text-align:right">
       <div style="font-size:1.6rem;font-weight:700;color:#071D35">{price_str}</div>
-      <div style="font-size:0.95rem;color:{chg_color}">{chg_str} today</div>
+      <div style="font-size:0.95rem;color:{chg_color};font-weight:600">{chg_str} today</div>
     </div>
   </div>
 </div>""",
-        unsafe_allow_html=True,
-    )
+            unsafe_allow_html=True,
+        )
+    with close_col:
+        st.markdown("<div style='margin-top:0.6rem'></div>", unsafe_allow_html=True)
+        if st.button("✕", key=f"cr_close_{yf_ticker}", help="Close panel"):
+            st.session_state["cr_selected"] = None
+            st.rerun()
 
-    # Fetch in parallel
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        _fn = pool.submit(_fetch_news, yf_ticker)
-        _fp = pool.submit(_fetch_performance, yf_ticker)
-        news = _fn.result()
-        perf = _fp.result()
+    # Fetch in parallel with spinner for perceived performance
+    with st.spinner(f"Loading {symbol} data…"):
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            _fn = pool.submit(_fetch_news, yf_ticker)
+            _fp = pool.submit(_fetch_performance, yf_ticker)
+            news = _fn.result()
+            perf = _fp.result()
 
     # ── Tab layout ────────────────────────────────────────────────────────────
     tab_holders, tab_perf, tab_news, tab_analyst = st.tabs(
@@ -395,7 +404,11 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
     with tab_holders:
         holders = _TOP_HOLDERS.get(yf_ticker, [])
         if holders:
-            st.markdown(f"##### Known institutional & insider holders of {symbol}")
+            st.markdown(
+                f'<p style="font-size:0.95rem;font-weight:700;color:#071D35;margin:0.5rem 0">'
+                f'Known institutional &amp; insider holders of {symbol}</p>',
+                unsafe_allow_html=True,
+            )
             for i, h in enumerate(holders, 1):
                 pct_color = "#1AB868" if h["pct"] not in ("—", "") else "#888"
                 st.markdown(
@@ -414,7 +427,11 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
             st.info("Institutional holder data not available for this asset.")
 
     with tab_perf:
-        st.markdown(f"##### {symbol} Price Performance")
+        st.markdown(
+            f'<p style="font-size:0.95rem;font-weight:700;color:#071D35;margin:0.5rem 0">'
+            f'{symbol} Price Performance</p>',
+            unsafe_allow_html=True,
+        )
         if perf and perf.get("dates"):
             _TF_DAYS = {"1M": 21, "3M": 63, "6M": 126, "1Y": 252, "5Y": 1260, "All": None}
             tf = st.radio("", list(_TF_DAYS.keys()), index=3, horizontal=True,
@@ -442,8 +459,15 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
                 margin={"t": 5, "b": 5, "l": 0, "r": 0},
                 paper_bgcolor="#EEF4FB", plot_bgcolor="#EEF4FB",
                 xaxis={"visible": False},
-                yaxis={"color": "#5A8EBB", "gridcolor": "#D9E8F5", "tickformat": "$,.2f"},
+                yaxis={
+                    "gridcolor": "#D9E8F5",
+                    "tickformat": "$,.2f",
+                    "tickfont": {"color": "#5A8EBB", "size": 10},
+                    "tickcolor": "#5A8EBB",
+                    "linecolor": "#D9E8F5",
+                },
                 showlegend=False,
+                font={"color": "#5A8EBB"},
             )
             st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False})
 
@@ -472,7 +496,11 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
             st.caption("Performance data not available.")
 
     with tab_news:
-        st.markdown(f"##### Latest {symbol} News")
+        st.markdown(
+            f'<p style="font-size:0.95rem;font-weight:700;color:#071D35;margin:0.5rem 0">'
+            f'Latest {symbol} News</p>',
+            unsafe_allow_html=True,
+        )
         if news:
             for article in news:
                 _render_news_item(article)
@@ -482,7 +510,11 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
     with tab_analyst:
         targets = _ANALYST_TARGETS.get(yf_ticker, [])
         if targets:
-            st.markdown(f"##### {symbol} — Analyst Price Targets & Research")
+            st.markdown(
+                f'<p style="font-size:0.95rem;font-weight:700;color:#071D35;margin:0.5rem 0">'
+                f'{symbol} — Analyst Price Targets &amp; Research</p>',
+                unsafe_allow_html=True,
+            )
             st.caption("⚠ Price targets are forward-looking estimates from public analyst reports. Not financial advice.")
             for t in targets:
                 st.markdown(
@@ -592,7 +624,7 @@ def render() -> None:
                     f' style="background:{bg};border:{border};border-radius:10px;'
                     f'padding:0.65rem 0.85rem;margin-bottom:0.3rem;cursor:pointer;{shadow}">'
                     f'<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem">'
-                    f'<span style="font-size:1.1rem">{icon}</span>'
+                    f'<span style="font-size:1.1rem;color:{accent}">{icon}</span>'
                     f'<span style="font-weight:700;font-size:0.88rem;color:{accent}">{sym}</span>'
                     f'<span style="color:#5A8EBB;font-size:0.68rem;margin-left:auto">{name}</span>'
                     f'</div>'
@@ -607,7 +639,11 @@ def render() -> None:
         if open_ticker:
             open_entry = next(e for e in _TOP10 if e[0] == open_ticker)
             _ot, _oname, _osym, _ = open_entry
-            st.markdown(f"#### 🔍 {_osym} ({_oname}) — Deep Dive")
+            st.markdown(
+                f'<p style="font-size:1.1rem;font-weight:700;color:#071D35;'
+                f'margin:0.6rem 0 0.2rem 0">🔍 {_osym} ({_oname}) — Deep Dive</p>',
+                unsafe_allow_html=True,
+            )
             _render_detail_panel(_ot, _osym, _oname, prices)
 
     # ── Make cards clickable via JS (click-channel pattern) ──────────────────
