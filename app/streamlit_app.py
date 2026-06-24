@@ -304,9 +304,11 @@ st.markdown(
         color: var(--navy-800) !important;
     }
 
-    /* ── Hide trigger buttons that follow price cards ────────────────────────── */
+    /* ── Hide trigger buttons that follow price cards or news header ────────── */
     [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"],
-    [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"] * {
+    [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"] *,
+    [data-testid="stMarkdownContainer"]:has(#hub-news-header) + [data-testid="stButton"],
+    [data-testid="stMarkdownContainer"]:has(#hub-news-header) + [data-testid="stButton"] * {
         height: 0 !important; min-height: 0 !important;
         overflow: hidden !important; margin: 0 !important;
         padding: 0 !important; border: none !important;
@@ -1305,24 +1307,50 @@ def render_hub() -> None:
         sel_name = sel_meta.get("name", sel)
         sel_row  = sel_meta.get("row", "equity")
         sel_col  = _HUB_ROW_COLOR.get(sel_row, "#5B8FD4")
-        sel_nav  = _HUB_ROW_NAV.get(sel_row, "📈 Core Equity")
-
+        # Unified header: × on the left, title inline — no separate button row
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid {sel_col};border-left:4px solid {sel_col};border-radius:12px;'
-            f'padding:0.6rem 1rem;margin-top:0.5rem;box-shadow:var(--shadow-card)">'
-            f'<span style="color:{sel_col};font-weight:800;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.06em">'
-            f'Latest News — {sel} · {sel_name}</span></div>',
+            f'<div id="hub-news-header" style="background:#ffffff;border:1px solid {sel_col};'
+            f'border-left:4px solid {sel_col};border-radius:12px;padding:0.55rem 1rem;'
+            f'margin-top:0.5rem;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:0.75rem">'
+            f'<span id="hub-news-close-x" title="Close" '
+            f'style="color:{sel_col};font-size:1.25rem;font-weight:700;cursor:pointer;'
+            f'line-height:1;flex-shrink:0;opacity:0.55;transition:opacity 0.15s" '
+            f'onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'0.55\'">×</span>'
+            f'<span style="color:{sel_col};font-weight:800;font-size:0.82rem;'
+            f'text-transform:uppercase;letter-spacing:0.06em">'
+            f'Latest News — {sel} · {sel_name}</span>'
+            f'</div>',
             unsafe_allow_html=True,
         )
-        cl1, cl2, _ = st.columns([1, 2, 6])
-        with cl1:
-            if st.button("✕ Close", key="hub_news_close"):
-                st.session_state["hub_news_ticker"] = None
-                st.rerun()
-        with cl2:
-            if st.button(f"Open in {sel_nav}", key="hub_news_nav"):
-                st.session_state["sidebar_nav"] = sel_nav
-                st.rerun()
+        # Hidden close trigger (CSS-hidden via :has(#hub-news-header) + stButton rule)
+        if st.button("​", key="hub_news_close"):
+            st.session_state["hub_news_ticker"] = None
+            st.rerun()
+        # Wire × span click → hidden close button
+        components.html("""<script>
+(function(){
+  var doc = window.parent.document;
+  function wireNewsClose(){
+    var x = doc.getElementById('hub-news-close-x');
+    if(!x || x._iwCloseWired) return;
+    x._iwCloseWired = true;
+    x.addEventListener('click', function(){
+      var header = doc.getElementById('hub-news-header');
+      if(!header) return;
+      var mc = header.closest('[data-testid="stMarkdownContainer"]');
+      if(!mc) return;
+      var sib = mc.nextElementSibling;
+      while(sib){
+        var btn = sib.querySelector('button');
+        if(btn){ btn.click(); return; }
+        sib = sib.nextElementSibling;
+      }
+    });
+  }
+  wireNewsClose();
+  new MutationObserver(wireNewsClose).observe(doc.body,{childList:true,subtree:true});
+})();
+</script>""", height=0, scrolling=False)
 
         with st.spinner(f"Loading news for {sel}…"):
             news_items = _fetch_hub_news(sel)
