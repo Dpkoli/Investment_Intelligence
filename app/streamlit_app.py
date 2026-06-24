@@ -1107,6 +1107,7 @@ def render_hub() -> None:
     snap_favs  = st.session_state["snap_favs"]
     snap_open  = st.session_state["snap_open"]
     snap_prices = _hub_prices(tuple(snap_favs))
+    import streamlit.components.v1 as components
 
     # Section label + edit toggle
     sh1, sh2 = st.columns([9, 1])
@@ -1246,7 +1247,6 @@ def render_hub() -> None:
     st.markdown('<div style="height:0.15rem"></div>', unsafe_allow_html=True)
 
     # ── 3 × N card grid with inline accordion news ───────────────────────────
-    import streamlit.components.v1 as components
     SNAP_COLS = 3
     rows = [snap_favs[i:i+SNAP_COLS] for i in range(0, len(snap_favs), SNAP_COLS)]
 
