@@ -305,10 +305,17 @@ st.markdown(
     }
 
 
-    /* ── Snap-card: hide JS channel inputs + hover lift ─────────────────────── */
+    /* ── Snap-card channel inputs: visually hidden but focusable (not display:none) ── */
+    /* display:none prevents focus(), breaking synthetic React events on these inputs  */
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-click-v1"]) {
-        display: none !important;
+        position: fixed !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
     }
     .snap-card { transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
     .snap-card:hover {
@@ -1298,15 +1305,19 @@ def render_hub() -> None:
     function deliverStored(){{
       var ch=findCh();
       if(!ch) return;
+      ch.removeAttribute('readonly');
+      ch.focus();
       var setter=Object.getOwnPropertyDescriptor(
         window.parent.HTMLInputElement.prototype,'value').set;
       setter.call(ch,toDeliver);
       ch.dispatchEvent(new Event('input',{{bubbles:true,composed:true}}));
+      ch.dispatchEvent(new Event('change',{{bubbles:true,composed:true}}));
       setTimeout(function(){{
         ch.dispatchEvent(new KeyboardEvent('keydown',{{
           key:'Enter',code:'Enter',keyCode:13,which:13,
           bubbles:true,cancelable:true,composed:true
         }}));
+        ch.blur();
       }},80);
     }}
     var ch=findCh();
@@ -1431,40 +1442,49 @@ def render_hub() -> None:
             else:
                 st.info(f"No recent news for {open_in_row}.")
 
-    # JS: wire snap-card clicks → click channel input (no hidden buttons needed)
+    # JS: wire snap-card clicks → click channel input
     components.html("""<script>
 (function(){
   var doc = window.parent.document;
   var PH = 'iw-snap-click-v1';
+
   function findChannel(){
     var els = doc.querySelectorAll('[data-testid="stTextInput"] input');
     for(var i=0;i<els.length;i++){ if(els[i].placeholder===PH) return els[i]; }
     return null;
   }
-  function setReactVal(inp, val){
+
+  function fireChannel(ticker){
+    var inp = findChannel();
+    if(!inp) return;
+    // Must focus before synthetic events so React's root handler processes them
+    inp.removeAttribute('readonly');
+    inp.focus();
     var setter = Object.getOwnPropertyDescriptor(
       window.parent.HTMLInputElement.prototype, 'value').set;
-    setter.call(inp, val);
-    inp.dispatchEvent(new Event('input',{bubbles:true,composed:true}));
+    setter.call(inp, ticker);
+    inp.dispatchEvent(new Event('input',  {bubbles:true, composed:true}));
+    inp.dispatchEvent(new Event('change', {bubbles:true, composed:true}));
     setTimeout(function(){
       inp.dispatchEvent(new KeyboardEvent('keydown',{
-        key:'Enter',code:'Enter',keyCode:13,which:13,
-        bubbles:true,cancelable:true,composed:true
+        key:'Enter', code:'Enter', keyCode:13, which:13,
+        bubbles:true, cancelable:true, composed:true
       }));
-    }, 80);
+      inp.blur();
+    }, 60);
   }
+
   function wireSnapCards(){
     doc.querySelectorAll('.snap-card').forEach(function(card){
       if(card._snapWired) return;
       card._snapWired = true;
       card.addEventListener('click', function(){
         var ticker = card.getAttribute('data-ticker');
-        if(!ticker) return;
-        var ch = findChannel();
-        if(ch) setReactVal(ch, ticker);
+        if(ticker) fireChannel(ticker);
       });
     });
   }
+
   wireSnapCards();
   new MutationObserver(wireSnapCards).observe(doc.body,{childList:true,subtree:true});
 })();
