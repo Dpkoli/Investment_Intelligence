@@ -304,16 +304,18 @@ st.markdown(
         color: var(--navy-800) !important;
     }
 
-    /* ── Hide trigger buttons that follow price cards or news header ────────── */
+    /* ── Hide trigger buttons that follow price cards ────────────────────────── */
     [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"],
-    [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"] *,
-    [data-testid="stMarkdownContainer"]:has(#hub-news-header) + [data-testid="stButton"],
-    [data-testid="stMarkdownContainer"]:has(#hub-news-header) + [data-testid="stButton"] * {
+    [data-testid="stMarkdownContainer"]:has(.iw-price-card) + [data-testid="stButton"] * {
         height: 0 !important; min-height: 0 !important;
         overflow: hidden !important; margin: 0 !important;
         padding: 0 !important; border: none !important;
         opacity: 0 !important; pointer-events: none !important;
         position: absolute !important; line-height: 0 !important;
+    }
+    /* ── Hide the news-close hidden trigger button (display:none = zero space) ── */
+    [data-testid="stMarkdownContainer"]:has(#hub-news-header) + [data-testid="stButton"] {
+        display: none !important;
     }
 
     /* ── Price card hover ────────────────────────────────────────────────────── */
@@ -1264,7 +1266,7 @@ def render_hub() -> None:
                         )
                         st.rerun()
 
-    # JS: wire card click → the adjacent hidden trigger button
+    # JS: wire card clicks + news-close × — single iframe, no extra gaps
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
@@ -1275,7 +1277,6 @@ def render_hub() -> None:
       if(card._iwWired) return;
       card._iwWired = true;
       card.addEventListener('click', function(){
-        // The trigger button's [stButton] is the direct next sibling of [stMarkdownContainer]
         var mc = card.closest('[data-testid="stMarkdownContainer"]');
         if(!mc) return;
         var sibling = mc.nextElementSibling;
@@ -1283,7 +1284,6 @@ def render_hub() -> None:
           var btn = sibling.querySelector('button');
           if(btn){ btn.click(); return; }
         }
-        // Fallback: first button in the enclosing column
         var col = mc.closest('[data-testid="column"]') || mc.parentElement;
         if(!col) return;
         var stBtns = col.querySelectorAll('[data-testid="stButton"]');
@@ -1295,40 +1295,6 @@ def render_hub() -> None:
     });
   }
 
-  wireCards();
-  new MutationObserver(wireCards).observe(doc.body,{childList:true,subtree:true});
-})();
-</script>""", height=0, scrolling=False)
-
-    # ── News panel (below all rows, shown on card click) ──────────────────────
-    sel = st.session_state.get("hub_news_ticker")
-    if sel:
-        sel_meta = _HUB_ALL_TICKERS.get(sel, {})
-        sel_name = sel_meta.get("name", sel)
-        sel_row  = sel_meta.get("row", "equity")
-        sel_col  = _HUB_ROW_COLOR.get(sel_row, "#5B8FD4")
-        # Bare label row — no box, just × + title text
-        st.markdown(
-            f'<div id="hub-news-header" style="display:flex;align-items:center;gap:0.5rem;'
-            f'margin-top:0.6rem;margin-bottom:0.1rem;padding:0">'
-            f'<span id="hub-news-close-x" title="Close" '
-            f'style="color:#5A8EBB;font-size:1.1rem;font-weight:500;cursor:pointer;'
-            f'line-height:1;flex-shrink:0;opacity:0.6;transition:opacity 0.15s;user-select:none" '
-            f'onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'0.6\'">×</span>'
-            f'<span style="color:#5A8EBB;font-weight:700;font-size:0.72rem;'
-            f'text-transform:uppercase;letter-spacing:0.1em">'
-            f'Latest News — {sel} · {sel_name}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-        # Hidden close trigger (CSS-hidden via :has(#hub-news-header) + stButton rule)
-        if st.button("​", key="hub_news_close"):
-            st.session_state["hub_news_ticker"] = None
-            st.rerun()
-        # Wire × span click → hidden close button
-        components.html("""<script>
-(function(){
-  var doc = window.parent.document;
   function wireNewsClose(){
     var x = doc.getElementById('hub-news-close-x');
     if(!x || x._iwCloseWired) return;
@@ -1346,10 +1312,39 @@ def render_hub() -> None:
       }
     });
   }
-  wireNewsClose();
-  new MutationObserver(wireNewsClose).observe(doc.body,{childList:true,subtree:true});
+
+  function wireAll(){ wireCards(); wireNewsClose(); }
+  wireAll();
+  new MutationObserver(wireAll).observe(doc.body,{childList:true,subtree:true});
 })();
 </script>""", height=0, scrolling=False)
+
+    # ── News panel (below all rows, shown on card click) ──────────────────────
+    sel = st.session_state.get("hub_news_ticker")
+    if sel:
+        sel_meta = _HUB_ALL_TICKERS.get(sel, {})
+        sel_name = sel_meta.get("name", sel)
+        sel_row  = sel_meta.get("row", "equity")
+        sel_col  = _HUB_ROW_COLOR.get(sel_row, "#5B8FD4")
+        # Box header with inline × — hidden close button collapsed by display:none CSS
+        st.markdown(
+            f'<div id="hub-news-header" style="background:#ffffff;border:1px solid {sel_col};'
+            f'border-left:4px solid {sel_col};border-radius:12px;padding:0.55rem 1rem;'
+            f'margin-top:0.5rem;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:0.75rem">'
+            f'<span id="hub-news-close-x" title="Close" '
+            f'style="color:{sel_col};font-size:1.25rem;font-weight:700;cursor:pointer;'
+            f'line-height:1;flex-shrink:0;opacity:0.55;transition:opacity 0.15s;user-select:none" '
+            f'onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'0.55\'">×</span>'
+            f'<span style="color:{sel_col};font-weight:800;font-size:0.82rem;'
+            f'text-transform:uppercase;letter-spacing:0.06em">'
+            f'Latest News — {sel} · {sel_name}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        # Hidden close trigger — display:none via CSS, wired by wireNewsClose() in main JS block
+        if st.button("​", key="hub_news_close"):
+            st.session_state["hub_news_ticker"] = None
+            st.rerun()
 
         with st.spinner(f"Loading news for {sel}…"):
             news_items = _fetch_hub_news(sel)
