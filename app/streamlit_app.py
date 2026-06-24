@@ -1155,9 +1155,11 @@ def render_hub() -> None:
     _ls_raw = st.text_input(
         "ls", key="snap_ls_ch", placeholder=_LS_PH, label_visibility="collapsed"
     )
-    # On fresh browser load, JS delivers stored favorites via this channel
+    # On fresh browser load, JS delivers stored favorites (or "[]") via this channel.
+    # We wait for JS to deliver before marking init done — never overwrite stored favs.
     if not st.session_state.get("snap_ls_init"):
         if _ls_raw:
+            # JS has delivered: adopt stored favorites if valid, then mark init done
             try:
                 import json as _j2
                 _stored = _j2.loads(_ls_raw)
@@ -1169,6 +1171,7 @@ def render_hub() -> None:
                         if "snap_favs" not in st.session_state:
                             st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
                 else:
+                    # "[]" or empty list → nothing stored, use defaults
                     if "snap_favs" not in st.session_state:
                         st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
             except Exception:
@@ -1176,6 +1179,8 @@ def render_hub() -> None:
                     st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
             st.session_state["snap_ls_init"] = True
         else:
+            # JS hasn't delivered yet (first render before iframe JS runs) — use defaults
+            # but keep snap_ls_init unset so next render can adopt stored favs
             if "snap_favs" not in st.session_state:
                 st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
     elif "snap_favs" not in st.session_state:
@@ -1332,58 +1337,57 @@ def render_hub() -> None:
     import json as _json_ls
     _favs_json = _json_ls.dumps(snap_favs)
     _ls_ph_esc = "iw-snap-ls-v1"
+    _ls_init_done = "true" if st.session_state.get("snap_ls_init") else "false"
     components.html(f"""<script>
 (function(){{
   var LS_KEY='iw_snap_favs';
   var SS_KEY='iw_snap_ls_done';
   var CURRENT={_favs_json};
+  var INIT_DONE={_ls_init_done};
   var doc=window.parent.document;
   var ls=window.parent.localStorage;
   var ss=window.parent.sessionStorage;
 
-  // Always persist the current server-side favorites to localStorage
-  ls.setItem(LS_KEY,JSON.stringify(CURRENT));
+  // Only write to localStorage AFTER Python has finished initializing from it.
+  // This prevents overwriting stored favorites before they are read on first load.
+  if(INIT_DONE){{
+    ls.setItem(LS_KEY,JSON.stringify(CURRENT));
+  }}
 
-  // On fresh browser load (sessionStorage flag not yet set), deliver stored favorites
-  // back to Python via the hidden channel input so Python can adopt them
+  // On fresh browser session (sessionStorage flag not yet set):
+  // Read stored favorites and deliver them to Python via the hidden channel.
+  // Always deliver something ("[]" if nothing stored) so Python can mark init done.
   if(!ss.getItem(SS_KEY)){{
     ss.setItem(SS_KEY,'1');
     var stored=ls.getItem(LS_KEY);
-    if(stored){{
-      try{{
-        var parsed=JSON.parse(stored);
-        // Only deliver if different from the server-side current (i.e. stale defaults)
-        if(JSON.stringify(parsed)!==JSON.stringify(CURRENT)){{
-          var PH='{_ls_ph_esc}';
-          function findCh(){{
-            var els=doc.querySelectorAll('[data-testid="stTextInput"] input');
-            for(var i=0;i<els.length;i++){{ if(els[i].placeholder===PH) return els[i]; }}
-            return null;
-          }}
-          function deliverStored(){{
-            var ch=findCh();
-            if(!ch) return;
-            var setter=Object.getOwnPropertyDescriptor(
-              window.parent.HTMLInputElement.prototype,'value').set;
-            setter.call(ch,stored);
-            ch.dispatchEvent(new Event('input',{{bubbles:true,composed:true}}));
-            setTimeout(function(){{
-              ch.dispatchEvent(new KeyboardEvent('keydown',{{
-                key:'Enter',code:'Enter',keyCode:13,which:13,
-                bubbles:true,cancelable:true,composed:true
-              }}));
-            }},80);
-          }}
-          var ch=findCh();
-          if(ch){{ deliverStored(); }}
-          else{{
-            var obs=new MutationObserver(function(){{
-              if(findCh()){{ obs.disconnect(); deliverStored(); }}
-            }});
-            obs.observe(doc.body,{{childList:true,subtree:true}});
-          }}
-        }}
-      }}catch(e){{}}
+    var toDeliver=stored||'[]';
+    var PH='{_ls_ph_esc}';
+    function findCh(){{
+      var els=doc.querySelectorAll('[data-testid="stTextInput"] input');
+      for(var i=0;i<els.length;i++){{ if(els[i].placeholder===PH) return els[i]; }}
+      return null;
+    }}
+    function deliverStored(){{
+      var ch=findCh();
+      if(!ch) return;
+      var setter=Object.getOwnPropertyDescriptor(
+        window.parent.HTMLInputElement.prototype,'value').set;
+      setter.call(ch,toDeliver);
+      ch.dispatchEvent(new Event('input',{{bubbles:true,composed:true}}));
+      setTimeout(function(){{
+        ch.dispatchEvent(new KeyboardEvent('keydown',{{
+          key:'Enter',code:'Enter',keyCode:13,which:13,
+          bubbles:true,cancelable:true,composed:true
+        }}));
+      }},80);
+    }}
+    var ch=findCh();
+    if(ch){{ deliverStored(); }}
+    else{{
+      var obs=new MutationObserver(function(){{
+        if(findCh()){{ obs.disconnect(); deliverStored(); }}
+      }});
+      obs.observe(doc.body,{{childList:true,subtree:true}});
     }}
   }}
 }})();
