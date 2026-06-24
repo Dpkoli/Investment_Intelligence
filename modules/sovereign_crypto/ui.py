@@ -372,7 +372,7 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
       <span style="color:#2B5A85;font-size:1rem">{name}</span>
     </div>
     <div style="text-align:right">
-      <div style="font-size:1.6rem;font-weight:700">{price_str}</div>
+      <div style="font-size:1.6rem;font-weight:700;color:#071D35">{price_str}</div>
       <div style="font-size:0.95rem;color:{chg_color}">{chg_str} today</div>
     </div>
   </div>
@@ -403,7 +403,7 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
   border-left:3px solid {accent};border-radius:6px;padding:0.5rem 0.9rem;
   margin-bottom:0.35rem;display:flex;align-items:center;gap:1rem">
   <span style="color:#5A8EBB;min-width:22px;font-size:0.75rem">#{i}</span>
-  <span style="flex:1;font-weight:600;font-size:0.85rem">{h["name"]}</span>
+  <span style="flex:1;font-weight:600;font-size:0.85rem;color:#071D35">{h["name"]}</span>
   <span style="color:#071D35;font-size:0.8rem;min-width:120px;text-align:right">{h["amount"]}</span>
   <span style="color:{pct_color};font-size:0.8rem;min-width:60px;text-align:right;font-weight:700">{h["pct"]}</span>
 </div>""",
@@ -491,7 +491,7 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
   margin-bottom:0.4rem">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
     <div>
-      <span style="font-weight:700;font-size:0.88rem">{t["analyst"]}</span><br>
+      <span style="font-weight:700;font-size:0.88rem;color:#071D35">{t["analyst"]}</span><br>
       <span style="color:#5A8EBB;font-size:0.73rem">{t["thesis"]}</span>
     </div>
     <div style="text-align:right;white-space:nowrap">
