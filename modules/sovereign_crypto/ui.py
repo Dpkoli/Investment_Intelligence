@@ -656,12 +656,16 @@ def render() -> None:
             )
             _render_detail_panel(_ot, _osym, _oname, prices)
 
-    # ── Make cards clickable via JS (click-channel pattern) ──────────────────
+    # ── Make cards clickable via JS (event delegation — survives DOM replacements) ──
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
   var doc=window.parent.document;
   var PH="iw-cr-click-v1";
+
+  /* Guard: only attach the document-level listener once, even across iframe recreations */
+  if(doc._crDelegated) return;
+  doc._crDelegated=true;
 
   function setReactVal(inp,val){
     var setter=Object.getOwnPropertyDescriptor(
@@ -676,11 +680,11 @@ def render() -> None:
     return null;
   }
 
-  /* Retry up to 8× at 120ms intervals — channel may be absent during DOM churn */
+  /* Retry until the channel input is available — it may be mid-rerender */
   function sendTicker(ticker, attempt){
     var ch=findChannel();
     if(!ch){
-      if(attempt<8) setTimeout(function(){sendTicker(ticker,attempt+1);},120);
+      if(attempt<10) setTimeout(function(){sendTicker(ticker,attempt+1);},150);
       return;
     }
     ch.focus();
@@ -691,23 +695,17 @@ def render() -> None:
         key:'Enter',code:'Enter',keyCode:13,which:13,
         bubbles:true,cancelable:true,composed:true
       }));
-      setTimeout(function(){ch.blur();},50);
-    },80);
+      setTimeout(function(){ch.blur();},30);
+    },50);
   }
 
-  function wireCards(){
-    doc.querySelectorAll('.iw-price-card[data-ticker]').forEach(function(card){
-      if(card._crWired)return;
-      card._crWired=true;
-      card.addEventListener('click',function(){
-        var ticker=card.getAttribute('data-ticker');
-        if(ticker) sendTicker(ticker,0);
-      });
-    });
-  }
-
-  wireCards();
-  new MutationObserver(wireCards).observe(doc.body,{childList:true,subtree:true});
+  /* Single delegated listener on document — survives all DOM replacements */
+  doc.addEventListener('click',function(e){
+    var card=e.target && e.target.closest && e.target.closest('.iw-price-card[data-ticker]');
+    if(!card) return;
+    e.stopPropagation();
+    sendTicker(card.getAttribute('data-ticker'),0);
+  },true); /* capture phase so we get it before any bubbling handlers */
 })();
 </script>""", height=0, scrolling=False)
 
