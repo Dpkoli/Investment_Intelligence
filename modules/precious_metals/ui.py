@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from .data import METALS_REGISTRY, MetalType, fetch_prices
+from modules.shared import inject_autocomplete as _inject_autocomplete
 
 _PAGE_SIZE = 20
 _SPOT_TICKERS = ["GC=F", "SI=F", "PL=F", "PA=F"]
@@ -29,91 +30,6 @@ _METAL_COLOR = {
 def _on_pm_search_change() -> None:
     st.session_state["pm_page"] = 0
     st.session_state["pm_selected"] = None
-
-
-def _inject_autocomplete(items_json: str, placeholder: str) -> None:
-    """Typeahead dropdown that attaches to the text input with the given placeholder."""
-    import streamlit.components.v1 as components
-    ph = placeholder.replace("'", "\\'")
-    components.html(f"""<script>
-(function(){{
-  var DATA={items_json};
-  var PH="{ph}";
-  var doc=window.parent.document;
-
-  function findInput(){{
-    var els=doc.querySelectorAll('[data-testid="stTextInput"] input');
-    for(var i=0;i<els.length;i++){{ if(els[i].placeholder===PH) return els[i]; }}
-    return null;
-  }}
-
-  function hl(text,q){{
-    if(!q) return text;
-    var re=new RegExp('('+q.replace(/[.*+?^${{}}()|[\\]\\\\]/g,'\\\\$&')+')','gi');
-    return text.replace(re,'<mark style="background:#D9E8F5;color:#0F2D4F;border-radius:2px;padding:0 1px">$1</mark>');
-  }}
-
-  function attach(input){{
-    if(input._iwAC) return;
-    input._iwAC=true;
-    var wrap=input.closest('[data-testid="stTextInput"]');
-    if(!wrap) return;
-    wrap.style.position='relative';
-
-    var drop=doc.createElement('div');
-    drop.style.cssText='position:absolute;top:calc(100% + 3px);left:0;right:0;'
-      +'background:#fff;border:1.5px solid #D9E8F5;border-radius:8px;'
-      +'box-shadow:0 4px 16px rgba(7,29,53,.12);z-index:99999;'
-      +'max-height:264px;overflow-y:auto;display:none;'
-      +'font-family:Plus Jakarta Sans,system-ui,sans-serif;font-size:0.83rem;';
-    wrap.appendChild(drop);
-
-    function update(){{
-      var q=input.value.trim().toLowerCase();
-      if(!q){{ drop.style.display='none'; return; }}
-      var hits=DATA.filter(function(it){{ return it.s.includes(q); }}).slice(0,10);
-      if(!hits.length){{ drop.style.display='none'; return; }}
-      drop.innerHTML=hits.map(function(it,i){{
-        var border=i<hits.length-1?'border-bottom:1px solid #EEF4FB;':'';
-        return '<div class="iw-r" data-v="'+it.v.replace(/"/g,'&quot;')+'" style="'
-          +'display:flex;justify-content:space-between;align-items:center;'
-          +'padding:0.45rem 0.9rem;cursor:pointer;'+border+'">'
-          +'<span style="color:#071D35;font-weight:500">'+hl(it.l,q)+'</span>'
-          +(it.b?'<span style="font-size:0.68rem;color:#5A8EBB;background:#EEF4FB;'
-            +'padding:1px 7px;border-radius:4px;white-space:nowrap;margin-left:8px">'+it.b+'</span>':'')
-          +'</div>';
-      }}).join('');
-      drop.querySelectorAll('.iw-r').forEach(function(row){{
-        row.addEventListener('mouseenter',function(){{ row.style.background='#EEF4FB'; }});
-        row.addEventListener('mouseleave',function(){{ row.style.background=''; }});
-        row.addEventListener('mousedown',function(e){{
-          e.preventDefault();
-          input.value=row.getAttribute('data-v');
-          drop.style.display='none';
-          input.dispatchEvent(new Event('input',{{bubbles:true}}));
-          setTimeout(function(){{
-            input.dispatchEvent(new KeyboardEvent('keydown',{{
-              key:'Enter',code:'Enter',keyCode:13,which:13,bubbles:true,cancelable:true
-            }}));
-          }},120);
-        }});
-      }});
-      drop.style.display='block';
-    }}
-
-    input.addEventListener('input',update);
-    input.addEventListener('focus',function(){{ if(input.value) update(); }});
-    input.addEventListener('blur',function(){{ setTimeout(function(){{ drop.style.display='none'; }},200); }});
-    input.addEventListener('keydown',function(e){{
-      if(e.key==='Escape'||e.key==='Enter') drop.style.display='none';
-    }});
-  }}
-
-  function init(){{ var inp=findInput(); if(inp) attach(inp); }}
-  init();
-  new MutationObserver(init).observe(doc.body,{{childList:true,subtree:true}});
-}})();
-</script>""", height=0, scrolling=False)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
