@@ -1307,17 +1307,16 @@ def render_hub() -> None:
         sel_name = sel_meta.get("name", sel)
         sel_row  = sel_meta.get("row", "equity")
         sel_col  = _HUB_ROW_COLOR.get(sel_row, "#5B8FD4")
-        # Unified header: × on the left, title inline — no separate button row
+        # Bare label row — no box, just × + title text
         st.markdown(
-            f'<div id="hub-news-header" style="background:#ffffff;border:1px solid {sel_col};'
-            f'border-left:4px solid {sel_col};border-radius:12px;padding:0.55rem 1rem;'
-            f'margin-top:0.5rem;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:0.75rem">'
+            f'<div id="hub-news-header" style="display:flex;align-items:center;gap:0.5rem;'
+            f'margin-top:0.6rem;margin-bottom:0.1rem;padding:0">'
             f'<span id="hub-news-close-x" title="Close" '
-            f'style="color:{sel_col};font-size:1.25rem;font-weight:700;cursor:pointer;'
-            f'line-height:1;flex-shrink:0;opacity:0.55;transition:opacity 0.15s" '
-            f'onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'0.55\'">×</span>'
-            f'<span style="color:{sel_col};font-weight:800;font-size:0.82rem;'
-            f'text-transform:uppercase;letter-spacing:0.06em">'
+            f'style="color:#5A8EBB;font-size:1.1rem;font-weight:500;cursor:pointer;'
+            f'line-height:1;flex-shrink:0;opacity:0.6;transition:opacity 0.15s;user-select:none" '
+            f'onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'0.6\'">×</span>'
+            f'<span style="color:#5A8EBB;font-weight:700;font-size:0.72rem;'
+            f'text-transform:uppercase;letter-spacing:0.1em">'
             f'Latest News — {sel} · {sel_name}</span>'
             f'</div>',
             unsafe_allow_html=True,
