@@ -305,12 +305,9 @@ st.markdown(
     }
 
 
-    /* ── Snap-card: hide hidden toggle buttons + hover lift ─────────────────── */
-    [data-testid="stMarkdownContainer"]:has(.snap-card) + [data-testid="stButton"] {
-        display: none !important;
-    }
-    /* Hide localStorage persistence channel input */
-    [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]) {
+    /* ── Snap-card: hide JS channel inputs + hover lift ─────────────────────── */
+    [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]),
+    [data-testid="stTextInput"]:has(input[placeholder="iw-snap-click-v1"]) {
         display: none !important;
     }
     .snap-card { transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
@@ -1186,8 +1183,21 @@ def render_hub() -> None:
     elif "snap_favs" not in st.session_state:
         st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
 
-    snap_favs  = st.session_state["snap_favs"]
-    snap_open  = st.session_state["snap_open"]
+    snap_favs = st.session_state["snap_favs"]
+
+    # ── Card click channel (hidden via CSS) ───────────────────────────────────
+    # JS fires the clicked ticker into this input; Python toggles snap_open.
+    _click_raw = st.text_input(
+        "c", key="snap_click_ch", placeholder="iw-snap-click-v1",
+        label_visibility="collapsed",
+    )
+    if _click_raw and _click_raw in _HUB_ALL_TICKERS:
+        _prev_open = st.session_state.get("snap_open")
+        st.session_state["snap_open"] = None if _prev_open == _click_raw else _click_raw
+        st.session_state["snap_click_ch"] = ""
+        st.rerun()
+
+    snap_open   = st.session_state["snap_open"]
     snap_prices = _hub_prices(tuple(snap_favs))
 
     # Section label + edit toggle
@@ -1249,6 +1259,7 @@ def render_hub() -> None:
             if srch and srch in _HUB_ALL_TICKERS and srch not in snap_favs:
                 st.session_state["snap_favs"] = list(snap_favs) + [srch]
                 st.session_state["snap_add_srch"] = ""
+                st.session_state["snap_edit"] = False  # close edit panel immediately
                 st.rerun()
             # Inject typeahead dropdown (same pattern as Core Equity / Thematic / Metals)
             _snap_ac_ph = _SNAP_AC_PH.replace("'", "\\'")
@@ -1341,24 +1352,18 @@ def render_hub() -> None:
     components.html(f"""<script>
 (function(){{
   var LS_KEY='iw_snap_favs';
-  var SS_KEY='iw_snap_ls_done';
   var CURRENT={_favs_json};
   var INIT_DONE={_ls_init_done};
   var doc=window.parent.document;
   var ls=window.parent.localStorage;
-  var ss=window.parent.sessionStorage;
 
-  // Only write to localStorage AFTER Python has finished initializing from it.
-  // This prevents overwriting stored favorites before they are read on first load.
   if(INIT_DONE){{
+    // Initialization complete — write current favorites to localStorage on every render
     ls.setItem(LS_KEY,JSON.stringify(CURRENT));
-  }}
-
-  // On fresh browser session (sessionStorage flag not yet set):
-  // Read stored favorites and deliver them to Python via the hidden channel.
-  // Always deliver something ("[]" if nothing stored) so Python can mark init done.
-  if(!ss.getItem(SS_KEY)){{
-    ss.setItem(SS_KEY,'1');
+  }}else{{
+    // Not yet initialized — deliver stored favorites (or "[]") so Python can adopt them.
+    // Gate on INIT_DONE (a Python flag) rather than sessionStorage, because sessionStorage
+    // survives page refreshes and would prevent re-delivery after a refresh.
     var stored=ls.getItem(LS_KEY);
     var toDeliver=stored||'[]';
     var PH='{_ls_ph_esc}';
@@ -1436,7 +1441,7 @@ def render_hub() -> None:
                 border_top = f"3px solid {color}" if is_open else f"2px solid {color}"
 
                 st.markdown(
-                    f'<div id="{card_id}" class="snap-card" style="'
+                    f'<div id="{card_id}" class="snap-card" data-ticker="{ticker}" style="'
                     f'background:{bg};border:1px solid #D9E8F5;border-top:{border_top};'
                     f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;cursor:pointer">'
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.63rem;'
@@ -1451,10 +1456,6 @@ def render_hub() -> None:
                     f'</div>',
                     unsafe_allow_html=True,
                 )
-                # Hidden accordion toggle — display:none via CSS; JS wires the card click to this
-                if st.button("​", key=f"snap_btn_{ticker}"):
-                    st.session_state["snap_open"] = None if is_open else ticker
-                    st.rerun()
 
         # Inline news accordion — only for the card that is open in this row
         open_in_row = snap_open if (snap_open and snap_open in row_tickers) else None
@@ -1507,23 +1508,37 @@ def render_hub() -> None:
             else:
                 st.info(f"No recent news for {open_in_row}.")
 
-    # JS: wire snap-card div clicks → the adjacent hidden toggle button
+    # JS: wire snap-card clicks → click channel input (no hidden buttons needed)
     components.html("""<script>
 (function(){
   var doc = window.parent.document;
+  var PH = 'iw-snap-click-v1';
+  function findChannel(){
+    var els = doc.querySelectorAll('[data-testid="stTextInput"] input');
+    for(var i=0;i<els.length;i++){ if(els[i].placeholder===PH) return els[i]; }
+    return null;
+  }
+  function setReactVal(inp, val){
+    var setter = Object.getOwnPropertyDescriptor(
+      window.parent.HTMLInputElement.prototype, 'value').set;
+    setter.call(inp, val);
+    inp.dispatchEvent(new Event('input',{bubbles:true,composed:true}));
+    setTimeout(function(){
+      inp.dispatchEvent(new KeyboardEvent('keydown',{
+        key:'Enter',code:'Enter',keyCode:13,which:13,
+        bubbles:true,cancelable:true,composed:true
+      }));
+    }, 80);
+  }
   function wireSnapCards(){
     doc.querySelectorAll('.snap-card').forEach(function(card){
       if(card._snapWired) return;
       card._snapWired = true;
       card.addEventListener('click', function(){
-        var mc = card.closest('[data-testid="stMarkdownContainer"]');
-        if(!mc) return;
-        var sib = mc.nextElementSibling;
-        while(sib){
-          var btn = sib.querySelector('button');
-          if(btn){ btn.click(); return; }
-          sib = sib.nextElementSibling;
-        }
+        var ticker = card.getAttribute('data-ticker');
+        if(!ticker) return;
+        var ch = findChannel();
+        if(ch) setReactVal(ch, ticker);
       });
     });
   }
