@@ -309,6 +309,10 @@ st.markdown(
     [data-testid="stMarkdownContainer"]:has(.snap-card) + [data-testid="stButton"] {
         display: none !important;
     }
+    /* Hide localStorage persistence channel input */
+    [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]) {
+        display: none !important;
+    }
     .snap-card { transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
     .snap-card:hover {
         transform: translateY(-2px) !important;
@@ -846,6 +850,10 @@ _HUB_ALL_TICKERS: dict[str, dict] = {
     "SWDA.L":    {"name": "iShs World GBP",   "row": "equity"},
     "CSPX.L":    {"name": "iShs Core S&P500", "row": "equity"},
     "GLD":       {"name": "SPDR Gold",        "row": "equity"},
+    "XAU-USD":   {"name": "Gold Spot",        "row": "precious_metal"},
+    "XAG-USD":   {"name": "Silver Spot",      "row": "precious_metal"},
+    "XPT-USD":   {"name": "Platinum Spot",    "row": "precious_metal"},
+    "XPD-USD":   {"name": "Palladium Spot",   "row": "precious_metal"},
     "SLV":       {"name": "iShs Silver",      "row": "equity"},
     "GC=F":      {"name": "Gold Futures",     "row": "equity"},
     "NVDA":      {"name": "NVIDIA",           "row": "equity"},
@@ -982,6 +990,15 @@ _ASSET_MANAGERS: list[dict] = [
 ]
 
 
+# Display ticker → yfinance ticker translation for OTC spot prices
+_YF_TICKER_MAP: dict[str, str] = {
+    "XAU-USD": "XAUUSD=X",
+    "XAG-USD": "XAGUSD=X",
+    "XPT-USD": "XPTUSD=X",
+    "XPD-USD": "XPDUSD=X",
+}
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def _hub_prices(tickers: tuple) -> dict[str, dict]:
     try:
@@ -996,13 +1013,17 @@ def _hub_prices(tickers: tuple) -> dict[str, dict]:
             except Exception:
                 return None
 
-        batch = yf.download(list(tickers), period="5d", auto_adjust=True,
+        # Translate display tickers to yfinance tickers (e.g. XAU-USD → XAUUSD=X)
+        _rev_map = {v: k for k, v in _YF_TICKER_MAP.items()}
+        yf_tickers = [_YF_TICKER_MAP.get(t, t) for t in tickers]
+
+        batch = yf.download(yf_tickers, period="5d", auto_adjust=True,
                             progress=False, threads=True)
         closes = batch.get("Close", batch)
         if closes is None or closes.empty:
             return {}
         if isinstance(closes, pd.Series):
-            closes = closes.to_frame(name=tickers[0])
+            closes = closes.to_frame(name=yf_tickers[0])
         closes = closes.dropna(how="all")
         if closes.empty:
             return {}
@@ -1010,9 +1031,10 @@ def _hub_prices(tickers: tuple) -> dict[str, dict]:
         prev = closes.iloc[-2] if len(closes) >= 2 else closes.iloc[-1]
         data: dict[str, dict] = {}
         for t in tickers:
+            yf_t = _YF_TICKER_MAP.get(t, t)
             try:
-                p  = _clean(last.get(t))
-                p0 = _clean(prev.get(t))
+                p  = _clean(last.get(yf_t))
+                p0 = _clean(prev.get(yf_t))
                 if p is None:
                     continue
                 pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
@@ -1122,17 +1144,46 @@ def render_hub() -> None:
         )
 
     # ── Market Snapshot hero ──────────────────────────────────────────────────
-    if "snap_favs" not in st.session_state:
-        st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
     if "snap_open" not in st.session_state:
         st.session_state["snap_open"] = None
     if "snap_edit" not in st.session_state:
         st.session_state["snap_edit"] = False
+    import streamlit.components.v1 as components
+
+    # ── localStorage persistence channel (hidden via CSS) ─────────────────────
+    _LS_PH = "iw-snap-ls-v1"
+    _ls_raw = st.text_input(
+        "ls", key="snap_ls_ch", placeholder=_LS_PH, label_visibility="collapsed"
+    )
+    # On fresh browser load, JS delivers stored favorites via this channel
+    if not st.session_state.get("snap_ls_init"):
+        if _ls_raw:
+            try:
+                import json as _j2
+                _stored = _j2.loads(_ls_raw)
+                if isinstance(_stored, list) and _stored:
+                    _valid = [t for t in _stored if t in _HUB_ALL_TICKERS]
+                    if _valid:
+                        st.session_state["snap_favs"] = _valid[:6]
+                    else:
+                        if "snap_favs" not in st.session_state:
+                            st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
+                else:
+                    if "snap_favs" not in st.session_state:
+                        st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
+            except Exception:
+                if "snap_favs" not in st.session_state:
+                    st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
+            st.session_state["snap_ls_init"] = True
+        else:
+            if "snap_favs" not in st.session_state:
+                st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
+    elif "snap_favs" not in st.session_state:
+        st.session_state["snap_favs"] = list(_SNAP_DEFAULTS)
 
     snap_favs  = st.session_state["snap_favs"]
     snap_open  = st.session_state["snap_open"]
     snap_prices = _hub_prices(tuple(snap_favs))
-    import streamlit.components.v1 as components
 
     # Section label + edit toggle
     sh1, sh2 = st.columns([9, 1])
@@ -1201,10 +1252,15 @@ def render_hub() -> None:
   var DATA={_snap_ac_items};
   var PH="{_snap_ac_ph}";
   var doc=window.parent.document;
-  function findInput(){{
+  function findInput(ph){{
     var els=doc.querySelectorAll('[data-testid="stTextInput"] input');
-    for(var i=0;i<els.length;i++){{ if(els[i].placeholder===PH) return els[i]; }}
+    for(var i=0;i<els.length;i++){{ if(els[i].placeholder===ph) return els[i]; }}
     return null;
+  }}
+  function setReactVal(inp,val){{
+    var setter=Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype,'value').set;
+    setter.call(inp,val);
+    inp.dispatchEvent(new Event('input',{{bubbles:true,composed:true}}));
   }}
   function hl(t,q){{
     if(!q) return t;
@@ -1244,14 +1300,15 @@ def render_hub() -> None:
         row.addEventListener('mouseleave',function(){{ row.style.background=''; }});
         row.addEventListener('mousedown',function(e){{
           e.preventDefault();
-          input.value=row.getAttribute('data-v');
+          var val=row.getAttribute('data-v');
+          setReactVal(input,val);
           drop.style.display='none';
-          input.dispatchEvent(new Event('input',{{bubbles:true}}));
           setTimeout(function(){{
             input.dispatchEvent(new KeyboardEvent('keydown',{{
-              key:'Enter',code:'Enter',keyCode:13,which:13,bubbles:true,cancelable:true
+              key:'Enter',code:'Enter',keyCode:13,which:13,
+              bubbles:true,cancelable:true,composed:true
             }}));
-          }},120);
+          }},80);
         }});
       }});
       drop.style.display='block';
@@ -1263,13 +1320,74 @@ def render_hub() -> None:
       if(e.key==='Escape'||e.key==='Enter') drop.style.display='none';
     }});
   }}
-  function init(){{ var inp=findInput(); if(inp) attach(inp); }}
+  function init(){{ var inp=findInput(PH); if(inp) attach(inp); }}
   init();
   new MutationObserver(init).observe(doc.body,{{childList:true,subtree:true}});
 }})();
 </script>""", height=0, scrolling=False)
 
     st.markdown('<div style="height:0.15rem"></div>', unsafe_allow_html=True)
+
+    # ── localStorage sync: persist favorites across page refreshes ────────────
+    import json as _json_ls
+    _favs_json = _json_ls.dumps(snap_favs)
+    _ls_ph_esc = "iw-snap-ls-v1"
+    components.html(f"""<script>
+(function(){{
+  var LS_KEY='iw_snap_favs';
+  var SS_KEY='iw_snap_ls_done';
+  var CURRENT={_favs_json};
+  var doc=window.parent.document;
+  var ls=window.parent.localStorage;
+  var ss=window.parent.sessionStorage;
+
+  // Always persist the current server-side favorites to localStorage
+  ls.setItem(LS_KEY,JSON.stringify(CURRENT));
+
+  // On fresh browser load (sessionStorage flag not yet set), deliver stored favorites
+  // back to Python via the hidden channel input so Python can adopt them
+  if(!ss.getItem(SS_KEY)){{
+    ss.setItem(SS_KEY,'1');
+    var stored=ls.getItem(LS_KEY);
+    if(stored){{
+      try{{
+        var parsed=JSON.parse(stored);
+        // Only deliver if different from the server-side current (i.e. stale defaults)
+        if(JSON.stringify(parsed)!==JSON.stringify(CURRENT)){{
+          var PH='{_ls_ph_esc}';
+          function findCh(){{
+            var els=doc.querySelectorAll('[data-testid="stTextInput"] input');
+            for(var i=0;i<els.length;i++){{ if(els[i].placeholder===PH) return els[i]; }}
+            return null;
+          }}
+          function deliverStored(){{
+            var ch=findCh();
+            if(!ch) return;
+            var setter=Object.getOwnPropertyDescriptor(
+              window.parent.HTMLInputElement.prototype,'value').set;
+            setter.call(ch,stored);
+            ch.dispatchEvent(new Event('input',{{bubbles:true,composed:true}}));
+            setTimeout(function(){{
+              ch.dispatchEvent(new KeyboardEvent('keydown',{{
+                key:'Enter',code:'Enter',keyCode:13,which:13,
+                bubbles:true,cancelable:true,composed:true
+              }}));
+            }},80);
+          }}
+          var ch=findCh();
+          if(ch){{ deliverStored(); }}
+          else{{
+            var obs=new MutationObserver(function(){{
+              if(findCh()){{ obs.disconnect(); deliverStored(); }}
+            }});
+            obs.observe(doc.body,{{childList:true,subtree:true}});
+          }}
+        }}
+      }}catch(e){{}}
+    }}
+  }}
+}})();
+</script>""", height=0, scrolling=False)
 
     # ── 3 × N card grid with inline accordion news ───────────────────────────
     SNAP_COLS = 3
