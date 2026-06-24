@@ -548,10 +548,7 @@ def render() -> None:
     if "cr_selected" not in st.session_state:
         st.session_state["cr_selected"] = None
 
-    # ── Click channel (deferred clear) ───────────────────────────────────────
-    if st.session_state.pop("_cr_click_clear", False):
-        st.session_state.pop("cr_click_ch", None)
-
+    # ── Click channel (nonce-based — prevents re-processing retained input on rerun) ──
     st.markdown("""<style>
 [data-testid="stTextInput"]:has(input[placeholder="iw-cr-click-v1"]) {
   position: fixed !important;
@@ -566,11 +563,16 @@ def render() -> None:
 
     _click_raw = st.text_input("c", key="cr_click_ch", placeholder="iw-cr-click-v1",
                                 label_visibility="collapsed")
-    if _click_raw and any(_click_raw == t for t, *_ in _TOP10):
-        _prev = st.session_state.get("cr_selected")
-        st.session_state["cr_selected"] = None if _prev == _click_raw else _click_raw
-        st.session_state["_cr_click_clear"] = True
-        st.rerun()
+    # Payload format: "BTC-USD|<timestamp>" — nonce prevents re-firing on radio reruns
+    if _click_raw and "|" in _click_raw:
+        _raw_ticker, _nonce = _click_raw.rsplit("|", 1)
+        if any(_raw_ticker == t for t, *_ in _TOP10):
+            _last_nonce = st.session_state.get("_cr_nonce", "")
+            if _nonce != _last_nonce:
+                st.session_state["_cr_nonce"] = _nonce
+                _prev = st.session_state.get("cr_selected")
+                st.session_state["cr_selected"] = None if _prev == _raw_ticker else _raw_ticker
+                st.rerun()
 
     # Fetch live prices for top 10
     top10_tickers = tuple(t for t, *_ in _TOP10)
@@ -676,7 +678,7 @@ def render() -> None:
         var ch=findChannel();
         if(!ch)return;
         ch.focus();
-        setReactVal(ch,ticker);
+        setReactVal(ch, ticker + "|" + Date.now());
         ch.dispatchEvent(new Event('change',{bubbles:true,composed:true}));
         setTimeout(function(){
           ch.dispatchEvent(new KeyboardEvent('keydown',{
