@@ -367,15 +367,12 @@ st.markdown(
         font-size: 0.84rem !important;
         font-weight: 500 !important;
     }
-    /* Track off — navy-500 gives enough contrast against the #F2F6FA canvas */
     [data-testid="stToggleSwitch"] {
         background-color: var(--navy-500) !important;
     }
-    /* Track on */
     [aria-checked="true"] [data-testid="stToggleSwitch"] {
         background-color: var(--accent) !important;
     }
-    /* Thumb always white so it's visible on both states */
     [data-testid="stToggleSwitch"] span {
         background-color: #ffffff !important;
     }
@@ -1207,22 +1204,33 @@ def render_hub() -> None:
     today = date.today()
 
 
+    # ── Auto-refresh every 5 minutes ─────────────────────────────────────────
+    import time as _time
+    _now = _time.time()
+    _last = st.session_state.get("hub_last_refresh", 0)
+    _elapsed = _now - _last
+    if _elapsed >= 300:
+        st.session_state["hub_last_refresh"] = _now
+        st.cache_data.clear()
+        _elapsed = 0
+
+    # JS reloads the page when the remaining cache TTL expires so data is always live
+    _ms_until_refresh = max(0, int((300 - _elapsed) * 1000))
+    import streamlit.components.v1 as components
+    components.html(
+        f"<script>setTimeout(function(){{window.parent.location.reload();}},{_ms_until_refresh});</script>",
+        height=0, scrolling=False,
+    )
+
     # ── Header row ────────────────────────────────────────────────────────────
-    rc1, _, rc3 = st.columns([2, 3, 1])
+    rc1, rc3 = st.columns([5, 1])
     with rc1:
-        auto_on = st.toggle("Auto-refresh (5 min)", value=False, key="hub_autorefresh")
-        if auto_on:
-            # Schedule a rerun in 5 minutes by checking elapsed time
-            import time as _time
-            _now = _time.time()
-            _last = st.session_state.get("hub_last_refresh", 0)
-            if _now - _last >= 300:
-                st.session_state["hub_last_refresh"] = _now
-                st.cache_data.clear()
-                st.rerun()
-            else:
-                _remaining = int(300 - (_now - _last))
-                st.caption(f"Next refresh in {_remaining // 60}m {_remaining % 60}s")
+        _remaining = int(300 - _elapsed)
+        _rem_str = f"{_remaining // 60}m {_remaining % 60}s" if _remaining > 0 else "refreshing…"
+        st.markdown(
+            f'<span style="font-size:0.72rem;color:#5A8EBB">Live · auto-refreshes in {_rem_str}</span>',
+            unsafe_allow_html=True,
+        )
     with rc3:
         phase = current_phase(today)
         pc = _phase_color(phase)
