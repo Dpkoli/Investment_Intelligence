@@ -1484,9 +1484,8 @@ def render_hub() -> None:
                     f'{ticker}</div>'
                     f'<div style="font-size:0.59rem;color:#000000;margin:0.07rem 0;'
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name}</div>'
-                    f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:1.2rem;'
-                    f'font-weight:400;color:#000000;line-height:1.1;'
-                    f'margin:0.18rem 0">{price_str}</div>'
+                    f'<div style="font-size:1.2rem;font-weight:700;color:#000000;'
+                    f'line-height:1.1;margin:0.18rem 0">{price_str}</div>'
                     f'<div>{chg_html}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
@@ -1662,9 +1661,8 @@ def render_hub() -> None:
                 f'{idx_meta["name"]}</div>'
                 f'<div style="font-size:0.5rem;color:#000000;margin:0.03rem 0">'
                 f'{idx_meta["region"]}</div>'
-                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.95rem;'
-                f'font-weight:400;color:#000000;line-height:1.1;'
-                f'margin:0.1rem 0">{price_str}</div>'
+                f'<div style="font-size:0.95rem;font-weight:700;color:#000000;'
+                f'line-height:1.1;margin:0.1rem 0">{price_str}</div>'
                 f'{chg_html}'
                 f'</div>',
                 unsafe_allow_html=True,
