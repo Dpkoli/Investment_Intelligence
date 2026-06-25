@@ -305,10 +305,11 @@ st.markdown(
     }
 
 
-    /* ── Snap-card channel inputs: visually hidden but focusable (not display:none) ── */
+    /* ── Snap-card / wi-card channel inputs: visually hidden but focusable ── */
     /* display:none prevents focus(), breaking synthetic React events on these inputs  */
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]),
-    [data-testid="stTextInput"]:has(input[placeholder="iw-snap-click-v1"]) {
+    [data-testid="stTextInput"]:has(input[placeholder="iw-snap-click-v1"]),
+    [data-testid="stTextInput"]:has(input[placeholder="iw-wi-click-v1"]) {
         position: fixed !important;
         left: -9999px !important;
         top: -9999px !important;
@@ -317,8 +318,8 @@ st.markdown(
         overflow: hidden !important;
         opacity: 0 !important;
     }
-    .snap-card { transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
-    .snap-card:hover {
+    .snap-card, .wi-card { transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
+    .snap-card:hover, .wi-card:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 16px rgba(7,29,53,0.11) !important;
     }
@@ -1233,6 +1234,8 @@ def render_hub() -> None:
         st.session_state["snap_open"] = None
     if "snap_edit" not in st.session_state:
         st.session_state["snap_edit"] = False
+    if "wi_open" not in st.session_state:
+        st.session_state["wi_open"] = None
     import streamlit.components.v1 as components
 
     # ── localStorage persistence channel (hidden via CSS) ─────────────────────
@@ -1470,7 +1473,7 @@ def render_hub() -> None:
                     f'<div style="font-size:0.59rem;color:#000000;margin:0.07rem 0;'
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name}</div>'
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:1.2rem;'
-                    f'font-weight:600;color:#000000;line-height:1.1;'
+                    f'font-weight:400;color:#000000;line-height:1.1;'
                     f'margin:0.18rem 0">{price_str}</div>'
                     f'<div>{chg_html}</div>'
                     f'</div>',
@@ -1528,27 +1531,25 @@ def render_hub() -> None:
             else:
                 st.info(f"No recent news for {open_in_row}.")
 
-    # JS: wire snap-card clicks → click channel input
+    # JS: wire snap-card and wi-card clicks → their respective channel inputs
     components.html("""<script>
 (function(){
   var doc = window.parent.document;
-  var PH = 'iw-snap-click-v1';
+  var IHP = window.parent.HTMLInputElement.prototype;
 
-  function findChannel(){
+  function findCh(ph){
     var els = doc.querySelectorAll('[data-testid="stTextInput"] input');
-    for(var i=0;i<els.length;i++){ if(els[i].placeholder===PH) return els[i]; }
+    for(var i=0;i<els.length;i++){ if(els[i].placeholder===ph) return els[i]; }
     return null;
   }
 
-  function fireChannel(ticker){
-    var inp = findChannel();
+  function fireCh(ph, value){
+    var inp = findCh(ph);
     if(!inp) return;
-    // Must focus before synthetic events so React's root handler processes them
     inp.removeAttribute('readonly');
     inp.focus();
-    var setter = Object.getOwnPropertyDescriptor(
-      window.parent.HTMLInputElement.prototype, 'value').set;
-    setter.call(inp, ticker);
+    var setter = Object.getOwnPropertyDescriptor(IHP, 'value').set;
+    setter.call(inp, value);
     inp.dispatchEvent(new Event('input',  {bubbles:true, composed:true}));
     inp.dispatchEvent(new Event('change', {bubbles:true, composed:true}));
     setTimeout(function(){
@@ -1560,19 +1561,27 @@ def render_hub() -> None:
     }, 60);
   }
 
-  function wireSnapCards(){
-    doc.querySelectorAll('.snap-card').forEach(function(card){
+  function wireCards(){
+    doc.querySelectorAll('.snap-card[data-ticker]').forEach(function(card){
       if(card._snapWired) return;
       card._snapWired = true;
       card.addEventListener('click', function(){
-        var ticker = card.getAttribute('data-ticker');
-        if(ticker) fireChannel(ticker);
+        var t = card.getAttribute('data-ticker');
+        if(t) fireCh('iw-snap-click-v1', t);
+      });
+    });
+    doc.querySelectorAll('.wi-card[data-wi-ticker]').forEach(function(card){
+      if(card._wiWired) return;
+      card._wiWired = true;
+      card.addEventListener('click', function(){
+        var t = card.getAttribute('data-wi-ticker');
+        if(t) fireCh('iw-wi-click-v1', t);
       });
     });
   }
 
-  wireSnapCards();
-  new MutationObserver(wireSnapCards).observe(doc.body,{childList:true,subtree:true});
+  wireCards();
+  new MutationObserver(wireCards).observe(doc.body,{childList:true,subtree:true});
 })();
 </script>""", height=0, scrolling=False)
 
@@ -1583,13 +1592,29 @@ def render_hub() -> None:
         'World Indexes</p>',
         unsafe_allow_html=True,
     )
+
+    # Click channel for world index cards
+    if st.session_state.pop("_wi_click_clear", False):
+        st.session_state.pop("wi_click_ch", None)
+    _wi_raw = st.text_input("wi", key="wi_click_ch", placeholder="iw-wi-click-v1",
+                             label_visibility="collapsed")
+    if _wi_raw:
+        _wi_valid = {idx["ticker"] for idx in _WORLD_INDEXES}
+        if _wi_raw in _wi_valid:
+            _prev_wi = st.session_state.get("wi_open")
+            st.session_state["wi_open"] = None if _prev_wi == _wi_raw else _wi_raw
+            st.session_state["_wi_click_clear"] = True
+            st.rerun()
+
+    wi_open   = st.session_state["wi_open"]
     wi_prices = _world_index_prices()
-    wi_cols = st.columns(len(_WORLD_INDEXES))
+    wi_cols   = st.columns(len(_WORLD_INDEXES))
     for wi_col, idx_meta in zip(wi_cols, _WORLD_INDEXES):
-        t = idx_meta["ticker"]
-        p_data  = wi_prices.get(t, {})
-        price   = p_data.get("price")
-        chg     = p_data.get("chg_pct")
+        t        = idx_meta["ticker"]
+        p_data   = wi_prices.get(t, {})
+        price    = p_data.get("price")
+        chg      = p_data.get("chg_pct")
+        is_open  = wi_open == t
 
         if price is not None:
             price_str = (
@@ -1605,18 +1630,20 @@ def render_hub() -> None:
             chg_arrow = "▲" if chg >= 0 else "▼"
             chg_html  = (
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;'
-                f'font-weight:700;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
+                f'font-weight:400;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
             )
-            border_top = f"2px solid {chg_color}"
+            border_top = f"{'3px' if is_open else '2px'} solid {chg_color}"
         else:
             chg_html   = '<div style="color:#5A8EBB;font-size:0.6rem">—</div>'
             border_top = "2px solid #D9E8F5"
 
+        bg = "#F2F6FA" if is_open else "#ffffff"
+
         with wi_col:
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #D9E8F5;'
-                f'border-top:{border_top};border-radius:8px;padding:0.5rem 0.3rem;'
-                f'text-align:center">'
+                f'<div class="wi-card" data-wi-ticker="{t}" style="background:{bg};'
+                f'border:1px solid #D9E8F5;border-top:{border_top};border-radius:8px;'
+                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer">'
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;'
                 f'font-weight:800;color:#000000;letter-spacing:0.04em;text-transform:uppercase;'
                 f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
@@ -1624,12 +1651,57 @@ def render_hub() -> None:
                 f'<div style="font-size:0.5rem;color:#000000;margin:0.03rem 0">'
                 f'{idx_meta["region"]}</div>'
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.95rem;'
-                f'font-weight:600;color:#000000;line-height:1.1;'
+                f'font-weight:400;color:#000000;line-height:1.1;'
                 f'margin:0.1rem 0">{price_str}</div>'
                 f'{chg_html}'
                 f'</div>',
                 unsafe_allow_html=True,
             )
+
+    # Inline news accordion for the open world index
+    if wi_open:
+        wi_meta  = next((x for x in _WORLD_INDEXES if x["ticker"] == wi_open), {})
+        wi_name  = wi_meta.get("name", wi_open)
+        wh1, wh2 = st.columns([11, 1])
+        with wh1:
+            st.markdown(
+                f'<div style="margin:0.3rem 0 0.2rem;font-size:0.68rem;font-weight:800;'
+                f'text-transform:uppercase;letter-spacing:0.1em;color:#3A72A0">'
+                f'Latest News — {wi_name}</div>',
+                unsafe_allow_html=True,
+            )
+        with wh2:
+            if st.button("×", key=f"wi_close_{wi_open}"):
+                st.session_state["wi_open"] = None
+                st.rerun()
+        with st.spinner(f"Loading news for {wi_name}…"):
+            wi_news = _fetch_hub_news(wi_open)
+        if wi_news:
+            wn1, wn2 = st.columns(2)
+            for idx, item in enumerate(wi_news[:6]):
+                title    = item.get("title", "—")
+                link     = item.get("link", "")
+                pub      = item.get("publisher", "")
+                time_str = _format_ts(item.get("ts", 0))
+                title_html = (
+                    f'<a href="{link}" target="_blank" style="color:#071D35;'
+                    f'text-decoration:none;font-weight:600;font-size:0.78rem;line-height:1.45">'
+                    f'{title}</a>'
+                    if link else
+                    f'<span style="color:#071D35;font-size:0.78rem;font-weight:600">{title}</span>'
+                )
+                with (wn1 if idx % 2 == 0 else wn2):
+                    st.markdown(
+                        f'<div style="background:#ffffff;border:1px solid #D9E8F5;'
+                        f'border-left:3px solid #3A72A0;border-radius:0 10px 10px 0;'
+                        f'padding:0.45rem 0.7rem;margin-bottom:0.28rem">'
+                        f'{title_html}'
+                        f'<div style="color:#5A8EBB;font-size:0.64rem;margin-top:0.12rem">'
+                        f'{pub} · {time_str}</div></div>',
+                        unsafe_allow_html=True,
+                    )
+        else:
+            st.info(f"No recent news for {wi_name}.")
 
     st.divider()
 
