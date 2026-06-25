@@ -66,7 +66,7 @@ st.set_page_config(
     page_title="InvestWise",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
     menu_items={"About": "InvestWise — Institutional-grade investment intelligence platform."},
 )
 
@@ -523,6 +523,132 @@ st.markdown(
     }
     [data-testid="stDataFrame"] tbody tr:hover td {
         background-color: var(--navy-50) !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       RESPONSIVE  —  Mobile · iPad · Desktop
+    ══════════════════════════════════════════════════════════════════════════ */
+
+    /* ── iPad / Large tablet  (769 – 1024 px) ──────────────────────────────── */
+    @media screen and (max-width: 1024px) {
+        .block-container {
+            padding-left: 1.25rem !important;
+            padding-right: 1.25rem !important;
+            max-width: 100% !important;
+        }
+        /* Sidebar stays but slightly narrower */
+        section[data-testid="stSidebar"] > div:first-child {
+            padding-left: 0.85rem !important;
+            padding-right: 0.85rem !important;
+        }
+    }
+
+    /* ── Mobile  (≤ 768 px) ─────────────────────────────────────────────────── */
+    @media screen and (max-width: 768px) {
+        /* Tighter canvas */
+        .block-container {
+            padding: 0.5rem 0.6rem 2.5rem !important;
+            max-width: 100vw !important;
+        }
+
+        /* Sidebar overlays content on mobile */
+        section[data-testid="stSidebar"] {
+            position: fixed !important;
+            z-index: 1100 !important;
+            height: 100dvh !important;
+            top: 0 !important;
+        }
+
+        /* Header text */
+        h1 { font-size: 1.55rem !important; }
+        h2 { font-size: 1.2rem !important; }
+        h3 { font-size: 1rem !important; }
+
+        /* Metrics */
+        div[data-testid="metric-container"] {
+            padding: 0.6rem 0.85rem !important;
+        }
+        div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+            font-size: 1.45rem !important;
+        }
+
+        /* Tabs: horizontally scrollable strip */
+        .stTabs [data-baseweb="tab-list"] {
+            overflow-x: auto !important;
+            flex-wrap: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+            padding-bottom: 2px !important;
+        }
+        .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none !important; }
+        .stTabs [data-testid="stTab"] {
+            font-size: 0.76rem !important;
+            padding: 0.35rem 0.7rem !important;
+            white-space: nowrap !important;
+            min-width: max-content !important;
+        }
+
+        /* DataFrames: horizontal scroll */
+        [data-testid="stDataFrame"] > div,
+        div.stDataFrame { overflow-x: auto !important; }
+
+        /* Plotly charts */
+        .js-plotly-plot, .plotly, .plot-container {
+            max-width: 100% !important;
+        }
+
+        /* Expanders: tighter */
+        div[data-testid="stExpander"] summary {
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        /* Column gap */
+        [data-testid="stHorizontalBlock"] {
+            gap: 0.4rem !important;
+        }
+
+        /* 3-column snap card grid → 2 per row on mobile */
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+            min-width: calc(48% - 0.2rem) !important;
+            flex: 0 0 calc(48% - 0.2rem) !important;
+        }
+
+        /* Buttons: bigger tap targets */
+        .stButton button {
+            min-height: 40px !important;
+            font-size: 0.8rem !important;
+        }
+
+        /* Caption */
+        .stCaption p { font-size: 0.7rem !important; }
+
+        /* Selectbox / text input: full width feel */
+        .stSelectbox, .stTextInput { width: 100% !important; }
+
+        /* Sidebar nav items: larger tap targets */
+        section[data-testid="stSidebar"] .stRadio label {
+            min-height: 38px !important;
+            padding: 0.55rem 0.9rem !important;
+        }
+    }
+
+    /* ── Small phones  (≤ 480 px) ──────────────────────────────────────────── */
+    @media screen and (max-width: 480px) {
+        .block-container {
+            padding: 0.35rem 0.4rem 2.5rem !important;
+        }
+        h1 { font-size: 1.3rem !important; }
+        div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+            font-size: 1.25rem !important;
+        }
+        div[data-testid="metric-container"] label {
+            font-size: 0.62rem !important;
+        }
+        /* Single column on very small phones */
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+            min-width: 100% !important;
+            flex: 0 0 100% !important;
+        }
     }
     </style>
     """,
@@ -1909,24 +2035,86 @@ def render_hub() -> None:
 def main() -> None:
     nav = render_sidebar()
 
+    # ── Mobile swipe-to-open / swipe-to-close sidebar ─────────────────────────
+    import streamlit.components.v1 as _comp
+    _comp.html("""<script>
+(function(){
+  var win = window.parent;
+  var doc = win.document;
+
+  // Only activate on actual touch devices
+  if (!win.matchMedia('(hover: none) and (pointer: coarse)').matches) return;
+
+  // Idempotent across Streamlit reruns
+  if (doc._iwSwipeInstalled) return;
+  doc._iwSwipeInstalled = true;
+
+  var sx = 0, sy = 0;
+  var THRESHOLD = 65;  // min horizontal distance (px) to count as swipe
+  var EDGE = 55;       // right-swipe must start within this many px of left edge
+
+  function sidebar(){ return doc.querySelector('section[data-testid="stSidebar"]'); }
+
+  function isOpen(){
+    var sb = sidebar();
+    if (!sb) return false;
+    // Streamlit collapses the sidebar by translating it off-screen or hiding it;
+    // when open its left edge is ≥ 0
+    return sb.getBoundingClientRect().left >= -10;
+  }
+
+  function openSidebar(){
+    // The collapsed-state toggle button (hamburger / chevron)
+    var btn = doc.querySelector('[data-testid="collapsedControl"] button') ||
+              doc.querySelector('[data-testid="collapsedControl"]');
+    if (btn) btn.click();
+  }
+
+  function closeSidebar(){
+    // The close / collapse button visible inside an open sidebar
+    var btn = doc.querySelector('[data-testid="stSidebarCollapseButton"] button') ||
+              doc.querySelector('section[data-testid="stSidebar"] button[aria-label]') ||
+              doc.querySelector('section[data-testid="stSidebar"] button');
+    if (btn) btn.click();
+  }
+
+  doc.addEventListener('touchstart', function(e){
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+  }, {passive: true});
+
+  doc.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    // Ignore swipes that are more vertical than horizontal
+    if (Math.abs(dy) > Math.abs(dx) * 0.9) return;
+
+    if (dx > THRESHOLD && sx < EDGE && !isOpen()) {
+      openSidebar();
+    } else if (dx < -THRESHOLD && isOpen()) {
+      closeSidebar();
+    }
+  }, {passive: true});
+})();
+</script>""", height=0, scrolling=False)
+
     # ── Page header ───────────────────────────────────────────────────────────
-    h1, h2 = st.columns([3, 1])
-    with h1:
-        st.markdown(
-            "<h1 style='margin-bottom:0;color:#071D35;font-weight:700;font-size:2.1rem;letter-spacing:-0.02em'>InvestWise</h1>",
-            unsafe_allow_html=True,
-        )
-    with h2:
-        _pc = _phase_color(current_phase())
-        st.markdown(
-            f"<div style='text-align:right;padding-top:0.5rem'>"
-            f"<span style='color:#5A8EBB;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em'>Phase</span><br>"
-            f"<span style='background:{_pc}15;border:1px solid {_pc};border-radius:6px;padding:0.15rem 0.55rem;"
-            f"color:{_pc};font-size:0.74rem;font-weight:700'>{current_phase().replace('_', ' ')}</span><br>"
-            f"<span style='color:#5A8EBB;font-size:0.72rem'>{date.today()}</span>"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
+    _pc = _phase_color(current_phase())
+    st.markdown(
+        f"<div style='display:flex;align-items:center;justify-content:space-between;"
+        f"flex-wrap:wrap;gap:0.4rem;margin-bottom:0.25rem'>"
+        f"<h1 style='margin:0;color:#071D35;font-weight:700;font-size:2.1rem;"
+        f"letter-spacing:-0.02em;flex-shrink:0'>InvestWise</h1>"
+        f"<div style='text-align:right;flex-shrink:0'>"
+        f"<span style='color:#5A8EBB;font-size:0.73rem;text-transform:uppercase;"
+        f"letter-spacing:0.08em'>Phase</span><br>"
+        f"<span style='background:{_pc}15;border:1px solid {_pc};border-radius:6px;"
+        f"padding:0.15rem 0.55rem;color:{_pc};font-size:0.74rem;font-weight:700'>"
+        f"{current_phase().replace('_', ' ')}</span><br>"
+        f"<span style='color:#5A8EBB;font-size:0.72rem'>{date.today()}</span>"
+        f"</div></div>",
+        unsafe_allow_html=True,
+    )
 
     # ── Module routing ────────────────────────────────────────────────────────
     if nav == "Core Equity":
