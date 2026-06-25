@@ -367,13 +367,17 @@ st.markdown(
         font-size: 0.84rem !important;
         font-weight: 500 !important;
     }
-    /* Track off */
+    /* Track off — navy-500 gives enough contrast against the #F2F6FA canvas */
     [data-testid="stToggleSwitch"] {
-        background-color: var(--navy-200) !important;
+        background-color: var(--navy-500) !important;
     }
     /* Track on */
     [aria-checked="true"] [data-testid="stToggleSwitch"] {
         background-color: var(--accent) !important;
+    }
+    /* Thumb always white so it's visible on both states */
+    [data-testid="stToggleSwitch"] span {
+        background-color: #ffffff !important;
     }
 
     /* ── Text inputs ─────────────────────────────────────────────────────────── */
