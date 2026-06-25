@@ -632,6 +632,30 @@ def _render_compliance_matrix(today: date) -> None:
     if "rsb_drill_flag" not in st.session_state:
         st.session_state["rsb_drill_flag"] = None
 
+    # Hover-lift CSS matching Intelligence Hub snap-card style
+    st.markdown("""<style>
+.rsb-badge-card {
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+  user-select: none !important;
+}
+.rsb-badge-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 16px rgba(7,29,53,0.11) !important;
+}
+/* Hide the trigger buttons (sit directly after each badge card in DOM) */
+[data-testid="stMarkdownContainer"]:has(.rsb-badge-card) + [data-testid="stButton"] {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+</style>""", unsafe_allow_html=True)
+
     counts = {
         "GREEN":    matrix_data.green_count    if hasattr(matrix_data, "green_count")    else 0,
         "AMBER":    matrix_data.amber_count    if hasattr(matrix_data, "amber_count")    else 0,
@@ -642,15 +666,24 @@ def _render_compliance_matrix(today: date) -> None:
     for col, flag in zip(badge_cols, ["GREEN", "AMBER", "RED", "CRITICAL"]):
         color = _SURVIVAL_COLOR[flag]
         is_active = st.session_state["rsb_drill_flag"] == flag
-        border_style = f"3px solid {color}" if is_active else f"1px solid {color}"
+        bg         = f"{color}0D" if is_active else "#ffffff"
+        border_top = f"3px solid {color}" if is_active else f"2px solid {color}"
+        shadow     = "0 1px 3px rgba(7,29,53,0.05),0 4px 12px rgba(7,29,53,0.04)"
         with col:
             st.markdown(
-                f'<div id="rsb_badge_{flag}" class="iw-price-card" '
-                f'style="background:{color}{"22" if is_active else "0d"};border:{border_style};'
-                f'border-radius:8px;padding:0.65rem;text-align:center;cursor:pointer">'
-                f'<span style="color:{color};font-size:1.4rem;font-weight:800">{counts[flag]}</span><br>'
-                f'<span style="color:#2B5A85;font-size:0.78rem;font-weight:600">{flag}</span><br>'
-                f'<span style="color:{color};font-size:0.65rem">{"▼ hide" if is_active else "▲ view"}</span>'
+                f'<div id="rsb_badge_{flag}" class="rsb-badge-card" '
+                f'style="background:{bg};border:1px solid #D9E8F5;border-top:{border_top};'
+                f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;cursor:pointer;'
+                f'box-shadow:{shadow}">'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.63rem;'
+                f'font-weight:800;color:{color};letter-spacing:0.06em;text-transform:uppercase">'
+                f'{flag}</div>'
+                f'<div style="font-size:0.59rem;color:#5A8EBB;margin:0.07rem 0">instruments</div>'
+                f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.55rem;'
+                f'font-weight:400;color:#071D35;letter-spacing:-0.02em;line-height:1.1;'
+                f'margin:0.18rem 0">{counts[flag]}</div>'
+                f'<div style="font-size:0.65rem;color:{color}">'
+                f'{"▼ active" if is_active else "▲ expand"}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
