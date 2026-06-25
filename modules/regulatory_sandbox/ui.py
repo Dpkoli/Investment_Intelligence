@@ -632,7 +632,7 @@ def _render_compliance_matrix(today: date) -> None:
     if "rsb_drill_flag" not in st.session_state:
         st.session_state["rsb_drill_flag"] = None
 
-    # Hover-lift CSS matching Intelligence Hub snap-card style
+    # Click channel (nonce-based, same pattern as Sovereign Crypto cards)
     st.markdown("""<style>
 .rsb-badge-card {
   transition: transform 0.12s ease, box-shadow 0.12s ease !important;
@@ -642,19 +642,32 @@ def _render_compliance_matrix(today: date) -> None:
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 16px rgba(7,29,53,0.11) !important;
 }
-/* Hide the trigger buttons (sit directly after each badge card in DOM) */
-[data-testid="stMarkdownContainer"]:has(.rsb-badge-card) + [data-testid="stButton"] {
+[data-testid="stTextInput"]:has(input[placeholder="rsb-badge-click-v1"]) {
   position: fixed !important;
-  left: 0 !important;
   top: 0 !important;
+  left: 0 !important;
   width: 1px !important;
   height: 1px !important;
   overflow: hidden !important;
   clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
   pointer-events: none !important;
   z-index: -1 !important;
 }
 </style>""", unsafe_allow_html=True)
+
+    _rsb_raw = st.text_input(
+        "rsb", key="rsb_badge_ch", placeholder="rsb-badge-click-v1",
+        label_visibility="collapsed",
+    )
+    if _rsb_raw and "|" in _rsb_raw:
+        _rsb_flag, _rsb_nonce = _rsb_raw.rsplit("|", 1)
+        if _rsb_flag in ("GREEN", "AMBER", "RED", "CRITICAL"):
+            if _rsb_nonce != st.session_state.get("_rsb_nonce", ""):
+                st.session_state["_rsb_nonce"] = _rsb_nonce
+                _prev_flag = st.session_state.get("rsb_drill_flag")
+                st.session_state["rsb_drill_flag"] = None if _prev_flag == _rsb_flag else _rsb_flag
+                st.rerun()
 
     counts = {
         "GREEN":    matrix_data.green_count    if hasattr(matrix_data, "green_count")    else 0,
@@ -671,7 +684,7 @@ def _render_compliance_matrix(today: date) -> None:
         shadow     = "0 1px 3px rgba(7,29,53,0.05),0 4px 12px rgba(7,29,53,0.04)"
         with col:
             st.markdown(
-                f'<div id="rsb_badge_{flag}" class="rsb-badge-card" '
+                f'<div class="rsb-badge-card" data-rsb-flag="{flag}" '
                 f'style="background:{bg};border:1px solid #D9E8F5;border-top:{border_top};'
                 f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;cursor:pointer;'
                 f'box-shadow:{shadow}">'
@@ -687,36 +700,56 @@ def _render_compliance_matrix(today: date) -> None:
                 f'</div>',
                 unsafe_allow_html=True,
             )
-            if st.button(
-                "​",
-                key=f"rsb_badge_btn_{flag}",
-                use_container_width=True,
-            ):
-                st.session_state["rsb_drill_flag"] = None if is_active else flag
-                st.rerun()
 
-    # Wire badge card clicks → hidden trigger buttons
+    # JS: event delegation on document — no per-card wiring needed
     import streamlit.components.v1 as components
     components.html("""<script>
 (function(){
-  var doc=window.parent.document;
-  function wireBadges(){
-    ['GREEN','AMBER','RED','CRITICAL'].forEach(function(flag){
-      var card=doc.getElementById('rsb_badge_'+flag);
-      if(!card||card._rsbWired)return;
-      card._rsbWired=true;
-      card.addEventListener('click',function(){
-        var mc=card.closest('[data-testid="stMarkdownContainer"]');
-        if(!mc)return;
-        var sibling=mc.nextElementSibling;
-        if(sibling){var btn=sibling.querySelector('button');if(btn){btn.click();return;}}
-        var col=mc.closest('[data-testid="column"]')||mc.parentElement;
-        if(col){var b=col.querySelector('[data-testid="stButton"] button');if(b)b.click();}
-      });
-    });
+  var doc = window.parent.document;
+  var PH  = "rsb-badge-click-v1";
+  var IHP = window.parent.HTMLInputElement.prototype;
+
+  if (doc._rsbClickHandler) {
+    doc.removeEventListener('click', doc._rsbClickHandler, true);
+    doc._rsbClickHandler = null;
   }
-  wireBadges();
-  new MutationObserver(wireBadges).observe(doc.body,{childList:true,subtree:true});
+
+  function setReactVal(inp, val) {
+    var setter = Object.getOwnPropertyDescriptor(IHP, 'value').set;
+    setter.call(inp, val);
+    inp.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
+  }
+
+  function findChannel() {
+    var els = doc.querySelectorAll('[data-testid="stTextInput"] input');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].placeholder === PH) return els[i];
+    }
+    return null;
+  }
+
+  function sendFlag(flag, attempt) {
+    var ch = findChannel();
+    if (!ch) {
+      if (attempt < 15) setTimeout(function(){sendFlag(flag, attempt+1);}, 100);
+      return;
+    }
+    setReactVal(ch, flag + '|' + Date.now());
+    ch.dispatchEvent(new Event('change', {bubbles: true, composed: true}));
+    setTimeout(function() {
+      ch.focus();
+      setTimeout(function() { ch.blur(); }, 50);
+    }, 30);
+  }
+
+  function clickHandler(e) {
+    var card = e.target && e.target.closest && e.target.closest('.rsb-badge-card[data-rsb-flag]');
+    if (!card) return;
+    sendFlag(card.getAttribute('data-rsb-flag'), 0);
+  }
+
+  doc._rsbClickHandler = clickHandler;
+  doc.addEventListener('click', clickHandler, true);
 })();
 </script>""", height=0, scrolling=False)
 
