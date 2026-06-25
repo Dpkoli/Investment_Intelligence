@@ -366,17 +366,13 @@ st.markdown(
         font-size: 0.84rem !important;
         font-weight: 500 !important;
     }
-    /* Track off — darker so it's visible against the #F2F6FA canvas */
+    /* Track off */
     [data-testid="stToggleSwitch"] {
-        background-color: var(--navy-400) !important;
+        background-color: var(--navy-200) !important;
     }
     /* Track on */
     [aria-checked="true"] [data-testid="stToggleSwitch"] {
         background-color: var(--accent) !important;
-    }
-    /* Thumb always white */
-    [data-testid="stToggleSwitch"] span {
-        background-color: #ffffff !important;
     }
 
     /* ── Text inputs ─────────────────────────────────────────────────────────── */
@@ -1588,12 +1584,12 @@ def render_hub() -> None:
         unsafe_allow_html=True,
     )
     wi_prices = _world_index_prices()
-    _wi_cards = []
-    for idx_meta in _WORLD_INDEXES:
-        t      = idx_meta["ticker"]
-        p_data = wi_prices.get(t, {})
-        price  = p_data.get("price")
-        chg    = p_data.get("chg_pct")
+    wi_cols = st.columns(len(_WORLD_INDEXES))
+    for wi_col, idx_meta in zip(wi_cols, _WORLD_INDEXES):
+        t = idx_meta["ticker"]
+        p_data  = wi_prices.get(t, {})
+        price   = p_data.get("price")
+        chg     = p_data.get("chg_pct")
 
         if price is not None:
             price_str = (
@@ -1605,39 +1601,35 @@ def render_hub() -> None:
             price_str = "—"
 
         if chg is not None:
-            chg_color  = "#149453" if chg >= 0 else "#E53535"
-            chg_arrow  = "▲" if chg >= 0 else "▼"
-            chg_str    = f"{chg_arrow}{abs(chg):.2f}%"
-            border_top = f"3px solid {chg_color}"
+            chg_color = "#149453" if chg >= 0 else "#E53535"
+            chg_arrow = "▲" if chg >= 0 else "▼"
+            chg_html  = (
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;'
+                f'font-weight:700;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
+            )
+            border_top = f"2px solid {chg_color}"
         else:
-            chg_color  = "#5A8EBB"
-            chg_str    = "—"
-            border_top = "3px solid #D9E8F5"
+            chg_html   = '<div style="color:#5A8EBB;font-size:0.6rem">—</div>'
+            border_top = "2px solid #D9E8F5"
 
-        _wi_cards.append(
-            f'<div style="min-width:96px;flex-shrink:0;background:#ffffff;'
-            f'border:1px solid #D9E8F5;border-top:{border_top};'
-            f'border-radius:8px;padding:0.55rem 0.6rem;text-align:center">'
-            f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.67rem;'
-            f'font-weight:800;color:#3A72A0;letter-spacing:0.03em;text-transform:uppercase;'
-            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{idx_meta["name"]}</div>'
-            f'<div style="font-size:0.58rem;color:#5A8EBB;margin:0.05rem 0;font-weight:600;'
-            f'letter-spacing:0.06em">{idx_meta["region"]}</div>'
-            f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.35rem;'
-            f'font-weight:400;color:#071D35;letter-spacing:-0.02em;line-height:1.1;'
-            f'margin:0.14rem 0">{price_str}</div>'
-            f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.67rem;'
-            f'font-weight:700;color:{chg_color}">{chg_str}</div>'
-            f'</div>'
-        )
-
-    st.markdown(
-        '<div style="display:flex;gap:0.45rem;overflow-x:auto;padding-bottom:0.35rem;'
-        '-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none">'
-        + "".join(_wi_cards)
-        + '</div>',
-        unsafe_allow_html=True,
-    )
+        with wi_col:
+            st.markdown(
+                f'<div style="background:#ffffff;border:1px solid #D9E8F5;'
+                f'border-top:{border_top};border-radius:8px;padding:0.5rem 0.3rem;'
+                f'text-align:center">'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;'
+                f'font-weight:800;color:#3A72A0;letter-spacing:0.04em;text-transform:uppercase;'
+                f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+                f'{idx_meta["name"]}</div>'
+                f'<div style="font-size:0.5rem;color:#5A8EBB;margin:0.03rem 0">'
+                f'{idx_meta["region"]}</div>'
+                f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.1rem;'
+                f'font-weight:400;color:#071D35;letter-spacing:-0.02em;line-height:1.1;'
+                f'margin:0.1rem 0">{price_str}</div>'
+                f'{chg_html}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
     st.divider()
 
