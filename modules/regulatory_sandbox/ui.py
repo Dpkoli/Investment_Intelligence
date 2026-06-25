@@ -157,7 +157,7 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
             f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {color};'
             f'border-radius:8px;padding:0.75rem;text-align:center;box-shadow:0 1px 3px rgba(7,29,53,0.05)">'
             f'<div style="font-size:0.68rem;font-weight:700;color:#5A8EBB;letter-spacing:0.1em;text-transform:uppercase">Gateway Opens</div>'
-            f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:2rem;font-weight:400;color:{color};letter-spacing:-0.02em;line-height:1.1">{label}</div>'
+            f'<div style="font-size:2rem;font-weight:700;color:{color};line-height:1.1">{label}</div>'
             f'<div style="font-size:0.72rem;color:#2B5A85;font-weight:600;margin-top:0.1rem">{GATEWAY_OPEN_DATE}</div>'
             f'<div style="font-size:0.67rem;color:#5A8EBB;margin-top:0.1rem">FCA registration window opens</div>'
             f'</div>',
@@ -173,7 +173,7 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
             f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {color};'
             f'border-radius:8px;padding:0.75rem;text-align:center;box-shadow:0 1px 3px rgba(7,29,53,0.05)">'
             f'<div style="font-size:0.68rem;font-weight:700;color:#5A8EBB;letter-spacing:0.1em;text-transform:uppercase">Gateway Closes</div>'
-            f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:2rem;font-weight:400;color:{color};letter-spacing:-0.02em;line-height:1.1">{label}</div>'
+            f'<div style="font-size:2rem;font-weight:700;color:{color};line-height:1.1">{label}</div>'
             f'<div style="font-size:0.72rem;color:#2B5A85;font-weight:600;margin-top:0.1rem">{GATEWAY_CLOSE_DATE}</div>'
             f'<div style="font-size:0.67rem;color:#5A8EBB;margin-top:0.1rem">Final registration deadline — hard stop</div>'
             f'</div>',
@@ -189,7 +189,7 @@ def _render_overview(today: date, phase: str, phase_color: str) -> None:
             f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {color};'
             f'border-radius:8px;padding:0.75rem;text-align:center;box-shadow:0 1px 3px rgba(7,29,53,0.05)">'
             f'<div style="font-size:0.68rem;font-weight:700;color:#5A8EBB;letter-spacing:0.1em;text-transform:uppercase">Enforcement Cliff</div>'
-            f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:2rem;font-weight:400;color:{color};letter-spacing:-0.02em;line-height:1.1">{label}</div>'
+            f'<div style="font-size:2rem;font-weight:700;color:{color};line-height:1.1">{label}</div>'
             f'<div style="font-size:0.72rem;color:#2B5A85;font-weight:600;margin-top:0.1rem">{ENFORCEMENT_DATE}</div>'
             f'<div style="font-size:0.67rem;color:#5A8EBB;margin-top:0.1rem">s.23 FSMA criminal liability begins</div>'
             f'</div>',
@@ -692,9 +692,8 @@ def _render_compliance_matrix(today: date) -> None:
                 f'font-weight:800;color:{color};letter-spacing:0.06em;text-transform:uppercase">'
                 f'{flag}</div>'
                 f'<div style="font-size:0.59rem;color:#5A8EBB;margin:0.07rem 0">instruments</div>'
-                f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.55rem;'
-                f'font-weight:400;color:#071D35;letter-spacing:-0.02em;line-height:1.1;'
-                f'margin:0.18rem 0">{counts[flag]}</div>'
+                f'<div style="font-size:1.55rem;font-weight:700;color:#071D35;'
+                f'line-height:1.1;margin:0.18rem 0">{counts[flag]}</div>'
                 f'<div style="font-size:0.65rem;color:{color}">'
                 f'{"▼ active" if is_active else "▲ expand"}</div>'
                 f'</div>',
