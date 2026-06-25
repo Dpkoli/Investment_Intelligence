@@ -905,6 +905,30 @@ try:
 except Exception:
     pass
 
+# Extend with all Core Equity instruments (~266 entries)
+try:
+    from modules.core_equity.data import CORE_EQUITY_REGISTRY as _CE_REGISTRY
+    for _ce in _CE_REGISTRY:
+        if _ce.ticker not in _HUB_ALL_TICKERS:
+            _HUB_ALL_TICKERS[_ce.ticker] = {
+                "name": _ce.name,
+                "row":  "equity",
+            }
+except Exception:
+    pass
+
+# Extend with all Thematic Sector instruments (~132 entries)
+try:
+    from modules.thematic_sectors.data import THEMATIC_REGISTRY as _TH_REGISTRY
+    for _th in _TH_REGISTRY:
+        if _th.ticker not in _HUB_ALL_TICKERS:
+            _HUB_ALL_TICKERS[_th.ticker] = {
+                "name": _th.name,
+                "row":  "thematic",
+            }
+except Exception:
+    pass
+
 _INFLUENTIAL_PEOPLE: list[dict] = [
     {
         "name": "Jensen Huang", "role": "CEO, NVIDIA", "avatar": "🟢",
@@ -1039,6 +1063,63 @@ def _hub_prices(tickers: tuple) -> dict[str, dict]:
             try:
                 p  = _clean(last.get(yf_t))
                 p0 = _clean(prev.get(yf_t))
+                if p is None:
+                    continue
+                pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
+                data[t] = {"price": p, "chg_pct": pct}
+            except Exception:
+                pass
+        return data
+    except Exception:
+        return {}
+
+
+_WORLD_INDEXES: list[dict] = [
+    {"ticker": "^GSPC",     "name": "S&P 500",      "region": "US"},
+    {"ticker": "^IXIC",     "name": "NASDAQ",        "region": "US"},
+    {"ticker": "^DJI",      "name": "Dow Jones",     "region": "US"},
+    {"ticker": "^FTSE",     "name": "FTSE 100",      "region": "UK"},
+    {"ticker": "^GDAXI",    "name": "DAX",           "region": "EU"},
+    {"ticker": "^FCHI",     "name": "CAC 40",        "region": "EU"},
+    {"ticker": "^STOXX50E", "name": "Euro Stoxx 50", "region": "EU"},
+    {"ticker": "^N225",     "name": "Nikkei 225",    "region": "JP"},
+    {"ticker": "^HSI",      "name": "Hang Seng",     "region": "HK"},
+    {"ticker": "^BSESN",    "name": "BSE Sensex",    "region": "IN"},
+]
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _world_index_prices() -> dict[str, dict]:
+    try:
+        import math
+        import yfinance as yf
+        import pandas as pd
+
+        def _clean(v) -> Optional[float]:
+            try:
+                f = float(v)
+                return None if (math.isnan(f) or math.isinf(f)) else f
+            except Exception:
+                return None
+
+        tickers = [idx["ticker"] for idx in _WORLD_INDEXES]
+        batch = yf.download(tickers, period="5d", auto_adjust=True,
+                            progress=False, threads=True)
+        closes = batch.get("Close", batch)
+        if closes is None or closes.empty:
+            return {}
+        if isinstance(closes, pd.Series):
+            closes = closes.to_frame(name=tickers[0])
+        closes = closes.dropna(how="all")
+        if closes.empty:
+            return {}
+        last = closes.iloc[-1]
+        prev = closes.iloc[-2] if len(closes) >= 2 else closes.iloc[-1]
+        data: dict[str, dict] = {}
+        for t in tickers:
+            try:
+                p  = _clean(last.get(t))
+                p0 = _clean(prev.get(t))
                 if p is None:
                     continue
                 pct = round((p - p0) / p0 * 100, 2) if (p and p0 and p0 != 0) else None
@@ -1494,6 +1575,61 @@ def render_hub() -> None:
   new MutationObserver(wireSnapCards).observe(doc.body,{childList:true,subtree:true});
 })();
 </script>""", height=0, scrolling=False)
+
+    # ── World Indexes ─────────────────────────────────────────────────────────
+    st.markdown(
+        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;'
+        'text-transform:uppercase;color:#5A8EBB;margin:0.6rem 0 0.3rem">'
+        'World Indexes</p>',
+        unsafe_allow_html=True,
+    )
+    wi_prices = _world_index_prices()
+    wi_cols = st.columns(len(_WORLD_INDEXES))
+    for wi_col, idx_meta in zip(wi_cols, _WORLD_INDEXES):
+        t = idx_meta["ticker"]
+        p_data  = wi_prices.get(t, {})
+        price   = p_data.get("price")
+        chg     = p_data.get("chg_pct")
+
+        if price is not None:
+            price_str = (
+                f"{price:,.0f}" if price >= 1000 else
+                f"{price:.2f}"  if price >= 1    else
+                f"{price:.4f}"
+            )
+        else:
+            price_str = "—"
+
+        if chg is not None:
+            chg_color = "#149453" if chg >= 0 else "#E53535"
+            chg_arrow = "▲" if chg >= 0 else "▼"
+            chg_html  = (
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;'
+                f'font-weight:700;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
+            )
+            border_top = f"2px solid {chg_color}"
+        else:
+            chg_html   = '<div style="color:#5A8EBB;font-size:0.6rem">—</div>'
+            border_top = "2px solid #D9E8F5"
+
+        with wi_col:
+            st.markdown(
+                f'<div style="background:#ffffff;border:1px solid #D9E8F5;'
+                f'border-top:{border_top};border-radius:8px;padding:0.5rem 0.3rem;'
+                f'text-align:center">'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;'
+                f'font-weight:800;color:#3A72A0;letter-spacing:0.04em;text-transform:uppercase;'
+                f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+                f'{idx_meta["name"]}</div>'
+                f'<div style="font-size:0.5rem;color:#5A8EBB;margin:0.03rem 0">'
+                f'{idx_meta["region"]}</div>'
+                f'<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.1rem;'
+                f'font-weight:400;color:#071D35;letter-spacing:-0.02em;line-height:1.1;'
+                f'margin:0.1rem 0">{price_str}</div>'
+                f'{chg_html}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
     st.divider()
 
