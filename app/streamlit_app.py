@@ -288,6 +288,7 @@ st.markdown(
     .stButton button[kind="primary"] {
         background: var(--color-primary) !important;
         border-color: var(--color-primary) !important;
+        color: #ffffff !important;
     }
     .stButton button[kind="primary"]:hover {
         background: var(--navy-700) !important;
@@ -1128,7 +1129,7 @@ _HUB_ROW_NAV: dict[str, str] = {
     "thematic": "Thematic Sectors",
     "equity":   "Core Equity",
 }
-_SNAP_DEFAULTS: list[str] = ["BTC-USD", "ETH-USD", "SPY", "NVDA", "VWRP.L", "GC=F"]
+_SNAP_DEFAULTS: list[str] = []
 
 # Extend the ticker catalogue with all precious metals from the metals module
 try:
@@ -1559,12 +1560,29 @@ def render_hub() -> None:
             st.rerun()
 
     # ── Edit panel ────────────────────────────────────────────────────────────
+    # Auto-open edit panel when no instruments are selected yet
+    if not snap_favs and not st.session_state["snap_edit"]:
+        st.session_state["snap_edit"] = True
+
     if st.session_state["snap_edit"]:
-        st.markdown(
-            '<div style="font-size:0.67rem;color:#5A8EBB;font-weight:600;margin-bottom:0.25rem">'
-            'Click to remove  ·  Max 6 instruments</div>',
-            unsafe_allow_html=True,
-        )
+        if not snap_favs:
+            st.markdown(
+                '<div style="background:#EEF4FB;border:1px solid #D9E8F5;border-left:3px solid #1AB868;'
+                'border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:0.5rem">'
+                '<div style="font-size:0.8rem;font-weight:700;color:#071D35;margin-bottom:0.15rem">'
+                'Personalise your Market Snapshot</div>'
+                '<div style="font-size:0.74rem;color:#5A8EBB;line-height:1.5">'
+                'Search for up to 6 instruments below — equities, ETFs, crypto, or commodities. '
+                'Your selections persist across sessions via browser storage.</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<div style="font-size:0.67rem;color:#5A8EBB;font-weight:600;margin-bottom:0.25rem">'
+                'Click to remove  ·  Max 6 instruments</div>',
+                unsafe_allow_html=True,
+            )
         rm_cols = st.columns(min(6, max(1, len(snap_favs))))
         for ci, tick in enumerate(snap_favs):
             with rm_cols[ci]:
@@ -1890,14 +1908,15 @@ def render_hub() -> None:
             st.markdown(
                 f'<div class="wi-card" data-wi-ticker="{t}" style="background:{bg};'
                 f'border:1px solid #D9E8F5;border-top:{border_top};border-radius:8px;'
-                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer">'
+                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer;'
+                f'box-shadow:0 1px 3px rgba(7,29,53,0.05)">'
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;'
-                f'font-weight:800;color:#000000;letter-spacing:0.04em;text-transform:uppercase;'
+                f'font-weight:800;color:#071D35;letter-spacing:0.04em;text-transform:uppercase;'
                 f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
                 f'{idx_meta["name"]}</div>'
-                f'<div style="font-size:0.5rem;color:#000000;margin:0.03rem 0">'
+                f'<div style="font-size:0.5rem;color:#5A8EBB;margin:0.03rem 0">'
                 f'{idx_meta["region"]}</div>'
-                f'<div style="font-size:0.95rem;font-weight:700;color:#000000;'
+                f'<div style="font-size:0.95rem;font-weight:700;color:#071D35;'
                 f'line-height:1.1;margin:0.1rem 0">{price_str}</div>'
                 f'{chg_html}'
                 f'</div>',
@@ -2273,29 +2292,35 @@ def main() -> None:
   if (doc._iwRowSelectInstalled) return;
   doc._iwRowSelectInstalled = true;
 
-  // glide-data-grid layout constants (Streamlit defaults)
-  var HEADER_H   = 36;  // header row height in px
-  var CB_WIDTH   = 52;  // checkbox column width in px
-  var CB_X       = 26;  // x center of checkbox within that column
+  var HEADER_H = 36;
+  var CB_WIDTH = 52;
+  var CB_X     = 26;
 
-  function wireCanvas(canvas) {
-    if (canvas._iwRowWired) return;
-    canvas._iwRowWired = true;
+  function wireFrame(frame) {
+    if (frame._iwRowWired) return;
+    frame._iwRowWired = true;
 
-    canvas.addEventListener('mousedown', function(e) {
-      if (canvas._iwFiring) return;
+    // Listen on the FRAME container in capture phase so we fire BEFORE
+    // glide-data-grid's own canvas listeners (capture goes outer→inner).
+    frame.addEventListener('mousedown', function(e) {
+      if (frame._iwFiring) return;
+
+      var canvas = frame.querySelector('canvas');
+      if (!canvas) return;
 
       var rect = canvas.getBoundingClientRect();
       var x = e.clientX - rect.left;
       var y = e.clientY - rect.top;
 
-      // Only intercept clicks in the data area — not header or checkbox column
+      // Only intercept data-area clicks — skip header and checkbox column
       if (y < HEADER_H || x < CB_WIDTH) return;
 
-      e.stopPropagation();
+      // stopImmediatePropagation prevents ALL other listeners (including
+      // glide's own capture/bubble handlers) from seeing this event.
+      e.stopImmediatePropagation();
       e.preventDefault();
 
-      canvas._iwFiring = true;
+      frame._iwFiring = true;
       var tx = rect.left + CB_X;
       var ty = e.clientY;
 
@@ -2308,12 +2333,12 @@ def main() -> None:
           view: window.parent
         }));
       });
-      canvas._iwFiring = false;
-    }, true); // capture phase so we intercept before glide's own listeners
+      frame._iwFiring = false;
+    }, true); // CAPTURE phase on the frame ancestor
   }
 
   function wireAll() {
-    doc.querySelectorAll('[data-testid="stDataFrame"] canvas').forEach(wireCanvas);
+    doc.querySelectorAll('[data-testid="stDataFrame"]').forEach(wireFrame);
   }
 
   wireAll();

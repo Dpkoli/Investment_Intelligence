@@ -135,6 +135,19 @@ def _info_card(title: str, body: str, color: str = "#D9E8F5") -> None:
 
 
 def _render_overview(today: date, phase: str, phase_color: str) -> None:
+    st.markdown(
+        '<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:4px solid #1AB868;'
+        'border-radius:0 8px 8px 0;padding:0.75rem 1rem;margin-bottom:0.75rem">'
+        '<div style="font-size:0.82rem;color:#071D35;line-height:1.65">'
+        'The <strong>Regulatory Sandbox</strong> is a controlled intelligence environment for monitoring '
+        'UK financial instrument compliance under FSMA 2023 and FCA guidance. It tracks live regulatory '
+        'phase countdowns, evaluates instruments against FCA registration requirements, and surfaces '
+        'actionable risk signals — without exposing live capital to market risk. Use it to stress-test '
+        'portfolio decisions against current and upcoming enforcement timelines.'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
+
     # Phase banner
     st.markdown(
         f"""<div style="background:linear-gradient(90deg,{phase_color}22,transparent);
@@ -578,6 +591,19 @@ All firms communicating or approving crypto financial promotions to UK persons m
 
 def _render_compliance_matrix(today: date) -> None:
     st.markdown("### Compliance Matrix — 19 Tracked Instruments")
+    st.markdown(
+        '<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:4px solid #2B5A85;'
+        'border-radius:0 8px 8px 0;padding:0.75rem 1rem;margin-bottom:0.75rem">'
+        '<div style="font-size:0.82rem;color:#071D35;line-height:1.65">'
+        'The <strong>Compliance Matrix</strong> evaluates all 19 tracked instruments against real-time '
+        'FCA regulatory rules, cross-border restrictions, and licensing frameworks including '
+        '<strong>FSMA 2023</strong> and <strong>MiFID II</strong> guidelines. Each instrument is '
+        'automatically scored GREEN, AMBER, RED, or CRITICAL based on its authorisation status, '
+        'marketing restrictions, and proximity to enforcement deadlines — ensuring your selected '
+        'instruments meet regional legal criteria before deployment.'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
 
     col_date, _ = st.columns([2, 2])
     with col_date:

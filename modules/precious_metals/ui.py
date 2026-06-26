@@ -18,10 +18,10 @@ _PAGE_SIZE = 20
 _SPOT_TICKERS = ["GC=F", "SI=F", "PL=F", "PA=F"]
 
 _METAL_COLOR = {
-    MetalType.GOLD:      "#FFD700",
-    MetalType.SILVER:    "#C0C0C0",
-    MetalType.PLATINUM:  "#E5E4E2",
-    MetalType.PALLADIUM: "#CED0DD",
+    MetalType.GOLD:      "#C98900",
+    MetalType.SILVER:    "#5A8EBB",
+    MetalType.PLATINUM:  "#3A72A0",
+    MetalType.PALLADIUM: "#2B5A85",
 }
 
 
