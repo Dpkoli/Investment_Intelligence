@@ -399,8 +399,8 @@ st.markdown(
     }
     .wi-pct {
         font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.73rem !important;
-        font-weight: 600 !important;
+        font-size: 0.82rem !important;
+        font-weight: 700 !important;
     }
 
     /* ── Selectbox / Multiselect — control (closed state) ──────────────────── */
@@ -1755,12 +1755,12 @@ def render_hub() -> None:
                     cc  = "#149453" if chg >= 0 else "#E53535"
                     arr = "▲" if chg >= 0 else "▼"
                     chg_html = (
-                        f'<span style="color:{cc};font-weight:600;'
-                        f'font-family:\'JetBrains Mono\',monospace;font-size:0.73rem">'
+                        f'<span style="color:{cc};font-weight:700;'
+                        f'font-family:\'JetBrains Mono\',monospace;font-size:0.82rem">'
                         f'{arr}{abs(chg):.2f}%</span>'
                     )
                 else:
-                    chg_html = '<span style="color:#5A8EBB;font-size:0.73rem">—</span>'
+                    chg_html = '<span style="color:#5A8EBB;font-size:0.82rem">—</span>'
 
                 bg         = f"{color}0D" if is_open else "#ffffff"
                 border_top = f"3px solid {color}" if is_open else f"2px solid {color}"
@@ -1770,11 +1770,11 @@ def render_hub() -> None:
                     f'background:{bg};border:1px solid #D9E8F5;border-top:{border_top};'
                     f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;cursor:pointer">'
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.63rem;'
-                    f'font-weight:800;color:#000000;letter-spacing:0.06em;text-transform:uppercase">'
+                    f'font-weight:800;color:{color};letter-spacing:0.06em;text-transform:uppercase">'
                     f'{ticker}</div>'
-                    f'<div style="font-size:0.59rem;color:#000000;margin:0.07rem 0;'
+                    f'<div style="font-size:0.59rem;color:#5A8EBB;margin:0.07rem 0;'
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name}</div>'
-                    f'<div style="font-size:1.2rem;font-weight:700;color:#000000;'
+                    f'<div style="font-size:1.75rem;font-weight:800;color:#071D35;'
                     f'line-height:1.1;margin:0.18rem 0">{price_str}</div>'
                     f'<div>{chg_html}</div>'
                     f'</div>',
@@ -1955,8 +1955,8 @@ def render_hub() -> None:
                 f'{idx_meta["name"]}</div>'
                 f'<div style="font-size:0.62rem;color:#5A8EBB;margin:0.1rem 0">'
                 f'{idx_meta["region"]}</div>'
-                f'<div style="font-size:1.15rem;font-weight:700;color:#071D35;'
-                f'line-height:1.15;margin:0.2rem 0 0.05rem">{price_str}</div>'
+                f'<div style="font-size:1.75rem;font-weight:800;color:#071D35;'
+                f'line-height:1.1;margin:0.2rem 0 0.05rem">{price_str}</div>'
                 f'{chg_html}'
                 f'</div>',
                 unsafe_allow_html=True,
