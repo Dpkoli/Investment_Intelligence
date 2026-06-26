@@ -513,6 +513,7 @@ div[data-testid="stRadio"] label {
         if st.button("← Prev", key="ce_prev", disabled=page == 0):
             st.session_state["ce_page"] = page - 1
             st.session_state["ce_selected"] = None
+            st.session_state.pop(f"df_{_CE_CH}", None)
             st.rerun()
     with c2:
         st.caption(f"Page {page + 1} / {total_pages}")
@@ -520,6 +521,7 @@ div[data-testid="stRadio"] label {
         if st.button("Next →", key="ce_next", disabled=page >= total_pages - 1):
             st.session_state["ce_page"] = page + 1
             st.session_state["ce_selected"] = None
+            st.session_state.pop(f"df_{_CE_CH}", None)
             st.rerun()
 
     page_items = filtered[page * _PAGE_SIZE : (page + 1) * _PAGE_SIZE]
@@ -545,9 +547,6 @@ div[data-testid="stRadio"] label {
             "1d %":      f"{chg:+.2f}%"             if chg  is not None else "—",
         })
 
-    sel_ticker_cur = st.session_state.get("ce_selected")
-    sel_idx = next((i for i, p in enumerate(page_items) if p.ticker == sel_ticker_cur), None)
-
     new_sel = _tbl.render(
         rows=rows,
         columns=[
@@ -557,19 +556,12 @@ div[data-testid="stRadio"] label {
             ("Price", "Price"), ("1d %", "1d %"),
         ],
         channel_placeholder=_CE_CH,
-        selected_idx=sel_idx,
-        col_classes={"Ticker": "td-mono", "Price": "td-mono"},
     )
 
     if new_sel is not None and 0 <= new_sel < len(page_items):
-        clicked = page_items[new_sel].ticker
-        if st.session_state.get("ce_selected") == clicked:
-            st.session_state["ce_selected"] = None
-            st.session_state[f"_iwtbl_clear__iwtbl_{_CE_CH}"] = True
-            st.rerun()
-        else:
-            st.session_state["ce_selected"] = clicked
-            st.rerun()
+        st.session_state["ce_selected"] = page_items[new_sel].ticker
+    else:
+        st.session_state["ce_selected"] = None
 
     # ── Fund Intelligence panel ───────────────────────────────────────────────
     sel_ticker = st.session_state["ce_selected"]

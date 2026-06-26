@@ -636,19 +636,17 @@ def render() -> None:
     if "sw_selected" not in st.session_state: st.session_state["sw_selected"] = None
 
     # ── Filters ───────────────────────────────────────────────────────────────
-    fc1, fc2, fc3 = st.columns(3)
+    fc1, fc2, fc3, fc4 = st.columns(4)
     with fc1:
         sel_countries = st.multiselect("Country", ALL_COUNTRIES, placeholder="All countries", key="sw_countries")
     with fc2:
         sel_sectors   = st.multiselect("Sector",  ALL_SECTORS,   placeholder="All sectors",   key="sw_sectors")
     with fc3:
         sel_indexes   = st.multiselect("Index",   ALL_INDEXES,   placeholder="All indexes",   key="sw_indexes")
-
-    fs1, fs2 = st.columns([1, 3])
-    with fs1:
+    with fc4:
         min_cap = st.selectbox("Min Market Cap", ["Any", ">$10Bn", ">$50Bn", ">$100Bn", ">$500Bn"], key="sw_mincap")
-    with fs2:
-        search_q = st.text_input("Search", placeholder="Ticker, name, sector…", key="sw_search", label_visibility="collapsed")
+
+    search_q = st.text_input("Search", placeholder="Ticker, name, sector…", key="sw_search", label_visibility="collapsed")
 
     # ── Apply filters ─────────────────────────────────────────────────────────
     filtered = list(STOCKS_REGISTRY)
@@ -698,16 +696,6 @@ def render() -> None:
             "1d %":      chg_str,
         })
 
-    # Determine selected index for highlight
-    sel_ticker = st.session_state["sw_selected"]
-    sel_idx = next((i for i, s in enumerate(page_items) if s.ticker == sel_ticker), None)
-
-    # Column class mapping
-    col_classes = {
-        "Ticker":  "td-mono",
-        "Price":   "td-mono",
-    }
-
     # Render table
     new_sel = _tbl.render(
         rows=rows,
@@ -717,22 +705,13 @@ def render() -> None:
             ("Price", "Price"), ("1d %", "1d %"),
         ],
         channel_placeholder=_CH,
-        selected_idx=sel_idx,
-        col_classes=col_classes,
     )
 
     # Handle selection
     if new_sel is not None and 0 <= new_sel < len(page_items):
-        clicked_ticker = page_items[new_sel].ticker
-        if st.session_state["sw_selected"] == clicked_ticker:
-            st.session_state["sw_selected"] = None
-            st.session_state[f"_iwtbl_clear__iwtbl_{_CH}"] = True
-            st.rerun()
-        else:
-            st.session_state["sw_selected"] = clicked_ticker
-            st.rerun()
-    elif new_sel is None and sel_idx is None:
-        pass  # nothing selected, no change
+        st.session_state["sw_selected"] = page_items[new_sel].ticker
+    else:
+        st.session_state["sw_selected"] = None
 
     # ── Pagination controls ───────────────────────────────────────────────────
     if n_pages > 1:
@@ -741,6 +720,7 @@ def render() -> None:
             if st.button("← Prev", disabled=(page == 0), key="sw_prev", use_container_width=True):
                 st.session_state["sw_page"] = page - 1
                 st.session_state["sw_selected"] = None
+                st.session_state.pop(f"df_{_CH}", None)
                 st.rerun()
         with pp2:
             st.markdown(
@@ -752,6 +732,7 @@ def render() -> None:
             if st.button("Next →", disabled=(page == n_pages - 1), key="sw_next", use_container_width=True):
                 st.session_state["sw_page"] = page + 1
                 st.session_state["sw_selected"] = None
+                st.session_state.pop(f"df_{_CH}", None)
                 st.rerun()
 
     # ── Deep-dive panel ───────────────────────────────────────────────────────

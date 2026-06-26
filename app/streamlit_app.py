@@ -397,6 +397,11 @@ st.markdown(
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 16px rgba(7,29,53,0.11) !important;
     }
+    .wi-pct {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 0.73rem !important;
+        font-weight: 600 !important;
+    }
 
     /* ── Selectbox / Multiselect — control (closed state) ──────────────────── */
     .stSelectbox [data-baseweb="select"],
@@ -1876,20 +1881,7 @@ def render_hub() -> None:
     });
   }
 
-  function wireIwTables(){
-    doc.querySelectorAll('tr[data-ph]').forEach(function(row){
-      if(row._iwTblWired) return;
-      row._iwTblWired = true;
-      row.addEventListener('click', function(e){
-        if(e.target && e.target.type === 'checkbox') return;
-        var ph  = row.getAttribute('data-ph');
-        var idx = row.getAttribute('data-idx');
-        if(ph && idx !== null) fireCh(ph, idx);
-      });
-    });
-  }
-
-  function wireAll(){ wireCards(); wireIwTables(); }
+  function wireAll(){ wireCards(); }
 
   wireAll();
   new MutationObserver(function(){ wireAll(); }).observe(doc.body,{childList:true,subtree:true});
@@ -1940,13 +1932,12 @@ def render_hub() -> None:
             chg_color = "#149453" if chg >= 0 else "#E53535"
             chg_arrow = "▲" if chg >= 0 else "▼"
             chg_html  = (
-                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.73rem;'
-                f'font-weight:600;color:{chg_color};margin-top:0.08rem">'
+                f'<div class="wi-pct" style="color:{chg_color};margin-top:0.08rem">'
                 f'{chg_arrow}{abs(chg):.2f}%</div>'
             )
             border_top = f"{'3px' if is_open else '2px'} solid {chg_color}"
         else:
-            chg_html   = '<div style="color:#5A8EBB;font-size:0.73rem;margin-top:0.08rem">—</div>'
+            chg_html   = '<div class="wi-pct" style="color:#5A8EBB;margin-top:0.08rem">—</div>'
             border_top = "2px solid #D9E8F5"
 
         bg = "#EDFAF3" if is_open else "#ffffff"

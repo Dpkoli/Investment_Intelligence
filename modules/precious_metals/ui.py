@@ -535,6 +535,7 @@ def render() -> None:
         if st.button("← Prev", key="pm_prev", disabled=page == 0):
             st.session_state["pm_page"] = page - 1
             st.session_state["pm_selected"] = None
+            st.session_state.pop(f"df_{_PM_CH}", None)
             st.rerun()
     with c2:
         st.caption(f"Page {page + 1} / {total_pages}")
@@ -542,6 +543,7 @@ def render() -> None:
         if st.button("Next →", key="pm_next", disabled=page >= total_pages - 1):
             st.session_state["pm_page"] = page + 1
             st.session_state["pm_selected"] = None
+            st.session_state.pop(f"df_{_PM_CH}", None)
             st.rerun()
 
     page_items = filtered[page * _PAGE_SIZE : (page + 1) * _PAGE_SIZE]
@@ -568,9 +570,6 @@ def render() -> None:
             "1d %":         f"{chg:+.2f}%" if chg is not None else "—",
         })
 
-    sel_ticker_cur = st.session_state.get("pm_selected")
-    sel_idx = next((i for i, p in enumerate(page_items) if p.ticker == sel_ticker_cur), None)
-
     new_sel = _tbl.render(
         rows=rows,
         columns=[
@@ -580,19 +579,12 @@ def render() -> None:
             ("Issuer", "Issuer"), ("Price", "Price"), ("1d %", "1d %"),
         ],
         channel_placeholder=_PM_CH,
-        selected_idx=sel_idx,
-        col_classes={"Ticker": "td-mono", "Price": "td-mono"},
     )
 
     if new_sel is not None and 0 <= new_sel < len(page_items):
-        clicked = page_items[new_sel].ticker
-        if st.session_state.get("pm_selected") == clicked:
-            st.session_state["pm_selected"] = None
-            st.session_state[f"_iwtbl_clear__iwtbl_{_PM_CH}"] = True
-            st.rerun()
-        else:
-            st.session_state["pm_selected"] = clicked
-            st.rerun()
+        st.session_state["pm_selected"] = page_items[new_sel].ticker
+    else:
+        st.session_state["pm_selected"] = None
 
     # ── Fund Intelligence panel ───────────────────────────────────────────────
     sel_ticker = st.session_state["pm_selected"]
