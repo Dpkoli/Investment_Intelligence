@@ -365,10 +365,17 @@ st.markdown(
     .stSelectbox [data-baseweb="select"] > div,
     .stMultiSelect [data-baseweb="select"] > div {
         background-color: var(--card) !important;
-        border: 1.5px solid var(--border) !important;
+        border: 1.5px solid #000000 !important;
         border-radius: 8px !important;
         color: var(--text-h) !important;
         font-size: 0.84rem !important;
+        transition: border-color 0.15s ease !important;
+    }
+    /* Focused / active state — keep border black */
+    .stSelectbox [data-baseweb="select"]:focus-within > div,
+    .stMultiSelect [data-baseweb="select"]:focus-within > div {
+        border-color: #000000 !important;
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.10) !important;
     }
     /* Text / value / placeholder inside the control */
     .stSelectbox [data-baseweb="select"] span,
