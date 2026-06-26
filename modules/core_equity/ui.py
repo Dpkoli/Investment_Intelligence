@@ -466,28 +466,6 @@ div[data-testid="stRadio"] label {
         on_change=_on_ce_search_change,
     )
 
-    # Auto-focus: wire click on the search label/container to focus the real input
-    import streamlit.components.v1 as _components
-    _components.html("""
-<script>
-(function() {
-    var doc = window.parent.document;
-    function wireClick() {
-        var inputs = doc.querySelectorAll('input[placeholder="Ticker, name, index…"]');
-        if (!inputs.length) { setTimeout(wireClick, 200); return; }
-        var inp = inputs[0];
-        var wrapper = inp.closest('[data-testid="stTextInput"]') || inp.parentElement;
-        if (wrapper && !wrapper._ceFocusWired) {
-            wrapper._ceFocusWired = true;
-            wrapper.style.cursor = 'text';
-            wrapper.addEventListener('click', function() { inp.focus(); });
-        }
-    }
-    wireClick();
-})();
-</script>
-""", height=0)
-
     import json as _json
     _ac_items = []
     for _p in CORE_EQUITY_REGISTRY:

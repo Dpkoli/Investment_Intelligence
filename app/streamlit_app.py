@@ -443,6 +443,11 @@ st.markdown(
         background: var(--card) !important;
         color: var(--text-h) !important;
         font-family: var(--font-body) !important;
+        caret-color: #000000 !important;
+    }
+    .stTextInput input::selection {
+        background-color: var(--navy-200) !important;
+        color: #000000 !important;
     }
 
     /* ── Card classes ────────────────────────────────────────────────────────── */
@@ -2163,6 +2168,48 @@ def main() -> None:
       closeSidebar();
     }
   }, {passive: true});
+})();
+</script>""", height=0, scrolling=False)
+
+    # ── Global search-input click-to-focus ────────────────────────────────────
+    _comp.html("""<script>
+(function(){
+  var doc = window.parent.document;
+  if (doc._iwFocusInstalled) return;
+  doc._iwFocusInstalled = true;
+
+  // Placeholders belonging to hidden channel inputs — never focus-wire these
+  var HIDDEN = new Set([
+    'iw-snap-ls-v1', 'iw-snap-click-v1', 'iw-wi-click-v1',
+    'iw-cr-click-v1', 'rsb-badge-click-v1'
+  ]);
+
+  function wireInput(inp) {
+    var ph = (inp.getAttribute('placeholder') || '').trim();
+    if (HIDDEN.has(ph)) return;
+    var wrapper = inp.closest('[data-testid="stTextInput"]') || inp.parentElement;
+    if (!wrapper || wrapper._iwFocusWired) return;
+    wrapper._iwFocusWired = true;
+    wrapper.style.cursor = 'text';
+    wrapper.addEventListener('click', function(e) {
+      // Only fire if the user didn't click directly on the input itself
+      if (e.target !== inp) inp.focus();
+    });
+  }
+
+  function wireAll() {
+    doc.querySelectorAll(
+      '[data-testid="stTextInput"] input'
+    ).forEach(wireInput);
+  }
+
+  wireAll();
+
+  // Re-wire whenever Streamlit swaps in new DOM nodes (module navigation, reruns)
+  new MutationObserver(function(mutations) {
+    var hasNew = mutations.some(function(m) { return m.addedNodes.length > 0; });
+    if (hasNew) wireAll();
+  }).observe(doc.body, { childList: true, subtree: true });
 })();
 </script>""", height=0, scrolling=False)
 
