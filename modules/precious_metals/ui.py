@@ -437,19 +437,21 @@ def render() -> None:
         chg       = _safe_num(px_data.get("chg_pct"))
         color     = _METAL_COLOR.get(color_key, "#FFD700")
         price_str = f"${price:,.2f}" if price else "—"
-        chg_color = "#1AB868" if (chg is not None and chg >= 0) else "#E53535"
+        chg_color = "#149453" if (chg is not None and chg >= 0) else "#E53535"
         chg_str   = f"{chg:+.2f}%" if chg is not None else "—"
         with col:
             st.markdown(
-                f"""<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {color};
-                    border-radius:8px;padding:0.85rem 1rem;text-align:center;
-                    box-shadow:0 1px 3px rgba(7,29,53,0.05)">
-                    <div style="font-size:0.65rem;color:{color};font-weight:800;letter-spacing:0.14em;text-transform:uppercase">{metal}</div>
-                    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.9rem;font-weight:400;
-                        color:#071D35;letter-spacing:-0.02em;line-height:1.1;margin:0.2rem 0">{price_str}</div>
-                    <div style="font-size:0.83rem;font-weight:600;color:{chg_color}">{chg_str}</div>
-                    <div style="font-size:0.67rem;color:#5A8EBB;margin-top:0.25rem;font-family:'JetBrains Mono',monospace">{ticker}</div>
-                </div>""",
+                f'<div style="background:#ffffff;border:1px solid {color};border-top:3px solid {color};'
+                f'border-radius:8px;padding:0.75rem 0.9rem;text-align:center;'
+                f'box-shadow:0 1px 3px rgba(7,29,53,0.05)">'
+                f'<div style="font-size:0.65rem;color:{color};font-weight:800;'
+                f'letter-spacing:0.14em;text-transform:uppercase;margin-bottom:0.15rem">{metal}</div>'
+                f'<div style="font-size:1.75rem;font-weight:800;'
+                f'color:#071D35;line-height:1.1;margin:0.15rem 0">{price_str}</div>'
+                f'<div style="font-size:0.82rem;font-weight:700;color:{chg_color};margin-bottom:0.1rem">{chg_str}</div>'
+                f'<div style="font-size:0.64rem;color:#5A8EBB;font-family:\'JetBrains Mono\',monospace;'
+                f'letter-spacing:0.04em">{ticker}</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 

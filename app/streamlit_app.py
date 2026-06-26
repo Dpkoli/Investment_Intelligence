@@ -365,17 +365,17 @@ st.markdown(
     .stSelectbox [data-baseweb="select"] > div,
     .stMultiSelect [data-baseweb="select"] > div {
         background-color: var(--card) !important;
-        border: 1.5px solid #000000 !important;
+        border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         color: var(--text-h) !important;
         font-size: 0.84rem !important;
         transition: border-color 0.15s ease !important;
     }
-    /* Focused / active state — keep border black */
+    /* Focused / active state — emerald accent, matching text input focus */
     .stSelectbox [data-baseweb="select"]:focus-within > div,
     .stMultiSelect [data-baseweb="select"]:focus-within > div {
-        border-color: #000000 !important;
-        box-shadow: 0 0 0 2px rgba(0,0,0,0.10) !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 2px rgba(26,184,104,0.15) !important;
     }
     /* Text / value / placeholder inside the control */
     .stSelectbox [data-baseweb="select"] span,
@@ -1118,9 +1118,9 @@ _HUB_ALL_TICKERS: dict[str, dict] = {
     "INJ-USD":   {"name": "Injective",        "row": "crypto"},
 }
 _HUB_ROW_COLOR: dict[str, str] = {
-    "crypto":          "#1AB868",
-    "thematic":        "#149453",
-    "equity":          "#2B5A85",
+    "crypto":          "#7c3aed",
+    "thematic":        "#1AB868",
+    "equity":          "#3A72A0",
     "precious_metal":  "#C98900",
 }
 _HUB_ROW_NAV: dict[str, str] = {
@@ -1708,21 +1708,19 @@ def render_hub() -> None:
                 else:
                     chg_html = '<span style="color:#5A8EBB;font-size:0.73rem">—</span>'
 
-                bg         = "#F2F6FA" if is_open else "#ffffff"
-                border_l   = f"{'4px' if is_open else '3px'} solid {color}"
-                shadow     = "0 2px 8px rgba(0,0,0,0.08)" if is_open else "0 1px 3px rgba(0,0,0,0.04)"
+                bg         = f"{color}0D" if is_open else "#ffffff"
+                border_top = f"3px solid {color}" if is_open else f"2px solid {color}"
 
                 st.markdown(
                     f'<div id="{card_id}" class="snap-card" data-ticker="{ticker}" style="'
-                    f'background:{bg};border:1px solid #D9E8F5;border-left:{border_l};'
-                    f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;'
-                    f'cursor:pointer;box-shadow:{shadow};transition:box-shadow 0.15s">'
+                    f'background:{bg};border:1px solid #D9E8F5;border-top:{border_top};'
+                    f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;cursor:pointer">'
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.63rem;'
-                    f'font-weight:800;color:#071D35;letter-spacing:0.06em;text-transform:uppercase">'
+                    f'font-weight:800;color:#000000;letter-spacing:0.06em;text-transform:uppercase">'
                     f'{ticker}</div>'
-                    f'<div style="font-size:0.59rem;color:#5A8EBB;margin:0.07rem 0;'
+                    f'<div style="font-size:0.59rem;color:#000000;margin:0.07rem 0;'
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name}</div>'
-                    f'<div style="font-size:1.2rem;font-weight:700;color:#071D35;'
+                    f'<div style="font-size:1.2rem;font-weight:700;color:#000000;'
                     f'line-height:1.1;margin:0.18rem 0">{price_str}</div>'
                     f'<div>{chg_html}</div>'
                     f'</div>',
@@ -1879,27 +1877,27 @@ def render_hub() -> None:
             chg_arrow = "▲" if chg >= 0 else "▼"
             chg_html  = (
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;'
-                f'font-weight:600;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
+                f'font-weight:400;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
             )
+            border_top = f"{'3px' if is_open else '2px'} solid {chg_color}"
         else:
             chg_html   = '<div style="color:#5A8EBB;font-size:0.6rem">—</div>'
+            border_top = "2px solid #D9E8F5"
 
-        bg        = "#F2F6FA" if is_open else "#ffffff"
-        border_l  = f"{'4px' if is_open else '3px'} solid #1AB868"
-        shadow    = "0 2px 8px rgba(0,0,0,0.08)" if is_open else "0 1px 3px rgba(0,0,0,0.04)"
+        bg = "#F2F6FA" if is_open else "#ffffff"
 
         with wi_col:
             st.markdown(
                 f'<div class="wi-card" data-wi-ticker="{t}" style="background:{bg};'
-                f'border:1px solid #D9E8F5;border-left:{border_l};border-radius:8px;'
-                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer;box-shadow:{shadow}">'
+                f'border:1px solid #D9E8F5;border-top:{border_top};border-radius:8px;'
+                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer">'
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;'
-                f'font-weight:800;color:#071D35;letter-spacing:0.04em;text-transform:uppercase;'
+                f'font-weight:800;color:#000000;letter-spacing:0.04em;text-transform:uppercase;'
                 f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
                 f'{idx_meta["name"]}</div>'
-                f'<div style="font-size:0.5rem;color:#5A8EBB;margin:0.03rem 0">'
+                f'<div style="font-size:0.5rem;color:#000000;margin:0.03rem 0">'
                 f'{idx_meta["region"]}</div>'
-                f'<div style="font-size:0.95rem;font-weight:700;color:#071D35;'
+                f'<div style="font-size:0.95rem;font-weight:700;color:#000000;'
                 f'line-height:1.1;margin:0.1rem 0">{price_str}</div>'
                 f'{chg_html}'
                 f'</div>',
