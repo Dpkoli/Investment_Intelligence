@@ -1118,9 +1118,9 @@ _HUB_ALL_TICKERS: dict[str, dict] = {
     "INJ-USD":   {"name": "Injective",        "row": "crypto"},
 }
 _HUB_ROW_COLOR: dict[str, str] = {
-    "crypto":          "#7c3aed",
-    "thematic":        "#1AB868",
-    "equity":          "#3A72A0",
+    "crypto":          "#1AB868",
+    "thematic":        "#149453",
+    "equity":          "#2B5A85",
     "precious_metal":  "#C98900",
 }
 _HUB_ROW_NAV: dict[str, str] = {
@@ -1708,19 +1708,21 @@ def render_hub() -> None:
                 else:
                     chg_html = '<span style="color:#5A8EBB;font-size:0.73rem">—</span>'
 
-                bg         = f"{color}0D" if is_open else "#ffffff"
-                border_top = f"3px solid {color}" if is_open else f"2px solid {color}"
+                bg         = "#F2F6FA" if is_open else "#ffffff"
+                border_l   = f"{'4px' if is_open else '3px'} solid {color}"
+                shadow     = "0 2px 8px rgba(0,0,0,0.08)" if is_open else "0 1px 3px rgba(0,0,0,0.04)"
 
                 st.markdown(
                     f'<div id="{card_id}" class="snap-card" data-ticker="{ticker}" style="'
-                    f'background:{bg};border:1px solid #D9E8F5;border-top:{border_top};'
-                    f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;cursor:pointer">'
+                    f'background:{bg};border:1px solid #D9E8F5;border-left:{border_l};'
+                    f'border-radius:10px;padding:0.9rem 0.5rem;text-align:center;'
+                    f'cursor:pointer;box-shadow:{shadow};transition:box-shadow 0.15s">'
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.63rem;'
-                    f'font-weight:800;color:#000000;letter-spacing:0.06em;text-transform:uppercase">'
+                    f'font-weight:800;color:#071D35;letter-spacing:0.06em;text-transform:uppercase">'
                     f'{ticker}</div>'
-                    f'<div style="font-size:0.59rem;color:#000000;margin:0.07rem 0;'
+                    f'<div style="font-size:0.59rem;color:#5A8EBB;margin:0.07rem 0;'
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{name}</div>'
-                    f'<div style="font-size:1.2rem;font-weight:700;color:#000000;'
+                    f'<div style="font-size:1.2rem;font-weight:700;color:#071D35;'
                     f'line-height:1.1;margin:0.18rem 0">{price_str}</div>'
                     f'<div>{chg_html}</div>'
                     f'</div>',
@@ -1877,27 +1879,27 @@ def render_hub() -> None:
             chg_arrow = "▲" if chg >= 0 else "▼"
             chg_html  = (
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;'
-                f'font-weight:400;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
+                f'font-weight:600;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
             )
-            border_top = f"{'3px' if is_open else '2px'} solid {chg_color}"
         else:
             chg_html   = '<div style="color:#5A8EBB;font-size:0.6rem">—</div>'
-            border_top = "2px solid #D9E8F5"
 
-        bg = "#F2F6FA" if is_open else "#ffffff"
+        bg        = "#F2F6FA" if is_open else "#ffffff"
+        border_l  = f"{'4px' if is_open else '3px'} solid #1AB868"
+        shadow    = "0 2px 8px rgba(0,0,0,0.08)" if is_open else "0 1px 3px rgba(0,0,0,0.04)"
 
         with wi_col:
             st.markdown(
                 f'<div class="wi-card" data-wi-ticker="{t}" style="background:{bg};'
-                f'border:1px solid #D9E8F5;border-top:{border_top};border-radius:8px;'
-                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer">'
+                f'border:1px solid #D9E8F5;border-left:{border_l};border-radius:8px;'
+                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer;box-shadow:{shadow}">'
                 f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;'
-                f'font-weight:800;color:#000000;letter-spacing:0.04em;text-transform:uppercase;'
+                f'font-weight:800;color:#071D35;letter-spacing:0.04em;text-transform:uppercase;'
                 f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
                 f'{idx_meta["name"]}</div>'
-                f'<div style="font-size:0.5rem;color:#000000;margin:0.03rem 0">'
+                f'<div style="font-size:0.5rem;color:#5A8EBB;margin:0.03rem 0">'
                 f'{idx_meta["region"]}</div>'
-                f'<div style="font-size:0.95rem;font-weight:700;color:#000000;'
+                f'<div style="font-size:0.95rem;font-weight:700;color:#071D35;'
                 f'line-height:1.1;margin:0.1rem 0">{price_str}</div>'
                 f'{chg_html}'
                 f'</div>',
@@ -2262,6 +2264,64 @@ def main() -> None:
   new MutationObserver(function(mutations) {
     var hasNew = mutations.some(function(m) { return m.addedNodes.length > 0; });
     if (hasNew) wireAll();
+  }).observe(doc.body, { childList: true, subtree: true });
+})();
+</script>""", height=0, scrolling=False)
+
+    # ── Canvas full-row click → checkbox-column selection ─────────────────────
+    _comp.html("""<script>
+(function(){
+  var doc = window.parent.document;
+  if (doc._iwRowSelectInstalled) return;
+  doc._iwRowSelectInstalled = true;
+
+  // glide-data-grid layout constants (Streamlit defaults)
+  var HEADER_H   = 36;  // header row height in px
+  var CB_WIDTH   = 52;  // checkbox column width in px
+  var CB_X       = 26;  // x center of checkbox within that column
+
+  function wireCanvas(canvas) {
+    if (canvas._iwRowWired) return;
+    canvas._iwRowWired = true;
+
+    canvas.addEventListener('mousedown', function(e) {
+      if (canvas._iwFiring) return;
+
+      var rect = canvas.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+
+      // Only intercept clicks in the data area — not header or checkbox column
+      if (y < HEADER_H || x < CB_WIDTH) return;
+
+      e.stopPropagation();
+      e.preventDefault();
+
+      canvas._iwFiring = true;
+      var tx = rect.left + CB_X;
+      var ty = e.clientY;
+
+      ['mousedown', 'mouseup', 'click'].forEach(function(type) {
+        canvas.dispatchEvent(new MouseEvent(type, {
+          bubbles: true, cancelable: true,
+          clientX: tx, clientY: ty,
+          button: 0,
+          buttons: type === 'mouseup' ? 0 : 1,
+          view: window.parent
+        }));
+      });
+      canvas._iwFiring = false;
+    }, true); // capture phase so we intercept before glide's own listeners
+  }
+
+  function wireAll() {
+    doc.querySelectorAll('[data-testid="stDataFrame"] canvas').forEach(wireCanvas);
+  }
+
+  wireAll();
+
+  new MutationObserver(function(mutations) {
+    if (mutations.some(function(m) { return m.addedNodes.length > 0; })) wireAll();
   }).observe(doc.body, { childList: true, subtree: true });
 })();
 </script>""", height=0, scrolling=False)
