@@ -272,6 +272,7 @@ def _render_detail_panel(p: IndexProduct, prices: dict) -> None:
                 marker_color="#1AB868",
                 text=[f"{v:.1f}%" for v in h_df["pct"]],
                 textposition="outside",
+                textfont={"color": "#071D35", "size": 11},
                 hovertemplate="<b>%{customdata}</b> (%{y})<br>%{x:.2f}%<extra></extra>",
             ))
             fig_h.update_layout(
@@ -412,14 +413,13 @@ def render() -> None:
     st.markdown("""
 <style>
 /* ── Core Equity: toggle wrapper visibility ── */
-div[data-testid="stToggle"] {
+.stToggle,
+div[data-testid="stToggle"],
+label[data-baseweb="checkbox"] {
     background: var(--navy-50) !important;
     border: 1.5px solid var(--navy-200) !important;
     border-radius: 10px !important;
     padding: 0.35rem 0.65rem !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
     width: 100% !important;
     box-sizing: border-box !important;
 }
@@ -427,6 +427,9 @@ div[data-testid="stToggle"] {
 div[data-testid="stRadio"] label {
     font-size: 0.75rem !important;
     color: var(--text-h) !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)

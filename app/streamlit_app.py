@@ -305,7 +305,8 @@ st.markdown(
     }
 
     /* ── Link buttons ────────────────────────────────────────────────────────── */
-    [data-testid="stLinkButton"] a {
+    [data-testid="stLinkButton"] a,
+    .stLinkButton a {
         background-color: var(--navy-600) !important;
         color: #ffffff !important;
         border-radius: 8px !important;
@@ -315,11 +316,26 @@ st.markdown(
         text-decoration: none !important;
         transition: background 0.13s !important;
         font-family: var(--font-body) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    [data-testid="stLinkButton"] a:hover {
+    [data-testid="stLinkButton"] a:hover,
+    .stLinkButton a:hover {
         background-color: var(--navy-700) !important;
         color: #ffffff !important;
         text-decoration: none !important;
+    }
+    /* Override global p/span color rules inside link buttons */
+    [data-testid="stLinkButton"] a p,
+    [data-testid="stLinkButton"] a span,
+    [data-testid="stLinkButton"] p,
+    .stLinkButton a p,
+    .stLinkButton p {
+        color: #ffffff !important;
+        font-size: 0.82rem !important;
+        margin: 0 !important;
+        line-height: 1 !important;
     }
 
     /* ── Snap-card / wi-card channel inputs: visually hidden but focusable ── */
@@ -400,14 +416,24 @@ st.markdown(
         font-size: 0.84rem !important;
         font-weight: 500 !important;
     }
-    [data-testid="stToggleSwitch"] {
+    /* Off state: visible navy track */
+    [data-testid="stToggleSwitch"],
+    [aria-checked="false"] [data-testid="stToggleSwitch"],
+    label[role="switch"] [data-testid="stToggleSwitch"] {
         background-color: var(--navy-500) !important;
+        border: none !important;
+        outline: none !important;
     }
-    [aria-checked="true"] [data-testid="stToggleSwitch"] {
+    /* On state: emerald track */
+    [aria-checked="true"] [data-testid="stToggleSwitch"],
+    input:checked ~ * [data-testid="stToggleSwitch"] {
         background-color: var(--accent) !important;
     }
-    [data-testid="stToggleSwitch"] span {
+    /* White thumb always */
+    [data-testid="stToggleSwitch"] span,
+    [data-testid="stToggleSwitch"] > span {
         background-color: #ffffff !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.25) !important;
     }
 
     /* ── Text inputs ─────────────────────────────────────────────────────────── */
