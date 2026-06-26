@@ -478,6 +478,18 @@ st.markdown(
         background-color: var(--navy-200) !important;
         color: #000000 !important;
     }
+    /* Black blinking cursor inside every selectbox / multiselect control */
+    [data-baseweb="select"] input,
+    .stSelectbox input,
+    .stMultiSelect input {
+        caret-color: #000000 !important;
+        color: var(--text-h) !important;
+        background: transparent !important;
+    }
+    [data-baseweb="select"] input::selection {
+        background-color: var(--navy-200) !important;
+        color: #000000 !important;
+    }
 
     /* ── Card classes ────────────────────────────────────────────────────────── */
     .cr-card {
@@ -2221,15 +2233,31 @@ def main() -> None:
     wrapper._iwFocusWired = true;
     wrapper.style.cursor = 'text';
     wrapper.addEventListener('click', function(e) {
-      // Only fire if the user didn't click directly on the input itself
       if (e.target !== inp) inp.focus();
     });
   }
 
+  function wireSelect(ctrl) {
+    // The control div for [data-baseweb="select"] — clicking it should
+    // focus the internal search input and show a black blinking cursor
+    if (ctrl._iwSelectWired) return;
+    var inp = ctrl.querySelector('input');
+    if (!inp) return;
+    ctrl._iwSelectWired = true;
+    ctrl.style.cursor = 'text';
+    ctrl.addEventListener('click', function(e) {
+      if (e.target === inp) return;
+      inp.focus();
+    });
+  }
+
   function wireAll() {
+    // Text inputs
+    doc.querySelectorAll('[data-testid="stTextInput"] input').forEach(wireInput);
+    // Selectbox / Multiselect controls
     doc.querySelectorAll(
-      '[data-testid="stTextInput"] input'
-    ).forEach(wireInput);
+      '.stSelectbox [data-baseweb="select"], .stMultiSelect [data-baseweb="select"]'
+    ).forEach(wireSelect);
   }
 
   wireAll();
