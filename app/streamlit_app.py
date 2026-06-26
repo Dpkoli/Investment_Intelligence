@@ -357,28 +357,45 @@ st.markdown(
         box-shadow: 0 4px 16px rgba(7,29,53,0.11) !important;
     }
 
-    /* ── Selectbox / Multiselect ─────────────────────────────────────────────── */
-    .stSelectbox [data-baseweb="select"] > div:first-child,
-    .stMultiSelect [data-baseweb="select"] > div:first-child {
+    /* ── Selectbox / Multiselect — control (closed state) ──────────────────── */
+    .stSelectbox [data-baseweb="select"],
+    .stMultiSelect [data-baseweb="select"] {
+        background-color: var(--card) !important;
+    }
+    .stSelectbox [data-baseweb="select"] > div,
+    .stMultiSelect [data-baseweb="select"] > div {
         background-color: var(--card) !important;
         border: 1.5px solid var(--border) !important;
         border-radius: 8px !important;
         color: var(--text-h) !important;
         font-size: 0.84rem !important;
     }
+    /* Text / value / placeholder inside the control */
     .stSelectbox [data-baseweb="select"] span,
-    .stMultiSelect [data-baseweb="select"] span {
+    .stSelectbox [data-baseweb="select"] [data-baseweb="select-single-value"],
+    .stSelectbox [data-baseweb="select"] [data-baseweb="placeholder"],
+    .stMultiSelect [data-baseweb="select"] span,
+    .stMultiSelect [data-baseweb="select"] [data-baseweb="placeholder"] {
         color: var(--text-h) !important;
     }
-    /* Dropdown menu — broad selectors to override Streamlit's default dark style */
+    /* Placeholder muted */
+    [data-baseweb="placeholder"] { color: var(--text-sub) !important; }
+    /* Selected single value */
+    [data-baseweb="select-single-value"] { color: var(--text-h) !important; }
+
+    /* ── Dropdown popover (opened) — covers ALL st.selectbox + st.multiselect ── */
     [data-baseweb="popover"],
     [data-baseweb="popover"] > div,
     [data-baseweb="popover"] > div > div {
         background: var(--card) !important;
         background-color: var(--card) !important;
     }
+    /* st.multiselect → [data-baseweb="menu"]
+       st.selectbox  → [data-baseweb="list"] or div[role="listbox"] */
     [data-baseweb="popover"] [data-baseweb="menu"],
+    [data-baseweb="popover"] [data-baseweb="list"],
     [data-baseweb="popover"] ul[role="listbox"],
+    [data-baseweb="popover"] div[role="listbox"],
     [data-baseweb="popover"] ul {
         background: var(--card) !important;
         background-color: var(--card) !important;
@@ -386,19 +403,31 @@ st.markdown(
         border-radius: 8px !important;
         box-shadow: var(--shadow-card-hover) !important;
     }
+    /* Option items (li and div variants) */
     [data-baseweb="popover"] [role="option"],
     [data-baseweb="popover"] li[role="option"],
-    [data-baseweb="popover"] [data-baseweb="menu-item"] {
+    [data-baseweb="popover"] div[role="option"],
+    [data-baseweb="popover"] [data-baseweb="menu-item"],
+    [data-baseweb="popover"] [data-baseweb="option"] {
         background: var(--card) !important;
         background-color: var(--card) !important;
         color: var(--text-h) !important;
         font-size: 0.84rem !important;
     }
+    /* Hover / selected state */
     [data-baseweb="popover"] [role="option"]:hover,
     [data-baseweb="popover"] li[role="option"]:hover,
+    [data-baseweb="popover"] div[role="option"]:hover,
     [data-baseweb="popover"] [aria-selected="true"],
-    [data-baseweb="popover"] [data-baseweb="menu-item"]:hover {
+    [data-baseweb="popover"] [data-baseweb="menu-item"]:hover,
+    [data-baseweb="popover"] [data-baseweb="option"]:hover {
         background-color: var(--navy-50) !important;
+        color: var(--text-h) !important;
+    }
+    /* Text nodes inside options */
+    [data-baseweb="popover"] [role="option"] span,
+    [data-baseweb="popover"] [data-baseweb="option"] span,
+    [data-baseweb="popover"] [data-baseweb="menu-item"] span {
         color: var(--text-h) !important;
     }
     /* Selected tags in multiselect */
