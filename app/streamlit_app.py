@@ -57,6 +57,12 @@ import modules.kingmaker_intelligence.ui as _mod_kingmaker
 import modules.regulatory_sandbox.ui   as _mod_regulatory
 import modules.news_feed.ui            as _mod_news
 import modules.technical_analysis.ui   as _mod_ta
+import modules.stocks_world.ui         as _mod_stocks
+
+from app.auth import (
+    check_auth, is_free_module, mock_login, logout,
+    render_auth_gate, render_auth_page,
+)
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PAGE CONFIG  (must be the first Streamlit call)
@@ -339,8 +345,9 @@ st.markdown(
         line-height: 1 !important;
     }
 
-    /* ── Snap-card / wi-card channel inputs: visually hidden but focusable ── */
+    /* ── Snap-card / wi-card / HTML-table channel inputs: visually hidden but focusable ── */
     /* display:none prevents focus(), breaking synthetic React events on these inputs  */
+    [data-testid="stTextInput"]:has(input[placeholder^="iw-tbl-"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-click-v1"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-wi-click-v1"]) {
@@ -1011,11 +1018,12 @@ def _kingmaker_assessment(conn_type: str, vendor: str, titan: str, conf: int) ->
 _NAV_OPTIONS = [
     "Intelligence Hub",
     "News Feed",
-    "Core Equity",
-    "Thematic Sectors",
-    "Sovereign Crypto",
-    "Precious Metals",
-    "Kingmaker Intelligence",
+    "Stocks & Shares World",
+    "Global Index & ETFs",
+    "Global Sector & ETFs",
+    "Crypto Network",
+    "Metals",
+    "CRM Intelligence",
     "Regulatory Sandbox",
     "Technical Analysis",
 ]
@@ -1046,6 +1054,24 @@ def render_sidebar() -> str:
             label_visibility="collapsed",
         )
 
+        st.divider()
+        if check_auth():
+            user = st.session_state.get("user_name", "User")
+            st.markdown(
+                f'<div style="color:rgba(255,255,255,0.7);font-size:0.75rem;margin-bottom:0.4rem">'
+                f'Signed in as <strong style="color:#1AB868">{user}</strong></div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("Sign Out", key="sidebar_logout", use_container_width=True):
+                logout()
+                st.rerun()
+        else:
+            st.markdown(
+                '<div style="color:rgba(255,255,255,0.5);font-size:0.73rem;margin-bottom:0.4rem">'
+                '🔒 Sign in to unlock all modules</div>',
+                unsafe_allow_html=True,
+            )
+
     return nav
 
 
@@ -1054,9 +1080,9 @@ def render_sidebar() -> str:
 # ═════════════════════════════════════════════════════════════════════════════
 
 _HUB_ROWS = [
-    ("crypto",   "Sovereign Crypto",  "#7c3aed", "Sovereign Crypto"),
-    ("thematic", "Thematic Sectors",  "#1AB868", "Thematic Sectors"),
-    ("equity",   "Core Equity",       "#3A72A0", "Core Equity"),
+    ("crypto",   "Crypto Network",    "#7c3aed", "Crypto Network"),
+    ("thematic", "Global Sector & ETFs", "#1AB868", "Global Sector & ETFs"),
+    ("equity",   "Global Index & ETFs",  "#3A72A0", "Global Index & ETFs"),
 ]
 _HUB_DEFAULT_FAVS: dict[str, list[str]] = {
     "crypto":   ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD"],
@@ -1125,9 +1151,9 @@ _HUB_ROW_COLOR: dict[str, str] = {
     "precious_metal":  "#C98900",
 }
 _HUB_ROW_NAV: dict[str, str] = {
-    "crypto":   "Sovereign Crypto",
-    "thematic": "Thematic Sectors",
-    "equity":   "Core Equity",
+    "crypto":   "Crypto Network",
+    "thematic": "Global Sector & ETFs",
+    "equity":   "Global Index & ETFs",
 }
 _SNAP_DEFAULTS: list[str] = []
 
@@ -2367,20 +2393,25 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
+    # ── Auth gate — check before rendering gated modules ─────────────────────
+    if not is_free_module(nav) and not check_auth():
+        render_auth_gate(nav)
+        return
+
     # ── Module routing ────────────────────────────────────────────────────────
-    if nav == "Core Equity":
+    if nav == "Global Index & ETFs":
         _mod_core_equity.render()
 
-    elif nav == "Thematic Sectors":
+    elif nav == "Global Sector & ETFs":
         _mod_thematic.render()
 
-    elif nav == "Sovereign Crypto":
+    elif nav == "Crypto Network":
         _mod_crypto.render()
 
-    elif nav == "Precious Metals":
+    elif nav == "Metals":
         _mod_metals.render()
 
-    elif nav == "Kingmaker Intelligence":
+    elif nav == "CRM Intelligence":
         _mod_kingmaker.render()
 
     elif nav == "Regulatory Sandbox":
@@ -2392,6 +2423,9 @@ def main() -> None:
     elif nav == "Technical Analysis":
         _mod_ta.render()
 
+    elif nav == "Stocks & Shares World":
+        _mod_stocks.render()
+
     else:
         render_hub()
 
@@ -2399,7 +2433,7 @@ def main() -> None:
     st.divider()
     st.markdown(
         "<p style='text-align:center;color:#5A8EBB;font-size:0.75rem'>"
-        "InvestWise · 8 modules · Data latency ≤ 5 min · "
+        "InvestWise · 10 modules · Data latency ≤ 5 min · "
         "Not investment advice · Regulatory data sourced from FCA CP23/28 &amp; PS24/12"
         "</p>",
         unsafe_allow_html=True,

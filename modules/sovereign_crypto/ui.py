@@ -541,7 +541,7 @@ def _render_detail_panel(yf_ticker: str, symbol: str, name: str, prices: dict) -
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
-    st.markdown("<h2 class='iw-module-header'>Sovereign Crypto Networks</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Crypto Network — Sovereign Blockchain Intelligence</h2>", unsafe_allow_html=True)
     st.caption("Top-10 digital assets · Institutional holders · Live prices · Analyst predictions")
 
     # Session state

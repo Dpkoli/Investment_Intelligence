@@ -13,8 +13,10 @@ import plotly.graph_objects as go
 
 from .data import THEMATIC_REGISTRY, ThematicProduct, ALL_SECTORS, ALL_SUB_THEMES, fetch_prices
 from modules.shared import inject_autocomplete as _inject_autocomplete
+from modules.shared import html_table as _tbl
 
 _PAGE_SIZE = 25
+_TH_CH = "iw-tbl-th-v1"
 
 # ── ETF website URL resolver ──────────────────────────────────────────────────
 
@@ -488,7 +490,7 @@ def _apply_treemap_sel(new_sel: dict) -> None:
 
 
 def render() -> None:
-    st.markdown("<h2 class='iw-module-header'>Thematic Sectors — Global Sector & Thematic ETF Grid</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Global Sector & ETFs — Sector & Thematic ETF Grid</h2>", unsafe_allow_html=True)
     st.caption(
         f"{len(THEMATIC_REGISTRY)} products across {len(ALL_SECTORS)} sectors "
         f"and {len(ALL_SUB_THEMES)} sub-themes — "
@@ -707,36 +709,31 @@ def render() -> None:
             "1d %":      f"{chg:+.2f}%"             if chg  is not None else "—",
         })
 
-    df = pd.DataFrame(rows)
-    table_event = st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True,
-        on_select="rerun",
-        selection_mode="single-row",
-        key=f"thematic_tbl_p{page}",
-        column_config={
-            "1d %":      st.column_config.TextColumn("1d %"),
-            "AUM ($bn)": st.column_config.TextColumn("AUM ($bn)"),
-        },
+    sel_ticker_cur = st.session_state.get("thematic_selected_ticker")
+    sel_idx = next((i for i, p in enumerate(page_items) if p.ticker == sel_ticker_cur), None)
+
+    new_sel = _tbl.render(
+        rows=rows,
+        columns=[
+            ("Ticker", "Ticker"), ("Name", "Name"), ("Sector", "Sector"),
+            ("Sub-Theme", "Sub-Theme"), ("Region", "Region"), ("Exchange", "Exchange"),
+            ("TER", "TER"), ("AUM ($bn)", "AUM ($bn)"), ("Issuer", "Issuer"),
+            ("Price", "Price"), ("1d %", "1d %"),
+        ],
+        channel_placeholder=_TH_CH,
+        selected_idx=sel_idx,
+        col_classes={"Ticker": "td-mono", "Price": "td-mono"},
     )
 
-    # Sync selection — full-row click selects; clicking selected row toggles off
-    sel_rows = (
-        table_event.selection.rows
-        if table_event and table_event.selection
-        else []
-    )
-    if sel_rows and 0 <= sel_rows[0] < len(page_items):
-        clicked = page_items[sel_rows[0]].ticker
+    if new_sel is not None and 0 <= new_sel < len(page_items):
+        clicked = page_items[new_sel].ticker
         if st.session_state.get("thematic_selected_ticker") == clicked:
             st.session_state["thematic_selected_ticker"] = None
-            st.session_state.pop(f"thematic_tbl_p{page}", None)
+            st.session_state[f"_iwtbl_clear__iwtbl_{_TH_CH}"] = True
             st.rerun()
         else:
             st.session_state["thematic_selected_ticker"] = clicked
-    else:
-        st.session_state["thematic_selected_ticker"] = None
+            st.rerun()
 
     sel_ticker = st.session_state["thematic_selected_ticker"]
     selected_product = next(

@@ -199,7 +199,7 @@ def _tactical_predictions(link: SupplyChainLink) -> list[str]:
 
 
 def render() -> None:
-    st.markdown("<h2 class='iw-module-header'>Kingmaker Intelligence — Global Supply-Chain Dependency Mapping</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>CRM Intelligence — Global Supply-Chain Dependency Mapping</h2>", unsafe_allow_html=True)
     st.caption(f"{len(SUPPLY_CHAIN_REGISTRY)} verified B2B relationships · {len(ALL_SECTORS)} sectors · "
                f"Click any supplier card to reveal valuation analysis and tactical predictions")
 

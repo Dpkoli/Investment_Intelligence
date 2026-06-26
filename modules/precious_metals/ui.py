@@ -13,8 +13,10 @@ import plotly.graph_objects as go
 
 from .data import METALS_REGISTRY, MetalType, fetch_prices
 from modules.shared import inject_autocomplete as _inject_autocomplete
+from modules.shared import html_table as _tbl
 
 _PAGE_SIZE = 20
+_PM_CH = "iw-tbl-pm-v1"
 _SPOT_TICKERS = ["GC=F", "SI=F", "PL=F", "PA=F"]
 
 _METAL_COLOR = {
@@ -413,7 +415,7 @@ def _render_detail_panel(p, prices: dict) -> None:
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
-    st.markdown("<h2 class='iw-module-header'>Precious Metals — Spot, Physical ETPs & Mining Equity Intelligence</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Metals — Spot, Physical ETPs & Mining Equity Intelligence</h2>", unsafe_allow_html=True)
     st.caption(f"{len(METALS_REGISTRY)} products tracked — Gold · Silver · Platinum · Palladium")
 
     if "pm_page" not in st.session_state:
@@ -566,62 +568,31 @@ def render() -> None:
             "1d %":         f"{chg:+.2f}%" if chg is not None else "—",
         })
 
-    df = pd.DataFrame(rows)
+    sel_ticker_cur = st.session_state.get("pm_selected")
+    sel_idx = next((i for i, p in enumerate(page_items) if p.ticker == sel_ticker_cur), None)
 
-    def _style_pm_table(df: pd.DataFrame):
-        base = "background-color:#ffffff;color:#2B5A85;"
-        styles = pd.DataFrame(base, index=df.index, columns=df.columns)
-        styles["Ticker"] = "background-color:#ffffff;color:#071D35;font-weight:700;"
-        styles["Name"]   = "background-color:#ffffff;color:#071D35;"
-        styles["Price"]  = "background-color:#ffffff;color:#071D35;font-family:'JetBrains Mono',monospace;"
-        for i, v in enumerate(df["1d %"]):
-            s = str(v)
-            if "%" in s:
-                try:
-                    num = float(s.replace("%", "").replace("+", ""))
-                    clr = "#149453" if num > 0 else "#E53535" if num < 0 else "#5A8EBB"
-                    styles.iloc[i, df.columns.get_loc("1d %")] = f"background-color:#ffffff;color:{clr};font-weight:700;"
-                except ValueError:
-                    pass
-        return styles
-
-    table_event = st.dataframe(
-        df.style.apply(_style_pm_table, axis=None).set_table_styles([
-            {"selector": "th", "props": [
-                ("background-color", "#EEF4FB"), ("color", "#5A8EBB"),
-                ("font-weight", "700"), ("font-size", "0.72rem"),
-                ("text-transform", "uppercase"), ("letter-spacing", "0.07em"),
-            ]},
-        ]),
-        use_container_width=True,
-        hide_index=True,
-        on_select="rerun",
-        selection_mode="single-row",
-        key=f"pm_tbl_p{page}",
-        column_config={
-            "1d %":      st.column_config.TextColumn("1d %"),
-            "AUM ($bn)": st.column_config.TextColumn("AUM ($bn)"),
-            "Leverage":  st.column_config.TextColumn("Lev."),
-            "Physical":  st.column_config.TextColumn("Phys."),
-        },
+    new_sel = _tbl.render(
+        rows=rows,
+        columns=[
+            ("Ticker", "Ticker"), ("Name", "Name"), ("Metal", "Metal"),
+            ("Type", "Type"), ("Exchange", "Exchange"), ("Physical", "Phys."),
+            ("Leverage", "Lev."), ("TER", "TER"), ("AUM ($bn)", "AUM ($bn)"),
+            ("Issuer", "Issuer"), ("Price", "Price"), ("1d %", "1d %"),
+        ],
+        channel_placeholder=_PM_CH,
+        selected_idx=sel_idx,
+        col_classes={"Ticker": "td-mono", "Price": "td-mono"},
     )
 
-    # Full-row click selects; clicking same row again toggles off
-    sel_rows = (
-        table_event.selection.rows
-        if table_event and table_event.selection
-        else []
-    )
-    if sel_rows and 0 <= sel_rows[0] < len(page_items):
-        clicked = page_items[sel_rows[0]].ticker
+    if new_sel is not None and 0 <= new_sel < len(page_items):
+        clicked = page_items[new_sel].ticker
         if st.session_state.get("pm_selected") == clicked:
             st.session_state["pm_selected"] = None
-            st.session_state.pop(f"pm_tbl_p{page}", None)
+            st.session_state[f"_iwtbl_clear__iwtbl_{_PM_CH}"] = True
             st.rerun()
         else:
             st.session_state["pm_selected"] = clicked
-    else:
-        st.session_state["pm_selected"] = None
+            st.rerun()
 
     # ── Fund Intelligence panel ───────────────────────────────────────────────
     sel_ticker = st.session_state["pm_selected"]

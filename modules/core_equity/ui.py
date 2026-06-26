@@ -13,6 +13,9 @@ import plotly.graph_objects as go
 
 from .data import CORE_EQUITY_REGISTRY, IndexProduct, fetch_prices
 from modules.shared import inject_autocomplete as _inject_autocomplete
+from modules.shared import html_table as _tbl
+
+_CE_CH = "iw-tbl-ce-v1"
 
 _PAGE_SIZE = 20
 
@@ -434,7 +437,7 @@ div[data-testid="stRadio"] label {
 </style>
 """, unsafe_allow_html=True)
 
-    st.markdown("<h2 class='iw-module-header'>Core Equity — Global Index & ETF Intelligence</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='iw-module-header'>Global Index & ETFs — Index & ETF Intelligence</h2>", unsafe_allow_html=True)
     st.caption(f"{len(CORE_EQUITY_REGISTRY)} instruments tracked across 25+ countries and regions")
 
     # ── Session state ─────────────────────────────────────────────────────────
@@ -542,38 +545,31 @@ div[data-testid="stRadio"] label {
             "1d %":      f"{chg:+.2f}%"             if chg  is not None else "—",
         })
 
-    df = pd.DataFrame(rows)
-    table_event = st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True,
-        on_select="rerun",
-        selection_mode="single-row",
-        key=f"ce_tbl_p{page}",
-        column_config={
-            "1d %":      st.column_config.TextColumn("1d %"),
-            "AUM ($bn)": st.column_config.TextColumn("AUM ($bn)"),
-            "Leverage":  st.column_config.TextColumn("Lev."),
-        },
+    sel_ticker_cur = st.session_state.get("ce_selected")
+    sel_idx = next((i for i, p in enumerate(page_items) if p.ticker == sel_ticker_cur), None)
+
+    new_sel = _tbl.render(
+        rows=rows,
+        columns=[
+            ("Ticker", "Ticker"), ("Name", "Name"), ("Region", "Region"),
+            ("Index", "Index"), ("Type", "Type"), ("Leverage", "Lev."),
+            ("TER", "TER"), ("AUM ($bn)", "AUM ($bn)"), ("Issuer", "Issuer"),
+            ("Price", "Price"), ("1d %", "1d %"),
+        ],
+        channel_placeholder=_CE_CH,
+        selected_idx=sel_idx,
+        col_classes={"Ticker": "td-mono", "Price": "td-mono"},
     )
 
-    # Sync row selection — full-row click selects; clicking selected row toggles off
-    sel_rows = (
-        table_event.selection.rows
-        if table_event and table_event.selection
-        else []
-    )
-    if sel_rows and 0 <= sel_rows[0] < len(page_items):
-        clicked = page_items[sel_rows[0]].ticker
+    if new_sel is not None and 0 <= new_sel < len(page_items):
+        clicked = page_items[new_sel].ticker
         if st.session_state.get("ce_selected") == clicked:
-            # Toggle off: clear our state and reset the table widget state
             st.session_state["ce_selected"] = None
-            st.session_state.pop(f"ce_tbl_p{page}", None)
+            st.session_state[f"_iwtbl_clear__iwtbl_{_CE_CH}"] = True
             st.rerun()
         else:
             st.session_state["ce_selected"] = clicked
-    else:
-        st.session_state["ce_selected"] = None
+            st.rerun()
 
     # ── Fund Intelligence panel ───────────────────────────────────────────────
     sel_ticker = st.session_state["ce_selected"]
