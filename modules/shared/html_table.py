@@ -1,15 +1,8 @@
-"""Shared reusable table using native Streamlit dataframe row-selection.
-
-Row selection is captured via st.dataframe(on_select='rerun', selection_mode='single-row').
-A thin "▶" selector column is prepended so users have an unambiguous, non-text click
-target that reliably fires the row-selection event rather than AG Grid's cell-focus mode.
-"""
+"""Shared reusable table using native Streamlit dataframe row-selection."""
 from __future__ import annotations
 from typing import Optional
 import pandas as pd
 import streamlit as st
-
-_SEL_COL = "▶"
 
 
 def render(
@@ -21,8 +14,8 @@ def render(
 ) -> Optional[int]:
     """Render a selectable table; returns the currently-selected row index or None.
 
-    Prepends a thin '▶' selector column as a reliable whole-row click target.
-    Clicking any column (including the selector) fires event.selection.rows.
+    Uses st.dataframe with on_select='rerun' so selection is fully native.
+    The channel_placeholder is used as a stable widget key prefix.
     """
     cols: list[tuple[str, str]] = [
         (c, c) if isinstance(c, str) else tuple(c)
@@ -30,20 +23,9 @@ def render(
     ]
 
     df = pd.DataFrame([
-        {
-            _SEL_COL: "▶",
-            **{label: row.get(key, "—") for key, label in cols},
-        }
+        {label: row.get(key, "—") for key, label in cols}
         for row in rows
     ])
-
-    col_cfg: dict = {
-        _SEL_COL: st.column_config.TextColumn(
-            label="",
-            width="small",
-            help="Click to select row",
-        ),
-    }
 
     event = st.dataframe(
         df,
@@ -52,8 +34,6 @@ def render(
         on_select="rerun",
         selection_mode="single-row",
         key=f"df_{channel_placeholder}",
-        column_config=col_cfg,
-        column_order=[_SEL_COL] + [label for _, label in cols],
     )
 
     sel = getattr(getattr(event, "selection", None), "rows", [])
