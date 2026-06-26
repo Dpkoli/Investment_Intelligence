@@ -60,8 +60,9 @@ import modules.technical_analysis.ui   as _mod_ta
 import modules.stocks_world.ui         as _mod_stocks
 
 from app.auth import (
-    check_auth, is_free_module, mock_login, logout,
+    check_auth, is_free_module, logout,
     render_auth_gate, render_auth_page,
+    wants_auth_page, request_auth_page,
 )
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1058,7 +1059,7 @@ def render_sidebar() -> str:
         if check_auth():
             user = st.session_state.get("user_name", "User")
             st.markdown(
-                f'<div style="color:rgba(255,255,255,0.7);font-size:0.75rem;margin-bottom:0.4rem">'
+                f'<div style="color:rgba(255,255,255,0.7);font-size:0.75rem;margin-bottom:0.5rem">'
                 f'Signed in as <strong style="color:#1AB868">{user}</strong></div>',
                 unsafe_allow_html=True,
             )
@@ -1067,10 +1068,17 @@ def render_sidebar() -> str:
                 st.rerun()
         else:
             st.markdown(
-                '<div style="color:rgba(255,255,255,0.5);font-size:0.73rem;margin-bottom:0.4rem">'
+                '<div style="color:rgba(255,255,255,0.5);font-size:0.72rem;margin-bottom:0.4rem">'
                 '🔒 Sign in to unlock all modules</div>',
                 unsafe_allow_html=True,
             )
+            if st.button(
+                "Sign In / Sign Up",
+                key="sidebar_signin_btn",
+                use_container_width=True,
+                type="primary",
+            ):
+                request_auth_page()
 
     return nav
 
@@ -2393,7 +2401,12 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    # ── Auth gate — check before rendering gated modules ─────────────────────
+    # ── Dedicated auth page — intercepts all other routing when flag is set ──
+    if wants_auth_page():
+        render_auth_page()
+        return
+
+    # ── Auth gate — clean lock screen for gated modules ───────────────────────
     if not is_free_module(nav) and not check_auth():
         render_auth_gate(nav)
         return
