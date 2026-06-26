@@ -87,28 +87,35 @@ _AUTH_CSS = """<style>
     margin: 0 auto;
     padding-bottom: 2rem;
 }
-/* ── Social provider buttons (native st.button override) ────────────── */
-[data-testid="stButton"][data-btn-id="google_btn"] button,
-[data-testid="stButton"][data-btn-id="github_btn"] button {
-    background: #ffffff !important;
-    border: 1.5px solid #D9E8F5 !important;
-    color: #071D35 !important;
-    font-weight: 600 !important;
-    font-size: 0.84rem !important;
-    border-radius: 8px !important;
-    transition: border-color 0.15s, box-shadow 0.15s !important;
+/* Social buttons */
+.iw-social-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
 }
-[data-testid="stButton"][data-btn-id="google_btn"] button:hover,
-[data-testid="stButton"][data-btn-id="github_btn"] button:hover {
-    border-color: #1AB868 !important;
-    box-shadow: 0 0 0 3px rgba(26,184,104,0.10) !important;
-}
-/* Social button icon+label row */
-.iw-social-label {
+.iw-social-btn {
+    flex: 1;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.62rem 0.9rem;
+    background: #ffffff;
+    border: 1.5px solid #D9E8F5;
+    border-radius: 8px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #071D35;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
 }
+.iw-social-btn:hover {
+    border-color: #1AB868;
+    box-shadow: 0 0 0 3px rgba(26,184,104,0.10);
+}
+.iw-social-btn:active { transform: scale(0.98); }
 /* Divider between social and email */
 .iw-or-divider {
     display: flex;
@@ -124,31 +131,6 @@ _AUTH_CSS = """<style>
     flex: 1;
     height: 1px;
     background: #D9E8F5;
-}
-/* ── Social provider modal overlay ──────────────────────────────────── */
-.iw-provider-panel {
-    background: #ffffff;
-    border: 1.5px solid #D9E8F5;
-    border-top: 3px solid #1AB868;
-    border-radius: 10px;
-    padding: 1.4rem 1.6rem 1.2rem;
-    margin-bottom: 1rem;
-}
-.iw-provider-header {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 1rem;
-}
-.iw-provider-title {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: #071D35;
-}
-.iw-provider-sub {
-    font-size: 0.78rem;
-    color: #5A8EBB;
-    margin-top: 0.15rem;
 }
 /* ── Superadmin: hide social channel inputs ─────────────────────────── */
 [data-testid="stTextInput"]:has(input[placeholder^="iw-auth-social-"]) {
@@ -176,116 +158,50 @@ _AUTH_CSS = """<style>
 }
 </style>"""
 
-
-def _render_social_buttons() -> str | None:
-    """Render Google + GitHub sign-in buttons as native st.button widgets.
-    Returns 'google', 'github', or None based on which was clicked.
-    """
-    col_g, col_h = st.columns(2)
-    with col_g:
-        st.markdown(
-            f'<div class="iw-social-label">{_GOOGLE_SVG}'
-            f'<span style="font-family:\'Plus Jakarta Sans\',sans-serif;'
-            f'font-size:0.84rem;font-weight:600;color:#071D35">'
-            f'Continue with Google</span></div>',
-            unsafe_allow_html=True,
-        )
-        google_clicked = st.button(
-            "Continue with Google",
-            key="_social_google",
-            use_container_width=True,
-        )
-    with col_h:
-        st.markdown(
-            f'<div class="iw-social-label">{_GITHUB_SVG}'
-            f'<span style="font-family:\'Plus Jakarta Sans\',sans-serif;'
-            f'font-size:0.84rem;font-weight:600;color:#071D35">'
-            f'Continue with GitHub</span></div>',
-            unsafe_allow_html=True,
-        )
-        github_clicked = st.button(
-            "Continue with GitHub",
-            key="_social_github",
-            use_container_width=True,
-        )
-    if google_clicked:
-        return "google"
-    if github_clicked:
-        return "github"
-    return None
+_SOCIAL_JS = """<script>
+(function(){
+  if(window._iwAuthSocialReady)return;
+  window._iwAuthSocialReady=true;
+  window.iwAuthSocial=function(ph,provider){
+    var inp=document.querySelector('input[placeholder="'+ph+'"]');
+    if(!inp)return;
+    var s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
+    s.call(inp,provider);
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+    inp.dispatchEvent(new Event('change',{bubbles:true}));
+    setTimeout(function(){
+      inp.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:13,bubbles:true}));
+    },30);
+  };
+})();
+</script>"""
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Social provider sign-in panels
-# ─────────────────────────────────────────────────────────────────────────────
+def _render_social_buttons(tab_prefix: str) -> str | None:
+    """Render Google + GitHub brand-icon buttons; return 'google'/'github' or None."""
+    ph = f"iw-auth-social-{tab_prefix}"
+    raw: str = st.text_input(
+        "_s", key=f"_iw_auth_social_{tab_prefix}",
+        placeholder=ph, label_visibility="collapsed",
+    )
+    # Clear value after reading so it doesn't persist across reruns
+    if raw:
+        st.session_state[f"_iw_auth_social_{tab_prefix}"] = ""
 
-def _render_google_panel() -> None:
-    """Inline Google sign-in form."""
     st.markdown(
-        f'<div class="iw-provider-panel">'
-        f'<div class="iw-provider-header">'
-        f'{_GOOGLE_SVG}'
-        f'<div>'
-        f'<div class="iw-provider-title">Sign in with Google</div>'
-        f'<div class="iw-provider-sub">Enter your Google account credentials</div>'
-        f'</div></div></div>',
+        f'{_SOCIAL_JS}'
+        f'<div class="iw-social-row">'
+        f'<button class="iw-social-btn" onclick="iwAuthSocial(\'{ph}\',\'google\')">'
+        f'  {_GOOGLE_SVG}&nbsp;Continue with Google'
+        f'</button>'
+        f'<button class="iw-social-btn" onclick="iwAuthSocial(\'{ph}\',\'github\')">'
+        f'  {_GITHUB_SVG}&nbsp;Continue with GitHub'
+        f'</button>'
+        f'</div>',
         unsafe_allow_html=True,
     )
-    g_email = st.text_input(
-        "Google account email", placeholder="you@gmail.com", key="_g_email",
-    )
-    g_pw = st.text_input(
-        "Password", type="password", placeholder="••••••••", key="_g_pw",
-    )
-    c1, c2 = st.columns([3, 1])
-    with c1:
-        if st.button("Sign in with Google", type="primary",
-                     use_container_width=True, key="_g_signin"):
-            if g_email and g_pw:
-                mock_login(g_email, display_name=g_email.split("@")[0].title())
-                st.success("Signed in with Google!")
-                st.rerun()
-            else:
-                st.error("Please enter your email and password.")
-    with c2:
-        if st.button("Cancel", use_container_width=True, key="_g_cancel"):
-            st.session_state.pop("_iw_social_provider", None)
-            st.rerun()
-
-
-def _render_github_panel() -> None:
-    """Inline GitHub sign-in form."""
-    st.markdown(
-        f'<div class="iw-provider-panel">'
-        f'<div class="iw-provider-header">'
-        f'{_GITHUB_SVG}'
-        f'<div>'
-        f'<div class="iw-provider-title">Sign in with GitHub</div>'
-        f'<div class="iw-provider-sub">Enter your GitHub username and password</div>'
-        f'</div></div></div>',
-        unsafe_allow_html=True,
-    )
-    gh_user = st.text_input(
-        "GitHub username or email", placeholder="you@github.com", key="_gh_user",
-    )
-    gh_pw = st.text_input(
-        "Password", type="password", placeholder="••••••••", key="_gh_pw",
-    )
-    c1, c2 = st.columns([3, 1])
-    with c1:
-        if st.button("Sign in with GitHub", type="primary",
-                     use_container_width=True, key="_gh_signin"):
-            if gh_user and gh_pw:
-                email = gh_user if "@" in gh_user else f"{gh_user}@users.noreply.github.com"
-                mock_login(email, display_name=gh_user.split("@")[0].title())
-                st.success("Signed in with GitHub!")
-                st.rerun()
-            else:
-                st.error("Please enter your username and password.")
-    with c2:
-        if st.button("Cancel", use_container_width=True, key="_gh_cancel"):
-            st.session_state.pop("_iw_social_provider", None)
-            st.rerun()
+    provider = (raw or "").strip()
+    return provider if provider in ("google", "github") else None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -380,7 +296,6 @@ def render_auth_page() -> None:
     # ── Back navigation ───────────────────────────────────────────────────────
     if st.button("← Back", key="_auth_back_btn"):
         st.session_state.pop(_AUTH_PAGE_KEY, None)
-        st.session_state.pop("_iw_social_provider", None)
         st.rerun()
 
     # ── InvestWise branded header ─────────────────────────────────────────────
@@ -399,7 +314,7 @@ def render_auth_page() -> None:
         'Invest<span style="font-weight:300;color:#1AB868">Wise</span></span>'
         '</div>'
         '<h2 style="color:#071D35;font-weight:800;font-size:1.45rem;margin:0 0 0.35rem">'
-        'Welcome</h2>'
+        'Welcome back</h2>'
         '<p style="color:#5A8EBB;font-size:0.86rem;margin:0">'
         'Intelligence Hub &amp; News Feed are always free. '
         'All other modules require a free account.</p>'
@@ -407,21 +322,13 @@ def render_auth_page() -> None:
         unsafe_allow_html=True,
     )
 
-    # ── Social provider panel (shown after selecting Google or GitHub) ─────────
-    provider = st.session_state.get("_iw_social_provider")
-    if provider == "google":
-        _render_google_panel()
-        st.markdown('</div>', unsafe_allow_html=True)
-        return
-    if provider == "github":
-        _render_github_panel()
-        st.markdown('</div>', unsafe_allow_html=True)
-        return
-
-    # ── Social buttons ────────────────────────────────────────────────────────
-    social_clicked = _render_social_buttons()
-    if social_clicked:
-        st.session_state["_iw_social_provider"] = social_clicked
+    # ── Social buttons (above tabs, shared) ───────────────────────────────────
+    social_provider = _render_social_buttons("shared")
+    if social_provider == "google":
+        mock_login("user@gmail.com", "Google User")
+        st.rerun()
+    elif social_provider == "github":
+        mock_login("user@github.com", "GitHub User")
         st.rerun()
 
     st.markdown(
