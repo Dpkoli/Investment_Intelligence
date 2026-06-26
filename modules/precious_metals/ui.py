@@ -604,13 +604,20 @@ def render() -> None:
         },
     )
 
+    # Full-row click selects; clicking same row again toggles off
     sel_rows = (
         table_event.selection.rows
         if table_event and table_event.selection
         else []
     )
     if sel_rows and 0 <= sel_rows[0] < len(page_items):
-        st.session_state["pm_selected"] = page_items[sel_rows[0]].ticker
+        clicked = page_items[sel_rows[0]].ticker
+        if st.session_state.get("pm_selected") == clicked:
+            st.session_state["pm_selected"] = None
+            st.session_state.pop(f"pm_tbl_p{page}", None)
+            st.rerun()
+        else:
+            st.session_state["pm_selected"] = clicked
     else:
         st.session_state["pm_selected"] = None
 

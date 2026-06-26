@@ -616,34 +616,23 @@ st.markdown(
     }
 
     /* ── DataFrames ──────────────────────────────────────────────────────────── */
+    /* Outer wrapper — card border, rounded corners */
     [data-testid="stDataFrame"] {
-        background: var(--card) !important;
         border: 1px solid var(--border) !important;
         border-radius: 10px !important;
         overflow: hidden !important;
+        box-shadow: var(--shadow-card) !important;
     }
-    /* Canvas-based grid container */
-    [data-testid="stDataFrame"] > div {
-        background: var(--card) !important;
+    /* The glide-data-grid canvas fills the card background from the Streamlit
+       theme (config.toml: secondaryBackgroundColor=#FFFFFF, textColor=#071D35).
+       These CSS rules style the non-canvas overlay elements that surround it. */
+    [data-testid="stDataFrame"] > div,
+    [data-testid="stDataFrame"] > div > div {
+        border-radius: 10px !important;
     }
-    [data-testid="stDataFrame"] table, [data-testid="stDataFrame"] thead,
-    [data-testid="stDataFrame"] tbody, [data-testid="stDataFrame"] th,
-    [data-testid="stDataFrame"] td {
-        background-color: var(--card) !important;
-        color: var(--text-h) !important;
-        border-color: var(--border) !important;
-        font-family: var(--font-body) !important;
-    }
-    [data-testid="stDataFrame"] thead th {
-        background-color: var(--navy-50) !important;
-        color: var(--text-sub) !important;
-        font-weight: 700 !important;
-        font-size: 0.72rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.07em !important;
-    }
-    [data-testid="stDataFrame"] tbody tr:hover td {
-        background-color: var(--navy-50) !important;
+    /* Ensure the resize handle / scrollbar overlay stays on-brand */
+    [data-testid="stDataFrame"] [role="scrollbar"] {
+        background: var(--navy-100) !important;
     }
 
     /* ══════════════════════════════════════════════════════════════════════════

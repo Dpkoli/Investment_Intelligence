@@ -721,14 +721,20 @@ def render() -> None:
         },
     )
 
-    # Sync selection — always reflect current table state so unchecking hides the panel
+    # Sync selection — full-row click selects; clicking selected row toggles off
     sel_rows = (
         table_event.selection.rows
         if table_event and table_event.selection
         else []
     )
     if sel_rows and 0 <= sel_rows[0] < len(page_items):
-        st.session_state["thematic_selected_ticker"] = page_items[sel_rows[0]].ticker
+        clicked = page_items[sel_rows[0]].ticker
+        if st.session_state.get("thematic_selected_ticker") == clicked:
+            st.session_state["thematic_selected_ticker"] = None
+            st.session_state.pop(f"thematic_tbl_p{page}", None)
+            st.rerun()
+        else:
+            st.session_state["thematic_selected_ticker"] = clicked
     else:
         st.session_state["thematic_selected_ticker"] = None
 

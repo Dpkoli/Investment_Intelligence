@@ -557,14 +557,21 @@ div[data-testid="stRadio"] label {
         },
     )
 
-    # Sync row selection
+    # Sync row selection — full-row click selects; clicking selected row toggles off
     sel_rows = (
         table_event.selection.rows
         if table_event and table_event.selection
         else []
     )
     if sel_rows and 0 <= sel_rows[0] < len(page_items):
-        st.session_state["ce_selected"] = page_items[sel_rows[0]].ticker
+        clicked = page_items[sel_rows[0]].ticker
+        if st.session_state.get("ce_selected") == clicked:
+            # Toggle off: clear our state and reset the table widget state
+            st.session_state["ce_selected"] = None
+            st.session_state.pop(f"ce_tbl_p{page}", None)
+            st.rerun()
+        else:
+            st.session_state["ce_selected"] = clicked
     else:
         st.session_state["ce_selected"] = None
 
