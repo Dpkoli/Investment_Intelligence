@@ -228,11 +228,11 @@ def _render_detail_panel(p: IndexProduct, prices: dict) -> None:
       <span style="color:#1AB868;font-size:0.68rem;font-weight:700;letter-spacing:0.12em">
         {p.region.upper()} &middot; {p.index_tracked}
       </span><br>
-      <span style="font-size:1.25rem;font-weight:700">{p.ticker}</span>&nbsp;
+      <span style="font-size:1.25rem;font-weight:700;color:#071D35">{p.ticker}</span>&nbsp;
       <span style="color:#2B5A85;font-size:0.87rem">{p.name}</span>
     </div>
     <div style="text-align:right">
-      <div style="font-size:1.3rem;font-weight:700">{price_str}</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#071D35">{price_str}</div>
       <div style="font-size:0.87rem;color:{chg_color}">{chg_str} today</div>
     </div>
   </div>
@@ -277,10 +277,10 @@ def _render_detail_panel(p: IndexProduct, prices: dict) -> None:
             fig_h.update_layout(
                 height=max(180, len(h_df) * 28),
                 margin={"t": 5, "b": 5, "l": 10, "r": 55},
-                paper_bgcolor="#f4f6f9",
-                plot_bgcolor="#f4f6f9",
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#ffffff",
                 xaxis={"visible": False},
-                yaxis={"color": "#888", "tickfont": {"size": 11}, "autorange": "reversed"},
+                yaxis={"color": "#2B5A85", "tickfont": {"size": 11, "color": "#2B5A85"}, "autorange": "reversed"},
                 showlegend=False,
             )
             st.plotly_chart(fig_h, use_container_width=True, config={"displayModeBar": False})
@@ -316,10 +316,10 @@ def _render_detail_panel(p: IndexProduct, prices: dict) -> None:
             fig_p.update_layout(
                 height=150,
                 margin={"t": 5, "b": 5, "l": 0, "r": 0},
-                paper_bgcolor="#f4f6f9",
-                plot_bgcolor="#f4f6f9",
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#ffffff",
                 xaxis={"visible": False},
-                yaxis={"color": "#5A8EBB", "gridcolor": "#D9E8F5", "tickformat": "$,.0f"},
+                yaxis={"color": "#2B5A85", "gridcolor": "#D9E8F5", "tickformat": "$,.0f", "tickfont": {"color": "#2B5A85", "size": 10}},
                 showlegend=False,
             )
             st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False})
@@ -408,6 +408,29 @@ def _render_detail_panel(p: IndexProduct, prices: dict) -> None:
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render() -> None:
+    # Module-scoped CSS fixes
+    st.markdown("""
+<style>
+/* ── Core Equity: toggle wrapper visibility ── */
+div[data-testid="stToggle"] {
+    background: var(--navy-50) !important;
+    border: 1.5px solid var(--navy-200) !important;
+    border-radius: 10px !important;
+    padding: 0.35rem 0.65rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+/* ── Core Equity: radio buttons (performance timeframe) ── */
+div[data-testid="stRadio"] label {
+    font-size: 0.75rem !important;
+    color: var(--text-h) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
     st.markdown("<h2 class='iw-module-header'>Core Equity — Global Index & ETF Intelligence</h2>", unsafe_allow_html=True)
     st.caption(f"{len(CORE_EQUITY_REGISTRY)} instruments tracked across 25+ countries and regions")
 
@@ -439,6 +462,28 @@ def render() -> None:
         key="ce_search",
         on_change=_on_ce_search_change,
     )
+
+    # Auto-focus: wire click on the search label/container to focus the real input
+    import streamlit.components.v1 as _components
+    _components.html("""
+<script>
+(function() {
+    var doc = window.parent.document;
+    function wireClick() {
+        var inputs = doc.querySelectorAll('input[placeholder="Ticker, name, index…"]');
+        if (!inputs.length) { setTimeout(wireClick, 200); return; }
+        var inp = inputs[0];
+        var wrapper = inp.closest('[data-testid="stTextInput"]') || inp.parentElement;
+        if (wrapper && !wrapper._ceFocusWired) {
+            wrapper._ceFocusWired = true;
+            wrapper.style.cursor = 'text';
+            wrapper.addEventListener('click', function() { inp.focus(); });
+        }
+    }
+    wireClick();
+})();
+</script>
+""", height=0)
 
     import json as _json
     _ac_items = []

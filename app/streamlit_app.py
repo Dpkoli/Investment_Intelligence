@@ -304,6 +304,23 @@ st.markdown(
         color: var(--navy-800) !important;
     }
 
+    /* ── Link buttons ────────────────────────────────────────────────────────── */
+    [data-testid="stLinkButton"] a {
+        background-color: var(--navy-600) !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 0.82rem !important;
+        border: none !important;
+        text-decoration: none !important;
+        transition: background 0.13s !important;
+        font-family: var(--font-body) !important;
+    }
+    [data-testid="stLinkButton"] a:hover {
+        background-color: var(--navy-700) !important;
+        color: #ffffff !important;
+        text-decoration: none !important;
+    }
 
     /* ── Snap-card / wi-card channel inputs: visually hidden but focusable ── */
     /* display:none prevents focus(), breaking synthetic React events on these inputs  */
@@ -337,20 +354,36 @@ st.markdown(
     .stMultiSelect [data-baseweb="select"] span {
         color: var(--text-h) !important;
     }
-    /* Dropdown menu */
-    [data-baseweb="popover"] [data-baseweb="menu"] {
+    /* Dropdown menu — broad selectors to override Streamlit's default dark style */
+    [data-baseweb="popover"],
+    [data-baseweb="popover"] > div,
+    [data-baseweb="popover"] > div > div {
         background: var(--card) !important;
+        background-color: var(--card) !important;
+    }
+    [data-baseweb="popover"] [data-baseweb="menu"],
+    [data-baseweb="popover"] ul[role="listbox"],
+    [data-baseweb="popover"] ul {
+        background: var(--card) !important;
+        background-color: var(--card) !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         box-shadow: var(--shadow-card-hover) !important;
     }
-    [data-baseweb="popover"] [role="option"] {
+    [data-baseweb="popover"] [role="option"],
+    [data-baseweb="popover"] li[role="option"],
+    [data-baseweb="popover"] [data-baseweb="menu-item"] {
+        background: var(--card) !important;
+        background-color: var(--card) !important;
         color: var(--text-h) !important;
         font-size: 0.84rem !important;
     }
     [data-baseweb="popover"] [role="option"]:hover,
-    [data-baseweb="popover"] [aria-selected="true"] {
+    [data-baseweb="popover"] li[role="option"]:hover,
+    [data-baseweb="popover"] [aria-selected="true"],
+    [data-baseweb="popover"] [data-baseweb="menu-item"]:hover {
         background-color: var(--navy-50) !important;
+        color: var(--text-h) !important;
     }
     /* Selected tags in multiselect */
     [data-baseweb="tag"] {
@@ -462,6 +495,15 @@ st.markdown(
         font-size: 0.95rem !important;
         font-weight: 700 !important;
         margin: 0.75rem 0 0.35rem 0 !important;
+    }
+    .stMarkdown h5, .stMarkdown h6,
+    [data-testid="stMarkdownContainer"] h5,
+    [data-testid="stMarkdownContainer"] h6 {
+        color: var(--color-text-primary) !important;
+        font-size: 0.88rem !important;
+        font-weight: 700 !important;
+        margin: 0.65rem 0 0.3rem 0 !important;
+        font-family: var(--font-body) !important;
     }
     /* Table text */
     .stMarkdown td,
