@@ -134,7 +134,7 @@ st.markdown(
         --amber-500: #E8A500;
         --amber-600: #C98900;
         /* Semantic */
-        --color-primary:        #0F2D4F;
+        --color-primary:        #1AB868;
         --color-accent:         #1AB868;
         --color-bg:             #F2F6FA;
         --color-surface:        #FFFFFF;
@@ -297,8 +297,13 @@ st.markdown(
         border-color: var(--color-primary) !important;
         color: #ffffff !important;
     }
+    .stButton button[kind="primary"] p,
+    .stButton button[kind="primary"] span,
+    .stButton button[kind="primary"] div {
+        color: #ffffff !important;
+    }
     .stButton button[kind="primary"]:hover {
-        background: var(--navy-700) !important;
+        background: var(--emerald-600) !important;
         transform: scale(0.98);
     }
     .stButton button[kind="secondary"] {
@@ -306,10 +311,36 @@ st.markdown(
         border: 1px solid var(--navy-100) !important;
         color: var(--navy-600) !important;
     }
+    .stButton button[kind="secondary"] p,
+    .stButton button[kind="secondary"] span,
+    .stButton button[kind="secondary"] div {
+        color: var(--navy-600) !important;
+    }
     .stButton button[kind="secondary"]:hover {
         background: var(--navy-100) !important;
         border-color: var(--navy-200) !important;
         color: var(--navy-800) !important;
+    }
+    /* Sidebar buttons — always need high-contrast text on dark background */
+    section[data-testid="stSidebar"] .stButton button {
+        background: rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] .stButton button p,
+    section[data-testid="stSidebar"] .stButton button span,
+    section[data-testid="stSidebar"] .stButton button div {
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] .stButton button:hover {
+        background: rgba(255,255,255,0.14) !important;
+    }
+    section[data-testid="stSidebar"] .stButton button[kind="primary"] {
+        background: var(--accent) !important;
+        border-color: var(--accent) !important;
+    }
+    section[data-testid="stSidebar"] .stButton button[kind="primary"]:hover {
+        background: var(--emerald-600) !important;
     }
 
     /* ── Link buttons ────────────────────────────────────────────────────────── */
@@ -1884,8 +1915,23 @@ def render_hub() -> None:
     });
   }
 
-  wireCards();
-  new MutationObserver(wireCards).observe(doc.body,{childList:true,subtree:true});
+  function wireIwTables(){
+    doc.querySelectorAll('tr[data-ph]').forEach(function(row){
+      if(row._iwTblWired) return;
+      row._iwTblWired = true;
+      row.addEventListener('click', function(e){
+        if(e.target && e.target.type === 'checkbox') return;
+        var ph  = row.getAttribute('data-ph');
+        var idx = row.getAttribute('data-idx');
+        if(ph && idx !== null) fireCh(ph, idx);
+      });
+    });
+  }
+
+  function wireAll(){ wireCards(); wireIwTables(); }
+
+  wireAll();
+  new MutationObserver(function(){ wireAll(); }).observe(doc.body,{childList:true,subtree:true});
 })();
 </script>""", height=0, scrolling=False)
 
@@ -1912,13 +1958,13 @@ def render_hub() -> None:
 
     wi_open   = st.session_state["wi_open"]
     wi_prices = _world_index_prices()
-    wi_cols   = st.columns(len(_WORLD_INDEXES))
-    for wi_col, idx_meta in zip(wi_cols, _WORLD_INDEXES):
-        t        = idx_meta["ticker"]
-        p_data   = wi_prices.get(t, {})
-        price    = p_data.get("price")
-        chg      = p_data.get("chg_pct")
-        is_open  = wi_open == t
+
+    def _render_wi_card(wi_col, idx_meta):
+        t       = idx_meta["ticker"]
+        p_data  = wi_prices.get(t, {})
+        price   = p_data.get("price")
+        chg     = p_data.get("chg_pct")
+        is_open = wi_open == t
 
         if price is not None:
             price_str = (
@@ -1933,34 +1979,44 @@ def render_hub() -> None:
             chg_color = "#149453" if chg >= 0 else "#E53535"
             chg_arrow = "▲" if chg >= 0 else "▼"
             chg_html  = (
-                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;'
-                f'font-weight:400;color:{chg_color}">{chg_arrow}{abs(chg):.2f}%</div>'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.72rem;'
+                f'font-weight:600;color:{chg_color};margin-top:0.1rem">'
+                f'{chg_arrow} {abs(chg):.2f}%</div>'
             )
             border_top = f"{'3px' if is_open else '2px'} solid {chg_color}"
         else:
-            chg_html   = '<div style="color:#5A8EBB;font-size:0.6rem">—</div>'
+            chg_html   = '<div style="color:#5A8EBB;font-size:0.72rem;margin-top:0.1rem">—</div>'
             border_top = "2px solid #D9E8F5"
 
-        bg = "#F2F6FA" if is_open else "#ffffff"
+        bg = "#EDFAF3" if is_open else "#ffffff"
+        outline = "outline:2px solid #1AB868;" if is_open else ""
 
         with wi_col:
             st.markdown(
                 f'<div class="wi-card" data-wi-ticker="{t}" style="background:{bg};'
-                f'border:1px solid #D9E8F5;border-top:{border_top};border-radius:8px;'
-                f'padding:0.5rem 0.3rem;text-align:center;cursor:pointer;'
-                f'box-shadow:0 1px 3px rgba(7,29,53,0.05)">'
-                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;'
+                f'border:1px solid #D9E8F5;border-top:{border_top};border-radius:10px;'
+                f'padding:0.85rem 0.6rem;text-align:center;cursor:pointer;{outline}'
+                f'box-shadow:0 1px 4px rgba(7,29,53,0.07)">'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.65rem;'
                 f'font-weight:800;color:#071D35;letter-spacing:0.04em;text-transform:uppercase;'
                 f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
                 f'{idx_meta["name"]}</div>'
-                f'<div style="font-size:0.5rem;color:#5A8EBB;margin:0.03rem 0">'
+                f'<div style="font-size:0.62rem;color:#5A8EBB;margin:0.1rem 0">'
                 f'{idx_meta["region"]}</div>'
-                f'<div style="font-size:0.95rem;font-weight:700;color:#071D35;'
-                f'line-height:1.1;margin:0.1rem 0">{price_str}</div>'
+                f'<div style="font-size:1.15rem;font-weight:700;color:#071D35;'
+                f'line-height:1.15;margin:0.2rem 0 0.05rem">{price_str}</div>'
                 f'{chg_html}'
                 f'</div>',
                 unsafe_allow_html=True,
             )
+
+    # 2-row × 5-card grid
+    wi_row1 = st.columns(5)
+    wi_row2 = st.columns(5)
+    for col, idx_meta in zip(wi_row1, _WORLD_INDEXES[:5]):
+        _render_wi_card(col, idx_meta)
+    for col, idx_meta in zip(wi_row2, _WORLD_INDEXES[5:]):
+        _render_wi_card(col, idx_meta)
 
     # Inline news accordion for the open world index
     if wi_open:
@@ -2394,7 +2450,8 @@ def main() -> None:
         f"<div style='display:flex;align-items:center;justify-content:space-between;"
         f"flex-wrap:wrap;gap:0.4rem;margin-bottom:0.25rem'>"
         f"<h1 style='margin:0;color:#071D35;font-weight:700;font-size:2.1rem;"
-        f"letter-spacing:-0.02em;flex-shrink:0'>InvestWise</h1>"
+        f"letter-spacing:-0.02em;flex-shrink:0'>Invest"
+        f"<span style='color:#1AB868;font-weight:300'>Wise</span></h1>"
         f"<div style='text-align:right;flex-shrink:0'>"
         f"<span style='color:#5A8EBB;font-size:0.73rem;text-transform:uppercase;"
         f"letter-spacing:0.08em'>Phase</span><br>"

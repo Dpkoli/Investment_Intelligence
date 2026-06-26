@@ -111,11 +111,14 @@ def render(
             cls = col_classes.get(key, "")
             cls_attr = f' class="{cls}"' if cls else ""
             cells.append(f"<td{cls_attr}>{val}</td>")
-        onclick = f"onclick=\"iwTblClick('{channel_placeholder}',{i},event)\""
-        body.append(f'<tr class="{row_cls}" {onclick}>{"".join(cells)}</tr>')
+        # Use data attributes instead of onclick — DOMPurify strips <script> and onclick
+        data_attrs = f'data-ph="{_html.escape(channel_placeholder)}" data-idx="{i}"'
+        body.append(f'<tr class="{row_cls}" {data_attrs}>{"".join(cells)}</tr>')
 
+    # Do NOT include _JS here — <script> tags are stripped by DOMPurify in st.markdown
+    # and corrupt the surrounding HTML. JS wiring lives in the global components.html block.
     html = (
-        _CSS + _JS +
+        _CSS +
         '<div class="iw-tbl-w"><table class="iw-tbl">'
         f"<thead><tr>{header_cells}</tr></thead>"
         f"<tbody>{''.join(body)}</tbody>"
