@@ -346,9 +346,10 @@ st.markdown(
         line-height: 1 !important;
     }
 
-    /* ── Snap-card / wi-card / HTML-table channel inputs: visually hidden but focusable ── */
+    /* ── Channel inputs (tables, snaps, auth social): visually hidden but focusable ── */
     /* display:none prevents focus(), breaking synthetic React events on these inputs  */
     [data-testid="stTextInput"]:has(input[placeholder^="iw-tbl-"]),
+    [data-testid="stTextInput"]:has(input[placeholder^="iw-auth-social-"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-click-v1"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-wi-click-v1"]) {
@@ -1046,6 +1047,10 @@ def render_sidebar() -> str:
             unsafe_allow_html=True,
         )
         st.divider()
+
+        # When showing the dedicated auth page, keep the nav neutral (Intelligence Hub)
+        if wants_auth_page():
+            st.session_state["sidebar_nav"] = "Intelligence Hub"
 
         nav = st.radio(
             "Navigate",
