@@ -100,6 +100,46 @@ def _fetch_fundamentals(ticker: str) -> dict:
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
+def _fetch_holdings(ticker: str) -> list[dict]:
+    try:
+        import yfinance as yf
+        t = yf.Ticker(ticker)
+        try:
+            fd = t.funds_data
+            if fd is not None:
+                th = getattr(fd, "top_holdings", None)
+                if th is not None and not th.empty:
+                    out = []
+                    for _, row in th.reset_index().head(12).iterrows():
+                        sym  = str(row.get("Symbol") or row.get("symbol") or "").strip()
+                        name = str(row.get("Name") or row.get("name") or sym).strip()
+                        raw  = row.get("Holding Percent") or row.get("holdingPercent") or 0
+                        pct  = _safe_num(raw) or 0.0
+                        if pct and pct < 1.5:
+                            pct *= 100
+                        if sym:
+                            out.append({"symbol": sym, "name": name, "pct": round(pct, 2)})
+                    if out:
+                        return out
+        except Exception:
+            pass
+        info = t.info or {}
+        holdings = []
+        for i in range(15):
+            sym  = str(info.get(f"holdings{i}Symbol") or "").strip()
+            name = str(info.get(f"holdings{i}Name") or sym).strip()
+            raw  = info.get(f"holdings{i}HoldingPercent") or 0
+            pct  = (_safe_num(raw) or 0.0)
+            if pct and pct < 1.5:
+                pct *= 100
+            if sym:
+                holdings.append({"symbol": sym, "name": name, "pct": round(pct, 2)})
+        return holdings[:12]
+    except Exception:
+        return []
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
 def _fetch_performance(ticker: str) -> dict:
     try:
         import yfinance as yf
@@ -159,7 +199,7 @@ def _pct_color(v: Optional[float]) -> str:
 
 
 def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
-    """Render the 5-panel deep-dive dashboard for the selected stock."""
+    """Render the 6-panel deep-dive dashboard for the selected stock."""
     px_data = prices.get(stock.ticker, {})
     price   = _safe_num(px_data.get("price"))
     chg     = _safe_num(px_data.get("chg_pct"))
@@ -182,12 +222,13 @@ def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    tab_news, tab_analysts, tab_technical, tab_financial, tab_performance = st.tabs([
+    tab_news, tab_pundits, tab_technical, tab_financial, tab_holdings, tab_performance = st.tabs([
         "📰 Latest News",
-        "🧑‍💼 Analyst Ratings",
+        "🧑‍💼 Market Pundits & Analysts",
         "📈 Technical Analysis",
         "💰 Financial Analysis",
-        "🏆 Performance",
+        "🏦 Top Holdings",
+        "🏆 Performance Metrics",
     ])
 
     # ── Tab 1: Latest News ────────────────────────────────────────────────────
@@ -217,15 +258,14 @@ def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
         else:
             st.info("No recent news available.")
 
-    # ── Tab 2: Analyst Ratings ────────────────────────────────────────────────
-    with tab_analysts:
+    # ── Tab 2: Market Pundits & Analysts ─────────────────────────────────────
+    with tab_pundits:
         with st.spinner("Loading analyst data…"):
             fund = _fetch_fundamentals(stock.ticker)
 
-        rating    = fund.get("analyst_rating", "—")
-        target    = fund.get("target_price")
+        rating     = fund.get("analyst_rating", "—")
+        target     = fund.get("target_price")
         n_analysts = fund.get("num_analysts", 0)
-
         rating_color = {
             "BUY": "#149453", "STRONG_BUY": "#149453",
             "HOLD": "#E8A500", "NEUTRAL": "#E8A500",
@@ -237,29 +277,26 @@ def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
             st.markdown(
                 f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid {rating_color};'
                 f'border-radius:8px;padding:0.75rem;text-align:center">'
-                f'<div style="font-size:0.65rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">Consensus</div>'
+                f'<div style="font-size:0.65rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">Consensus Rating</div>'
                 f'<div style="font-size:1.6rem;font-weight:800;color:{rating_color};margin:0.2rem 0">{rating}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
+                f'</div>', unsafe_allow_html=True,
             )
         with c2:
             tp_str = f"${target:,.2f}" if target else "—"
             st.markdown(
                 f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid #2B5A85;'
                 f'border-radius:8px;padding:0.75rem;text-align:center">'
-                f'<div style="font-size:0.65rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">Price Target</div>'
+                f'<div style="font-size:0.65rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">Mean Price Target</div>'
                 f'<div style="font-size:1.6rem;font-weight:800;color:#071D35;margin:0.2rem 0">{tp_str}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
+                f'</div>', unsafe_allow_html=True,
             )
         with c3:
             st.markdown(
                 f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid #3A72A0;'
                 f'border-radius:8px;padding:0.75rem;text-align:center">'
-                f'<div style="font-size:0.65rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">No. Analysts</div>'
+                f'<div style="font-size:0.65rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">Analysts Covering</div>'
                 f'<div style="font-size:1.6rem;font-weight:800;color:#071D35;margin:0.2rem 0">{n_analysts}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
+                f'</div>', unsafe_allow_html=True,
             )
 
         desc = fund.get("description", "")
@@ -267,7 +304,42 @@ def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
             st.markdown(
                 f'<div style="background:#EEF4FB;border:1px solid #D9E8F5;border-radius:8px;'
                 f'padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.8rem;color:#2B5A85;line-height:1.65">'
-                f'{desc[:600]}{"…" if len(desc) > 600 else ""}</div>',
+                f'{desc[:800]}{"…" if len(desc) > 800 else ""}</div>',
+                unsafe_allow_html=True,
+            )
+
+        st.markdown(
+            '<div style="margin-top:1rem;font-size:0.72rem;font-weight:700;color:#071D35;'
+            'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem">Wave Analysis Viewpoints</div>',
+            unsafe_allow_html=True,
+        )
+        wa1, wa2 = st.columns(2)
+        with wa1:
+            st.markdown(
+                '<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid #7c3aed;'
+                'border-radius:8px;padding:0.65rem 0.9rem">'
+                '<div style="font-size:0.65rem;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:0.1em">EWF — Elliott Wave Forecast</div>'
+                '<div style="font-size:0.77rem;color:#2B5A85;line-height:1.6;margin-top:0.25rem">'
+                'Leading provider of Elliott Wave analysis. EWF publishes intraday and swing counts across '
+                'major indices, equities, and commodities. Typically tracks Primary, Intermediate, and Minor '
+                'degree waves with defined invalidation levels. Subscribing members receive live wave counts '
+                'and trade setups.</div>'
+                '<div style="font-size:0.65rem;color:#5A8EBB;margin-top:0.3rem">Source: elliottwave-forecast.com</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        with wa2:
+            st.markdown(
+                '<div style="background:#ffffff;border:1px solid #D9E8F5;border-left:3px solid #3A72A0;'
+                'border-radius:8px;padding:0.65rem 0.9rem">'
+                '<div style="font-size:0.65rem;font-weight:800;color:#3A72A0;text-transform:uppercase;letter-spacing:0.1em">EWI — Elliott Wave International</div>'
+                '<div style="font-size:0.77rem;color:#2B5A85;line-height:1.6;margin-top:0.25rem">'
+                'Founded by Robert Prechter, EWI is the world\'s largest Elliott Wave analysis firm. '
+                'Their flagship Financial Forecast covers US equities with Grand Supercycle degree counts. '
+                'The monthly Elliott Wave Theorist provides macro wave context across decades of price history '
+                'and socionomic trend analysis.</div>'
+                '<div style="font-size:0.65rem;color:#5A8EBB;margin-top:0.3rem">Source: elliottwave.com</div>'
+                '</div>',
                 unsafe_allow_html=True,
             )
 
@@ -277,26 +349,44 @@ def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
             perf = _fetch_performance(stock.ticker)
 
         if perf.get("dates") and perf.get("prices"):
+            all_dates  = perf["dates"]
+            all_prices = perf["prices"]
+            clean_prices = [p for p in all_prices if p is not None]
+
+            _TF = {"1M": 21, "3M": 63, "6M": 126, "1Y": 252, "5Y": 1260, "Max": None}
+            tf_sel = st.radio("Timeframe", list(_TF.keys()), index=3, horizontal=True,
+                              key=f"sw_tech_tf_{stock.ticker}")
+            n = _TF[tf_sel]
+            vis_dates  = all_dates[-n:]  if n else all_dates
+            vis_prices = all_prices[-n:] if n else all_prices
+            vis_clean  = [p for p in vis_prices if p is not None]
+
             fig = go.Figure()
-            dates  = perf["dates"]
-            prices = perf["prices"]
-            clean_prices = [p for p in prices if p is not None]
-            if len(clean_prices) >= 20:
-                # 20-day MA
-                ma20 = pd.Series(clean_prices).rolling(20).mean().tolist()
+            if len(vis_clean) >= 20:
+                ma20 = pd.Series(vis_clean).rolling(20).mean().tolist()
                 fig.add_trace(go.Scatter(
-                    x=dates, y=ma20, mode="lines",
+                    x=vis_dates, y=ma20, mode="lines",
                     line={"color": "#E8A500", "width": 1, "dash": "dot"},
                     name="20-day MA", hoverinfo="skip",
                 ))
+            if len(vis_clean) >= 50:
+                ma50 = pd.Series(vis_clean).rolling(50).mean().tolist()
+                fig.add_trace(go.Scatter(
+                    x=vis_dates, y=ma50, mode="lines",
+                    line={"color": "#3A72A0", "width": 1, "dash": "dash"},
+                    name="50-day MA", hoverinfo="skip",
+                ))
+            line_color = "#1AB868"
+            if len(vis_clean) >= 2 and vis_clean[-1] < vis_clean[0]:
+                line_color = "#E53535"
             fig.add_trace(go.Scatter(
-                x=dates, y=prices, mode="lines",
-                line={"color": "#1AB868", "width": 2},
+                x=vis_dates, y=vis_prices, mode="lines",
+                line={"color": line_color, "width": 2},
                 name=stock.ticker, fill="tozeroy",
-                fillcolor="rgba(26,184,104,0.08)",
+                fillcolor=f"rgba({'26,184,104' if line_color == '#1AB868' else '229,53,53'},0.07)",
             ))
             fig.update_layout(
-                height=280, margin={"t": 10, "b": 30, "l": 50, "r": 10},
+                height=300, margin={"t": 10, "b": 30, "l": 50, "r": 10},
                 paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
                 legend={"orientation": "h", "y": 1.08, "x": 0, "font": {"size": 10}},
                 xaxis={"gridcolor": "#EEF4FB", "tickfont": {"color": "#5A8EBB", "size": 10}},
@@ -304,8 +394,56 @@ def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
                 hovermode="x unified",
             )
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
         else:
             st.info("Price history unavailable.")
+
+        # Elliott Wave practitioner cards
+        st.markdown(
+            '<div style="font-size:0.72rem;font-weight:700;color:#071D35;text-transform:uppercase;'
+            'letter-spacing:0.08em;margin:0.75rem 0 0.4rem">Elliott Wave Practitioner Viewpoints</div>',
+            unsafe_allow_html=True,
+        )
+        ew1, ew2, ew3 = st.columns(3)
+        with ew1:
+            st.markdown(
+                '<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid #7c3aed;'
+                'border-radius:8px;padding:0.6rem 0.75rem">'
+                '<div style="font-size:0.63rem;font-weight:800;color:#7c3aed;letter-spacing:0.08em">EWF · Elliott Wave Forecast</div>'
+                '<div style="font-size:0.73rem;color:#071D35;font-weight:600;margin:0.2rem 0">Real-time Wave Counts</div>'
+                '<div style="font-size:0.72rem;color:#2B5A85;line-height:1.55">'
+                'Publishes intraday, daily, and weekly Elliott Wave counts with defined entry, stop, '
+                'and target levels. Uses 3-7-11 swing methodology and Fibonacci extensions for '
+                'projections. Invalidation levels clearly stated per count.</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        with ew2:
+            st.markdown(
+                '<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid #3A72A0;'
+                'border-radius:8px;padding:0.6rem 0.75rem">'
+                '<div style="font-size:0.63rem;font-weight:800;color:#3A72A0;letter-spacing:0.08em">EWI · Elliott Wave International</div>'
+                '<div style="font-size:0.73rem;color:#071D35;font-weight:600;margin:0.2rem 0">Grand Supercycle Analysis</div>'
+                '<div style="font-size:0.72rem;color:#2B5A85;line-height:1.55">'
+                'Prechter\'s team covers multi-decade Grand Supercycle degree counts. '
+                'Monthly Elliott Wave Theorist provides macro-socionomic context. '
+                'Short-term Financial Forecast covers near-term S&P 500 and bond market counts.</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        with ew3:
+            st.markdown(
+                '<div style="background:#ffffff;border:1px solid #D9E8F5;border-top:3px solid #E8A500;'
+                'border-radius:8px;padding:0.6rem 0.75rem">'
+                '<div style="font-size:0.63rem;font-weight:800;color:#E8A500;letter-spacing:0.08em">Tony Caldaro · Objective Elliott Wave</div>'
+                '<div style="font-size:0.73rem;color:#071D35;font-weight:600;margin:0.2rem 0">Objective Wave Methodology</div>'
+                '<div style="font-size:0.72rem;color:#2B5A85;line-height:1.55">'
+                'OEW methodology uses quantitative pivots and activity levels to identify wave transitions. '
+                'Removes subjectivity by requiring price confirmation before labelling waves. '
+                'Widely followed for S&P 500 and DJIA counts.</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
 
     # ── Tab 4: Financial Analysis ─────────────────────────────────────────────
     with tab_financial:
@@ -343,55 +481,144 @@ def _render_deep_dive(stock: StockProduct, prices: dict) -> None:
                     unsafe_allow_html=True,
                 )
 
-    # ── Tab 5: Performance ────────────────────────────────────────────────────
+        current_price = _safe_num(px_data.get("price"))
+        h52 = _safe_num(fund.get("52w_high"))
+        l52 = _safe_num(fund.get("52w_low"))
+        if current_price and h52 and l52 and h52 > l52:
+            st.markdown("<br>", unsafe_allow_html=True)
+            fh1, fh2 = st.columns(2)
+            pct_from_high = (current_price - h52) / h52 * 100
+            pct_from_low  = (current_price - l52) / l52 * 100
+            with fh1:
+                st.markdown(
+                    f'<div style="background:#FEF2F2;border:1px solid #FBCACA;border-radius:8px;padding:0.6rem 0.9rem">'
+                    f'<div style="font-size:0.65rem;color:#9B1515;font-weight:700;text-transform:uppercase">vs 52-week High</div>'
+                    f'<div style="font-size:1.1rem;font-weight:800;color:#E53535">{pct_from_high:+.2f}%</div>'
+                    f'<div style="font-size:0.65rem;color:#9B1515">High: {stock.currency} {h52:,.2f}</div>'
+                    f'</div>', unsafe_allow_html=True,
+                )
+            with fh2:
+                st.markdown(
+                    f'<div style="background:#EDFAF3;border:1px solid #A3E8C4;border-radius:8px;padding:0.6rem 0.9rem">'
+                    f'<div style="font-size:0.65rem;color:#149453;font-weight:700;text-transform:uppercase">vs 52-week Low</div>'
+                    f'<div style="font-size:1.1rem;font-weight:800;color:#149453">{pct_from_low:+.2f}%</div>'
+                    f'<div style="font-size:0.65rem;color:#149453">Low: {stock.currency} {l52:,.2f}</div>'
+                    f'</div>', unsafe_allow_html=True,
+                )
+
+    # ── Tab 5: Top Holdings ───────────────────────────────────────────────────
+    with tab_holdings:
+        with st.spinner("Loading holdings data…"):
+            holdings = _fetch_holdings(stock.ticker)
+        if holdings:
+            h_df = pd.DataFrame(holdings).head(12)
+            fig_h = go.Figure(go.Bar(
+                x=h_df["pct"],
+                y=h_df["symbol"],
+                customdata=h_df["name"],
+                orientation="h",
+                marker_color="#1AB868",
+                text=[f"{v:.1f}%" for v in h_df["pct"]],
+                textposition="outside",
+                textfont={"color": "#071D35", "size": 11},
+                hovertemplate="<b>%{customdata}</b> (%{y})<br>%{x:.2f}%<extra></extra>",
+            ))
+            fig_h.update_layout(
+                height=max(200, len(h_df) * 28),
+                margin={"t": 10, "b": 10, "l": 10, "r": 60},
+                paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+                xaxis={"visible": False},
+                yaxis={"color": "#2B5A85", "tickfont": {"size": 11, "color": "#2B5A85"}, "autorange": "reversed"},
+                showlegend=False,
+            )
+            st.plotly_chart(fig_h, use_container_width=True, config={"displayModeBar": False})
+            for row in holdings[:12]:
+                pct_bar = int(row["pct"] / max(h["pct"] for h in holdings) * 100) if holdings else 0
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.22rem">'
+                    f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:0.72rem;font-weight:700;'
+                    f'color:#071D35;min-width:55px">{row["symbol"]}</span>'
+                    f'<span style="flex:1;font-size:0.72rem;color:#5A8EBB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{row["name"]}</span>'
+                    f'<span style="font-size:0.72rem;font-weight:700;color:#1AB868;min-width:42px;text-align:right">{row["pct"]:.2f}%</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("Top holdings data not available for this instrument — typically available for ETFs and funds.")
+
+    # ── Tab 6: Performance Metrics ────────────────────────────────────────────
     with tab_performance:
         with st.spinner("Loading performance data…"):
             perf = _fetch_performance(stock.ticker)
 
-        periods = [("1M", "1 Month"), ("3M", "3 Months"), ("6M", "6 Months"),
-                   ("YTD", "Year to Date"), ("1Y", "1 Year"), ("5Y", "5 Years")]
+        def _perf_max(closes_data: dict) -> Optional[float]:
+            dates_list  = closes_data.get("dates", [])
+            prices_list = closes_data.get("prices", [])
+            if not dates_list or not prices_list:
+                return None
+            start = _safe_num(prices_list[0])
+            end   = _safe_num(prices_list[-1])
+            if start and end and start != 0:
+                return round((end - start) / start * 100, 2)
+            return None
+
+        all_time = _perf_max(perf)
+
+        periods = [
+            ("1M",  "1 Month"),
+            ("3M",  "3 Months"),
+            ("6M",  "6 Months"),
+            ("YTD", "Year to Date"),
+            ("1Y",  "1 Year"),
+            ("5Y",  "5 Years"),
+            ("_at", "All Time"),
+        ]
+        perf_vals = {**{k: perf.get(k) for k, _ in periods[:-1]}, "_at": all_time}
 
         perf_cols = st.columns(len(periods))
         for col, (key, label) in zip(perf_cols, periods):
-            v = _safe_num(perf.get(key))
-            color = "#149453" if v and v >= 0 else "#E53535"
+            v = _safe_num(perf_vals.get(key))
+            color   = "#149453" if v is not None and v >= 0 else ("#E53535" if v is not None else "#5A8EBB")
             val_str = f"{v:+.2f}%" if v is not None else "—"
             with col:
                 st.markdown(
                     f'<div style="background:#ffffff;border:1px solid #D9E8F5;border-radius:8px;'
-                    f'padding:0.6rem 0.4rem;text-align:center">'
-                    f'<div style="font-size:0.6rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">{label}</div>'
+                    f'padding:0.65rem 0.4rem;text-align:center">'
+                    f'<div style="font-size:0.58rem;color:#5A8EBB;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">{label}</div>'
                     f'<div style="font-size:1.1rem;font-weight:800;color:{color};margin:0.15rem 0">{val_str}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
 
-        current_price = _safe_num(prices.get(stock.ticker, {}).get("price"))
-        h52 = _safe_num(perf.get("52w_high") if False else _fetch_fundamentals.cache_clear() if False else None) or _safe_num(_fetch_fundamentals(stock.ticker).get("52w_high"))
-        l52 = _safe_num(_fetch_fundamentals(stock.ticker).get("52w_low"))
-        if current_price and h52 and l52 and h52 > l52:
-            pct_from_high = (current_price - h52) / h52 * 100
-            pct_from_low  = (current_price - l52) / l52 * 100
-            st.markdown("<br>", unsafe_allow_html=True)
-            c1, c2 = st.columns(2)
-            with c1:
-                st.markdown(
-                    f'<div style="background:#FEF2F2;border:1px solid #FBCACA;border-radius:8px;padding:0.6rem 0.9rem">'
-                    f'<div style="font-size:0.65rem;color:#9B1515;font-weight:700;text-transform:uppercase">vs 52-week High</div>'
-                    f'<div style="font-size:1.1rem;font-weight:800;color:#E53535">{pct_from_high:+.2f}%</div>'
-                    f'<div style="font-size:0.65rem;color:#9B1515">High: ${h52:,.2f}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-            with c2:
-                st.markdown(
-                    f'<div style="background:#EDFAF3;border:1px solid #A3E8C4;border-radius:8px;padding:0.6rem 0.9rem">'
-                    f'<div style="font-size:0.65rem;color:#149453;font-weight:700;text-transform:uppercase">vs 52-week Low</div>'
-                    f'<div style="font-size:1.1rem;font-weight:800;color:#149453">{pct_from_low:+.2f}%</div>'
-                    f'<div style="font-size:0.65rem;color:#149453">Low: ${l52:,.2f}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
+        # Sparkline for selected period
+        if perf.get("dates") and perf.get("prices"):
+            st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+            _TF2 = {"1M": 21, "3M": 63, "6M": 126, "1Y": 252, "5Y": 1260, "Max": None}
+            tf2 = st.radio("Chart period", list(_TF2.keys()), index=3, horizontal=True,
+                           key=f"sw_perf_tf_{stock.ticker}")
+            n2 = _TF2[tf2]
+            pd2 = perf["dates"][-n2:]  if n2 else perf["dates"]
+            pp2 = perf["prices"][-n2:] if n2 else perf["prices"]
+            lc2 = "#1AB868"
+            vc2 = [p for p in pp2 if p is not None]
+            if len(vc2) >= 2 and vc2[-1] < vc2[0]:
+                lc2 = "#E53535"
+            fig_p = go.Figure(go.Scatter(
+                x=pd2, y=pp2, mode="lines",
+                line={"color": lc2, "width": 2},
+                fill="tozeroy",
+                fillcolor=f"rgba({'26,184,104' if lc2 == '#1AB868' else '229,53,53'},0.07)",
+                hovertemplate="%{x}<br>%{y:,.2f}<extra></extra>",
+            ))
+            fig_p.update_layout(
+                height=180, margin={"t": 5, "b": 5, "l": 0, "r": 0},
+                paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+                xaxis={"visible": False},
+                yaxis={"color": "#2B5A85", "gridcolor": "#EEF4FB", "tickformat": ",.2f",
+                       "tickfont": {"color": "#2B5A85", "size": 10}},
+                showlegend=False,
+            )
+            st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False})
 
 
 def render() -> None:

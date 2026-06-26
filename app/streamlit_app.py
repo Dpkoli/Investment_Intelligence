@@ -1551,8 +1551,6 @@ def render_hub() -> None:
     # ── Market Snapshot hero ──────────────────────────────────────────────────
     if "snap_open" not in st.session_state:
         st.session_state["snap_open"] = None
-    if "snap_edit" not in st.session_state:
-        st.session_state["snap_edit"] = False
     if "wi_open" not in st.session_state:
         st.session_state["wi_open"] = None
     import streamlit.components.v1 as components
@@ -1596,9 +1594,6 @@ def render_hub() -> None:
     snap_favs = st.session_state["snap_favs"]
 
     # ── Card click channel (hidden via CSS) ───────────────────────────────────
-    # Clear the channel BEFORE the widget renders on the post-click rerun.
-    # Streamlit raises StreamlitAPIException if you set a widget key after
-    # the widget has already been rendered in the same run, so we use a flag.
     if st.session_state.pop("_snap_click_clear", False):
         st.session_state.pop("snap_click_ch", None)
 
@@ -1609,50 +1604,21 @@ def render_hub() -> None:
     if _click_raw and _click_raw in _HUB_ALL_TICKERS:
         _prev_open = st.session_state.get("snap_open")
         st.session_state["snap_open"] = None if _prev_open == _click_raw else _click_raw
-        st.session_state["_snap_click_clear"] = True  # cleared before widget next run
+        st.session_state["_snap_click_clear"] = True
         st.rerun()
 
     snap_open   = st.session_state["snap_open"]
     snap_prices = _hub_prices(tuple(snap_favs))
 
-    # Section label + edit toggle
-    sh1, sh2 = st.columns([9, 1])
-    with sh1:
-        st.markdown(
-            '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;'
-            'color:#5A8EBB;margin-bottom:0.3rem;text-transform:uppercase">Market Snapshot</p>',
-            unsafe_allow_html=True,
-        )
-    with sh2:
-        if st.button("Edit" if not st.session_state["snap_edit"] else "Done",
-                     key="snap_edit_toggle", use_container_width=True):
-            st.session_state["snap_edit"] = not st.session_state["snap_edit"]
-            st.rerun()
+    # ── Section label ─────────────────────────────────────────────────────────
+    st.markdown(
+        '<p style="font-size:0.68rem;font-weight:800;letter-spacing:0.14em;'
+        'color:#5A8EBB;margin-bottom:0.3rem;text-transform:uppercase">Market Snapshot</p>',
+        unsafe_allow_html=True,
+    )
 
-    # ── Edit panel ────────────────────────────────────────────────────────────
-    # Auto-open edit panel when no instruments are selected yet
-    if not snap_favs and not st.session_state["snap_edit"]:
-        st.session_state["snap_edit"] = True
-
-    if st.session_state["snap_edit"]:
-        if not snap_favs:
-            st.markdown(
-                '<div style="background:#EEF4FB;border:1px solid #D9E8F5;border-left:3px solid #1AB868;'
-                'border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:0.5rem">'
-                '<div style="font-size:0.8rem;font-weight:700;color:#071D35;margin-bottom:0.15rem">'
-                'Personalise your Market Snapshot</div>'
-                '<div style="font-size:0.74rem;color:#5A8EBB;line-height:1.5">'
-                'Search for up to 6 instruments below — equities, ETFs, crypto, or commodities. '
-                'Your selections persist across sessions via browser storage.</div>'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                '<div style="font-size:0.67rem;color:#5A8EBB;font-weight:600;margin-bottom:0.25rem">'
-                'Click to remove  ·  Max 6 instruments</div>',
-                unsafe_allow_html=True,
-            )
+    # ── Always-visible instrument chips (click to remove) ─────────────────────
+    if snap_favs:
         rm_cols = st.columns(min(6, max(1, len(snap_favs))))
         for ci, tick in enumerate(snap_favs):
             with rm_cols[ci]:
@@ -1663,39 +1629,34 @@ def render_hub() -> None:
                         st.session_state["snap_open"] = None
                     st.rerun()
 
-        if len(snap_favs) < 6:
-            st.markdown(
-                '<div style="font-size:0.67rem;color:#5A8EBB;font-weight:600;'
-                'margin:0.4rem 0 0.2rem">Add instrument</div>',
-                unsafe_allow_html=True,
-            )
-            # Build autocomplete items from all tickers not already in favs
-            import json as _json
-            _snap_ac_items = _json.dumps([
-                {
-                    "l": f"{k} — {v['name']}",
-                    "v": k,
-                    "b": v.get("row", "equity").replace("_", " ").title(),
-                    "s": f"{k.lower()} {v['name'].lower()} {v.get('row','').replace('_',' ').lower()}",
-                }
-                for k, v in _HUB_ALL_TICKERS.items()
-                if k not in snap_favs
-            ])
-            _SNAP_AC_PH = "Ticker or name — e.g. BTC, NVDA, Gold…"
-            srch = st.text_input(
-                "Search", key="snap_add_srch",
-                placeholder=_SNAP_AC_PH,
-                label_visibility="collapsed",
-            )
-            # Auto-add when autocomplete selection sets value to a known ticker
-            if srch and srch in _HUB_ALL_TICKERS and srch not in snap_favs:
-                st.session_state["snap_favs"] = list(snap_favs) + [srch]
-                st.session_state["snap_add_srch"] = ""
-                st.session_state["snap_edit"] = False  # close edit panel immediately
-                st.rerun()
-            # Inject shared typeahead dropdown with keyboard navigation
-            from modules.shared import inject_autocomplete as _snap_inject_ac
-            _snap_inject_ac(_snap_ac_items, _SNAP_AC_PH)
+    # ── Always-visible search bar (hidden when 6 instruments already added) ───
+    if len(snap_favs) < 6:
+        import json as _json
+        _snap_ac_items = _json.dumps([
+            {
+                "l": f"{k} — {v['name']}",
+                "v": k,
+                "b": v.get("row", "equity").replace("_", " ").title(),
+                "s": f"{k.lower()} {v['name'].lower()} {v.get('row','').replace('_',' ').lower()}",
+            }
+            for k, v in _HUB_ALL_TICKERS.items()
+            if k not in snap_favs
+        ])
+        _SNAP_AC_PH = "Ticker or name — e.g. BTC, NVDA, Gold…"
+        # Use flag pattern to clear the input on next render (avoids StreamlitAPIException)
+        if st.session_state.pop("_snap_srch_clear", False):
+            st.session_state.pop("snap_add_srch", None)
+        srch = st.text_input(
+            "Search", key="snap_add_srch",
+            placeholder=_SNAP_AC_PH,
+            label_visibility="collapsed",
+        )
+        if srch and srch in _HUB_ALL_TICKERS and srch not in snap_favs:
+            st.session_state["snap_favs"] = list(snap_favs) + [srch]
+            st.session_state["_snap_srch_clear"] = True
+            st.rerun()
+        from modules.shared import inject_autocomplete as _snap_inject_ac
+        _snap_inject_ac(_snap_ac_items, _SNAP_AC_PH)
 
     st.markdown('<div style="height:0.15rem"></div>', unsafe_allow_html=True)
 
@@ -1979,13 +1940,13 @@ def render_hub() -> None:
             chg_color = "#149453" if chg >= 0 else "#E53535"
             chg_arrow = "▲" if chg >= 0 else "▼"
             chg_html  = (
-                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.72rem;'
-                f'font-weight:600;color:{chg_color};margin-top:0.1rem">'
-                f'{chg_arrow} {abs(chg):.2f}%</div>'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.73rem;'
+                f'font-weight:600;color:{chg_color};margin-top:0.08rem">'
+                f'{chg_arrow}{abs(chg):.2f}%</div>'
             )
             border_top = f"{'3px' if is_open else '2px'} solid {chg_color}"
         else:
-            chg_html   = '<div style="color:#5A8EBB;font-size:0.72rem;margin-top:0.1rem">—</div>'
+            chg_html   = '<div style="color:#5A8EBB;font-size:0.73rem;margin-top:0.08rem">—</div>'
             border_top = "2px solid #D9E8F5"
 
         bg = "#EDFAF3" if is_open else "#ffffff"
