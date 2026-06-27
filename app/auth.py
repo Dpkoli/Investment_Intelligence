@@ -150,47 +150,12 @@ def _handle_oauth_callback() -> bool:
 # Brand SVG icons (inline, no external dependencies)
 # ─────────────────────────────────────────────────────────────────────────────
 
-_GOOGLE_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" '
-    'style="display:inline-block;vertical-align:middle;flex-shrink:0">'
-    '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37'
-    '-1.04 2.53-2.21 3.31v2.77h3.57C21.36 18.42 22.56 15.6 22.56 12.25z"/>'
-    '<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06'
-    '-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>'
-    '<path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07'
-    'H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>'
-    '<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97'
-    ' 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>'
-    '</svg>'
-)
-
-_GITHUB_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" '
-    'fill="#24292e" style="display:inline-block;vertical-align:middle;flex-shrink:0">'
-    '<path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261'
-    '.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333'
-    '-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834'
-    ' 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467'
-    '-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322'
-    ' 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552'
-    ' 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221'
-    ' 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694'
-    '.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>'
-    '</svg>'
-)
-
 _AUTH_CSS = """<style>
 /* ── Auth page page-level reset ─────────────────────────────────────── */
 .iw-auth-wrap {
     max-width: 480px;
     margin: 0 auto;
     padding-bottom: 2rem;
-}
-/* Social buttons */
-.iw-social-row {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
 }
 /* Divider between social and email */
 .iw-or-divider {
@@ -207,35 +172,6 @@ _AUTH_CSS = """<style>
     flex: 1;
     height: 1px;
     background: #D9E8F5;
-}
-/* ── OAuth redirect panel ────────────────────────────────────────────── */
-.iw-oauth-panel {
-    background: #F8FAFD;
-    border: 1.5px solid #D9E8F5;
-    border-top: 3px solid #1AB868;
-    border-radius: 10px;
-    padding: 1.2rem 1.4rem 1rem;
-    margin-bottom: 1rem;
-    text-align: center;
-}
-.iw-oauth-panel-title {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: #071D35;
-    margin-bottom: 0.3rem;
-}
-.iw-oauth-panel-sub {
-    font-size: 0.78rem;
-    color: #5A8EBB;
-    margin-bottom: 1rem;
-}
-/* Social icon+label display rows */
-.iw-social-icon-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 0.3rem;
 }
 /* ── Superadmin: hide social channel inputs ─────────────────────────── */
 [data-testid="stTextInput"]:has(input[placeholder^="iw-auth-social-"]) {
@@ -265,27 +201,17 @@ _AUTH_CSS = """<style>
 
 
 def _render_social_buttons() -> None:
-    """Render Google + GitHub OAuth buttons.
-
-    Each button calls Supabase for a real OAuth URL and stores it in session
-    state as ("provider", url).  A link_button is then shown to send the user
-    to their chosen provider to complete the sign-in.
-    """
-    # If we already have a pending OAuth URL show the redirect panel instead
+    """Render Google + GitHub OAuth buttons using native st.button with icons."""
+    # If a provider has already been selected show the redirect panel
     if "_oauth_redirect" in st.session_state:
         provider, oauth_url = st.session_state["_oauth_redirect"]
-        icon_svg  = _GOOGLE_SVG if provider == "google" else _GITHUB_SVG
-        label     = "Google"    if provider == "google" else "GitHub"
+        icon  = "🌐" if provider == "google" else "💻"
+        label = "Google" if provider == "google" else "GitHub"
 
-        st.markdown(
-            f'<div class="iw-oauth-panel">'
-            f'<div class="iw-social-icon-row">{icon_svg}'
-            f'<span class="iw-oauth-panel-title">Continue with {label}</span></div>'
-            f'<p class="iw-oauth-panel-sub">'
-            f'Click the button below to open the {label} sign-in page. '
-            f"After you sign in you'll be returned here automatically.</p>"
-            f'</div>',
-            unsafe_allow_html=True,
+        st.info(
+            f"Click the button below to open the {label} sign-in page. "
+            f"You'll be returned here automatically after signing in.",
+            icon=icon,
         )
         st.link_button(
             f"Open {label} sign-in →",
@@ -299,17 +225,11 @@ def _render_social_buttons() -> None:
             st.rerun()
         return
 
-    # Normal state: show Google + GitHub buttons side by side
+    # Normal state: Google + GitHub side by side, single button each
     col_g, col_h = st.columns(2)
 
     with col_g:
-        st.markdown(
-            f'<div class="iw-social-icon-row">{_GOOGLE_SVG}'
-            f'<span style="font-size:0.84rem;font-weight:600;color:#071D35">'
-            f'Continue with Google</span></div>',
-            unsafe_allow_html=True,
-        )
-        if st.button("Continue with Google", key="_oauth_google",
+        if st.button("Continue with Google", icon="🌐", key="_oauth_google",
                      use_container_width=True):
             url = _get_oauth_url("google")
             if url:
@@ -317,13 +237,7 @@ def _render_social_buttons() -> None:
                 st.rerun()
 
     with col_h:
-        st.markdown(
-            f'<div class="iw-social-icon-row">{_GITHUB_SVG}'
-            f'<span style="font-size:0.84rem;font-weight:600;color:#071D35">'
-            f'Continue with GitHub</span></div>',
-            unsafe_allow_html=True,
-        )
-        if st.button("Continue with GitHub", key="_oauth_github",
+        if st.button("Continue with GitHub", icon="💻", key="_oauth_github",
                      use_container_width=True):
             url = _get_oauth_url("github")
             if url:
@@ -446,7 +360,7 @@ def render_auth_page() -> None:
         'Invest<span style="font-weight:300;color:#1AB868">Wise</span></span>'
         '</div>'
         '<h2 style="color:#071D35;font-weight:800;font-size:1.45rem;margin:0 0 0.35rem">'
-        'Welcome back</h2>'
+        'Welcome</h2>'
         '<p style="color:#5A8EBB;font-size:0.86rem;margin:0">'
         'Intelligence Hub &amp; News Feed are always free. '
         'All other modules require a free account.</p>'
