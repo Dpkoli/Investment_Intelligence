@@ -8,7 +8,7 @@ _FREE_MODULES   = {"Intelligence Hub", "News Feed"}
 _AUTH_PAGE_KEY  = "_iw_show_auth_page"
 _SA_PARAM       = "iw-sa-admin-portal-2025"   # secret URL ?_portal=<value>
 _SA_SECRET      = "iw-internal-sa-key-9x7z"   # superadmin password
-_REDIRECT_URL   = "https://st-wise.streamlit.app"
+_REDIRECT_URL   = "https://invest-wise.streamlit.app"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -48,6 +48,35 @@ def request_auth_page() -> None:
 
 def wants_auth_page() -> bool:
     return bool(st.session_state.get(_AUTH_PAGE_KEY)) and not check_auth()
+
+
+def handle_startup_auth() -> bool:
+    """Call this at the very top of main(), before any rendering.
+
+    Handles two startup cases for anonymous users:
+      • ?error=  — OAuth provider reported an error; surface it and clear params.
+      • ?code=   — PKCE callback from Google/GitHub; exchange for a session and
+                   log the user in so they land directly on the dashboard.
+
+    Returns True when a Streamlit rerun is required (session was established).
+    Already-authenticated sessions are a no-op.
+    """
+    if check_auth():
+        return False
+
+    # OAuth provider sent back an error (e.g. user cancelled)
+    error = st.query_params.get("error")
+    if error:
+        desc = st.query_params.get("error_description", error)
+        st.error(f"Sign-in failed: {desc}", icon="⚠️")
+        try:
+            st.query_params.clear()
+        except Exception:
+            pass
+        return False
+
+    # PKCE code exchange — this is the critical path for new OAuth sign-ins
+    return _handle_oauth_callback()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -392,10 +421,6 @@ def render_auth_page() -> None:
     if _is_superadmin_portal():
         _render_superadmin_panel()
         return
-
-    # ── Handle OAuth callback (PKCE ?code= redirect from provider) ────────────
-    if _handle_oauth_callback():
-        st.rerun()
 
     # ── Back navigation ───────────────────────────────────────────────────────
     if st.button("← Back", key="_auth_back_btn"):

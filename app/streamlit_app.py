@@ -60,7 +60,7 @@ import modules.technical_analysis.ui   as _mod_ta
 import modules.stocks_world.ui         as _mod_stocks
 
 from app.auth import (
-    check_auth, is_free_module, logout,
+    check_auth, handle_startup_auth, is_free_module, logout,
     render_auth_gate, render_auth_page,
     wants_auth_page, request_auth_page,
 )
@@ -2209,6 +2209,13 @@ def render_hub() -> None:
 # ═════════════════════════════════════════════════════════════════════════════
 
 def main() -> None:
+    # Handle OAuth callback (?code=) and error params BEFORE any rendering.
+    # This runs on every page load so the PKCE redirect from Google/GitHub is
+    # caught even when the user lands on a fresh Streamlit session with no
+    # _AUTH_PAGE_KEY set in session_state.
+    if handle_startup_auth():
+        st.rerun()
+
     nav = render_sidebar()
 
     # ── Mobile swipe-to-open / swipe-to-close sidebar ─────────────────────────
