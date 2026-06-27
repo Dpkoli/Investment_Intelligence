@@ -380,7 +380,6 @@ st.markdown(
     /* ── Channel inputs (tables, snaps, auth social): visually hidden but focusable ── */
     /* display:none prevents focus(), breaking synthetic React events on these inputs  */
     [data-testid="stTextInput"]:has(input[placeholder^="iw-tbl-"]),
-    [data-testid="stTextInput"]:has(input[placeholder^="iw-auth-social-"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-ls-v1"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-snap-click-v1"]),
     [data-testid="stTextInput"]:has(input[placeholder="iw-wi-click-v1"]) {
