@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import streamlit as st
-from supabase import create_client, Client
 
 _FREE_MODULES   = {"Intelligence Hub", "News Feed"}
 _AUTH_PAGE_KEY  = "_iw_show_auth_page"
@@ -55,9 +54,10 @@ def wants_auth_page() -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @st.cache_resource(show_spinner=False)
-def _supabase() -> "Client | None":
-    """Return a cached Supabase client, or None if secrets are not configured."""
+def _supabase():
+    """Return a cached Supabase client, or None if unavailable."""
     try:
+        from supabase import create_client  # lazy import — keeps startup crash-free
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
         return create_client(url, key)
