@@ -267,20 +267,32 @@ _SOCIAL_STYLE_JS = """<script>
 
 def _render_social_buttons() -> None:
     """Render Google + GitHub OAuth buttons with branded SVG logos."""
-    # ── Direct browser navigation when a provider URL is ready ───────────────
+    # ── Open provider in a new tab as soon as URL is ready ───────────────────
     if "_iw_oauth_nav" in st.session_state:
         nav_url = st.session_state.pop("_iw_oauth_nav")
-        redirect_js = f"""<script>
+        # Streamlit component iframes allow popups but not top-level navigation.
+        # window.open is the only reliable way to leave the page from here.
+        open_js = f"""<script>
 (function(){{
   var url = {json.dumps(nav_url)};
-  try {{ window.top.location.href = url; }} catch(e) {{ window.open(url, '_self'); }}
+  var w = window.open(url, '_blank');
+  if (!w) {{
+    // popup blocked — surface the fallback link
+    document.getElementById('fb').style.display = 'block';
+  }}
 }})();
 </script>
-<p style="font-family:sans-serif;font-size:0.85rem;color:#5A8EBB;margin:0">
-  Redirecting you to the sign-in page…
-  <a href="{nav_url}" style="color:#1AB868">Click here if not redirected</a>
+<p id="fb" style="display:none;font-family:sans-serif;font-size:0.85rem;
+   color:#5A8EBB;margin:4px 0">
+  Popup blocked —
+  <a href="{nav_url}" target="_blank" style="color:#1AB868;font-weight:600">
+    click here to open the sign-in page
+  </a>
 </p>"""
-        components.html(redirect_js, height=40, scrolling=False)
+        components.html(open_js, height=30, scrolling=False)
+        st.caption("A sign-in tab has opened. Complete sign-in there, then return here.")
+        if st.button("← Cancel", key="_oauth_nav_cancel", use_container_width=False):
+            st.rerun()
         return
 
     # ── Native st.buttons — reliable Streamlit click handling ────────────────
