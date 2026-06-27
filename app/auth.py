@@ -138,23 +138,9 @@ def _get_oauth_url(provider: str) -> str | None:
                 "skip_browser_redirect": True,
             },
         })
-        url = getattr(resp, "url", None)
-        if not url:
-            st.error(
-                f"Supabase returned no URL for {provider}. "
-                f"Check that the {provider.title()} provider is **enabled** in "
-                f"Supabase → Authentication → Providers, and that its Client ID "
-                f"and Client Secret are filled in.",
-                icon="⚠️",
-            )
-        return url
+        return getattr(resp, "url", None)
     except Exception as exc:
-        st.error(
-            f"Could not start {provider} sign-in: {exc}\n\n"
-            f"Verify the {provider.title()} provider is enabled in "
-            f"Supabase → Authentication → Providers.",
-            icon="⚠️",
-        )
+        st.error(f"Could not start {provider} sign-in: {exc}", icon="⚠️")
         return None
 
 
@@ -217,6 +203,17 @@ _AUTH_CSS = """<style>
     height: 1px;
     background: #D9E8F5;
 }
+/* ── Superadmin: hide social channel inputs ─────────────────────────── */
+[data-testid="stTextInput"]:has(input[placeholder^="iw-auth-social-"]) {
+    position: fixed !important;
+    left: -9999px !important;
+    top:  -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
 /* ── Superadmin badge ───────────────────────────────────────────────── */
 .iw-sa-badge {
     background: #071D35;
@@ -233,54 +230,58 @@ _AUTH_CSS = """<style>
 </style>"""
 
 
-# JS injected into a zero-height iframe to visually restyle the native
-# Streamlit buttons after each render (MutationObserver keeps them branded).
-_SOCIAL_STYLE_JS = """<script>
-(function(){
-  var GOOGLE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'/%3E%3Cpath fill='%23FBBC05' d='M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'/%3E%3C/svg%3E";
-  var GITHUB  = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z'/%3E%3C/svg%3E";
-
-  function applyBrandStyle(btn) {
-    var txt = btn.textContent.trim();
-    if (txt === 'Continue with Google') {
-      btn.style.setProperty('background', '#ffffff', 'important');
-      btn.style.setProperty('border', '1.5px solid #dadce0', 'important');
-      btn.style.setProperty('color', '#3c4043', 'important');
-      btn.style.setProperty('background-image', 'url("' + GOOGLE + '")', 'important');
-      btn.style.setProperty('background-repeat', 'no-repeat', 'important');
-      btn.style.setProperty('background-position', '14px center', 'important');
-      btn.style.setProperty('background-size', '18px 18px', 'important');
-      btn.style.setProperty('padding-left', '44px', 'important');
-      btn.style.setProperty('text-align', 'left', 'important');
-      btn.style.setProperty('min-height', '42px', 'important');
-      var p = btn.querySelector('p,span');
-      if (p) p.style.setProperty('color', '#3c4043', 'important');
-    } else if (txt === 'Continue with GitHub') {
-      btn.style.setProperty('background', '#24292e', 'important');
-      btn.style.setProperty('border', '1.5px solid #24292e', 'important');
-      btn.style.setProperty('color', '#ffffff', 'important');
-      btn.style.setProperty('background-image', 'url("' + GITHUB + '")', 'important');
-      btn.style.setProperty('background-repeat', 'no-repeat', 'important');
-      btn.style.setProperty('background-position', '14px center', 'important');
-      btn.style.setProperty('background-size', '18px 18px', 'important');
-      btn.style.setProperty('padding-left', '44px', 'important');
-      btn.style.setProperty('text-align', 'left', 'important');
-      btn.style.setProperty('min-height', '42px', 'important');
-      var p = btn.querySelector('p,span');
-      if (p) p.style.setProperty('color', '#ffffff', 'important');
-    }
+_SOCIAL_BTN_HTML = """
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .btn-row { display: flex; gap: 10px; width: 100%; }
+  .oauth-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    gap: 10px; padding: 10px 14px; border-radius: 8px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    border: none; transition: opacity 0.15s, box-shadow 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  .oauth-btn:hover { opacity: 0.88; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+  .oauth-btn:active { opacity: 0.75; }
+  .btn-google { background: #ffffff; color: #3c4043; border: 1.5px solid #dadce0; }
+  .btn-github { background: #24292e; color: #ffffff; border: 1.5px solid #24292e; }
+  svg { flex-shrink: 0; }
+</style>
+<div class="btn-row">
+  <button class="oauth-btn btn-google" onclick="sendClick('google')">
+    <svg width="18" height="18" viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path fill="none" d="M0 0h48v48H0z"/>
+    </svg>
+    Continue with Google
+  </button>
+  <button class="oauth-btn btn-github" onclick="sendClick('github')">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+    </svg>
+    Continue with GitHub
+  </button>
+</div>
+<script>
+function sendClick(provider) {
+  var doc = window.parent.document;
+  var inputs = doc.querySelectorAll('input[placeholder^="iw-auth-social-"]');
+  if (!inputs.length) { return; }
+  var inp = inputs[0];
+  var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+  nativeSetter.call(inp, provider);
+  inp.dispatchEvent(new Event('input',  { bubbles: true }));
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+  inp.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', keyCode: 13 }));
+}
+</script>
+"""
 
-  function run() {
-    window.parent.document.querySelectorAll('button').forEach(applyBrandStyle);
-  }
-
-  run();
-  new MutationObserver(run).observe(
-    window.parent.document.body, { childList: true, subtree: true }
-  );
-})();
-</script>"""
+_SOCIAL_BTN_HEIGHT = 60   # px — enough for one button row
 
 
 def _render_social_buttons() -> None:
@@ -308,25 +309,28 @@ def _render_social_buttons() -> None:
             st.rerun()
         return
 
-    # ── Native Streamlit buttons (reliable click handling) ────────────────────
-    col_g, col_h = st.columns(2)
-    with col_g:
-        if st.button("Continue with Google", key="_oauth_google",
-                     use_container_width=True):
-            url = _get_oauth_url("google")
-            if url:
-                st.session_state["_oauth_redirect"] = ("google", url)
-                st.rerun()
-    with col_h:
-        if st.button("Continue with GitHub", key="_oauth_github",
-                     use_container_width=True):
-            url = _get_oauth_url("github")
-            if url:
-                st.session_state["_oauth_redirect"] = ("github", url)
-                st.rerun()
+    # ── Hidden text_input: receives provider name from iframe JS ──────────────
+    # The placeholder prefix "iw-auth-social-" is used by the JS selector;
+    # CSS in _AUTH_CSS visually hides this input off-screen.
+    clicked = st.text_input(
+        "oauth_channel",
+        value="",
+        placeholder="iw-auth-social-channel",
+        key="_oauth_channel_input",
+        label_visibility="collapsed",
+    )
 
-    # ── Style injection: apply branded look via iframe JS ─────────────────────
-    components.html(_SOCIAL_STYLE_JS, height=0, scrolling=False)
+    # ── Branded iframe buttons ────────────────────────────────────────────────
+    components.html(_SOCIAL_BTN_HTML, height=_SOCIAL_BTN_HEIGHT, scrolling=False)
+
+    # ── React to a click that arrived this render cycle ───────────────────────
+    if clicked in ("google", "github"):
+        # Clear the channel so the next render doesn't re-fire
+        st.session_state["_oauth_channel_input"] = ""
+        url = _get_oauth_url(clicked)
+        if url:
+            st.session_state["_oauth_redirect"] = (clicked, url)
+            st.rerun()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
