@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import streamlit as st
+from supabase import create_client, Client
 
 _FREE_MODULES   = {"Intelligence Hub", "News Feed"}
 _AUTH_PAGE_KEY  = "_iw_show_auth_page"
 _SA_PARAM       = "iw-sa-admin-portal-2025"   # secret URL ?_portal=<value>
 _SA_SECRET      = "iw-internal-sa-key-9x7z"   # superadmin password
+_REDIRECT_URL   = "https://st-wise.streamlit.app"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -30,7 +32,8 @@ def mock_login(email: str, display_name: str = "", role: str = "user") -> None:
 
 
 def logout() -> None:
-    for k in ("is_authenticated", "user_email", "user_name", "user_role", _AUTH_PAGE_KEY):
+    for k in ("is_authenticated", "user_email", "user_name", "user_role",
+              _AUTH_PAGE_KEY, "_oauth_redirect"):
         st.session_state.pop(k, None)
 
 
@@ -45,6 +48,77 @@ def request_auth_page() -> None:
 
 def wants_auth_page() -> bool:
     return bool(st.session_state.get(_AUTH_PAGE_KEY)) and not check_auth()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Supabase client
+# ─────────────────────────────────────────────────────────────────────────────
+
+@st.cache_resource(show_spinner=False)
+def _supabase() -> "Client | None":
+    """Return a cached Supabase client, or None if secrets are not configured."""
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+        return create_client(url, key)
+    except Exception:
+        return None
+
+
+def _get_oauth_url(provider: str) -> str | None:
+    """Ask Supabase for an OAuth redirect URL without auto-opening a browser."""
+    sb = _supabase()
+    if sb is None:
+        st.error(
+            "Supabase is not configured. Add SUPABASE_URL and SUPABASE_KEY "
+            "to your Streamlit secrets.",
+            icon="⚠️",
+        )
+        return None
+    try:
+        resp = sb.auth.sign_in_with_oauth({
+            "provider": provider,
+            "options": {
+                "redirect_to": _REDIRECT_URL,
+                "skip_browser_redirect": True,
+            },
+        })
+        return getattr(resp, "url", None)
+    except Exception as exc:
+        st.error(f"Could not start {provider} sign-in: {exc}", icon="⚠️")
+        return None
+
+
+def _handle_oauth_callback() -> bool:
+    """Exchange a PKCE ?code= param for a real Supabase session.
+
+    Returns True when the user has been logged in so the caller can rerun.
+    """
+    code = st.query_params.get("code")
+    if not code:
+        return False
+    sb = _supabase()
+    if sb is None:
+        return False
+    try:
+        result = sb.auth.exchange_code_for_session({"auth_code": code})
+        user = getattr(result, "user", None)
+        if user:
+            meta = getattr(user, "user_metadata", {}) or {}
+            name = (
+                meta.get("full_name")
+                or meta.get("name")
+                or (user.email or "").split("@")[0].title()
+            )
+            mock_login(email=user.email or "", display_name=name)
+            try:
+                st.query_params.clear()
+            except Exception:
+                pass
+            return True
+    except Exception as exc:
+        st.error(f"Sign-in completion failed: {exc}", icon="⚠️")
+    return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -93,29 +167,6 @@ _AUTH_CSS = """<style>
     gap: 0.75rem;
     margin-bottom: 0.5rem;
 }
-.iw-social-btn {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.55rem;
-    padding: 0.62rem 0.9rem;
-    background: #ffffff;
-    border: 1.5px solid #D9E8F5;
-    border-radius: 8px;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    font-size: 0.84rem;
-    font-weight: 600;
-    color: #071D35;
-    cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    white-space: nowrap;
-}
-.iw-social-btn:hover {
-    border-color: #1AB868;
-    box-shadow: 0 0 0 3px rgba(26,184,104,0.10);
-}
-.iw-social-btn:active { transform: scale(0.98); }
 /* Divider between social and email */
 .iw-or-divider {
     display: flex;
@@ -131,6 +182,35 @@ _AUTH_CSS = """<style>
     flex: 1;
     height: 1px;
     background: #D9E8F5;
+}
+/* ── OAuth redirect panel ────────────────────────────────────────────── */
+.iw-oauth-panel {
+    background: #F8FAFD;
+    border: 1.5px solid #D9E8F5;
+    border-top: 3px solid #1AB868;
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+.iw-oauth-panel-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #071D35;
+    margin-bottom: 0.3rem;
+}
+.iw-oauth-panel-sub {
+    font-size: 0.78rem;
+    color: #5A8EBB;
+    margin-bottom: 1rem;
+}
+/* Social icon+label display rows */
+.iw-social-icon-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
 }
 /* ── Superadmin: hide social channel inputs ─────────────────────────── */
 [data-testid="stTextInput"]:has(input[placeholder^="iw-auth-social-"]) {
@@ -158,50 +238,72 @@ _AUTH_CSS = """<style>
 }
 </style>"""
 
-_SOCIAL_JS = """<script>
-(function(){
-  if(window._iwAuthSocialReady)return;
-  window._iwAuthSocialReady=true;
-  window.iwAuthSocial=function(ph,provider){
-    var inp=document.querySelector('input[placeholder="'+ph+'"]');
-    if(!inp)return;
-    var s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
-    s.call(inp,provider);
-    inp.dispatchEvent(new Event('input',{bubbles:true}));
-    inp.dispatchEvent(new Event('change',{bubbles:true}));
-    setTimeout(function(){
-      inp.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:13,bubbles:true}));
-    },30);
-  };
-})();
-</script>"""
 
+def _render_social_buttons() -> None:
+    """Render Google + GitHub OAuth buttons.
 
-def _render_social_buttons(tab_prefix: str) -> str | None:
-    """Render Google + GitHub brand-icon buttons; return 'google'/'github' or None."""
-    ph = f"iw-auth-social-{tab_prefix}"
-    raw: str = st.text_input(
-        "_s", key=f"_iw_auth_social_{tab_prefix}",
-        placeholder=ph, label_visibility="collapsed",
-    )
-    # Clear value after reading so it doesn't persist across reruns
-    if raw:
-        st.session_state[f"_iw_auth_social_{tab_prefix}"] = ""
+    Each button calls Supabase for a real OAuth URL and stores it in session
+    state as ("provider", url).  A link_button is then shown to send the user
+    to their chosen provider to complete the sign-in.
+    """
+    # If we already have a pending OAuth URL show the redirect panel instead
+    if "_oauth_redirect" in st.session_state:
+        provider, oauth_url = st.session_state["_oauth_redirect"]
+        icon_svg  = _GOOGLE_SVG if provider == "google" else _GITHUB_SVG
+        label     = "Google"    if provider == "google" else "GitHub"
 
-    st.markdown(
-        f'{_SOCIAL_JS}'
-        f'<div class="iw-social-row">'
-        f'<button class="iw-social-btn" onclick="iwAuthSocial(\'{ph}\',\'google\')">'
-        f'  {_GOOGLE_SVG}&nbsp;Continue with Google'
-        f'</button>'
-        f'<button class="iw-social-btn" onclick="iwAuthSocial(\'{ph}\',\'github\')">'
-        f'  {_GITHUB_SVG}&nbsp;Continue with GitHub'
-        f'</button>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    provider = (raw or "").strip()
-    return provider if provider in ("google", "github") else None
+        st.markdown(
+            f'<div class="iw-oauth-panel">'
+            f'<div class="iw-social-icon-row">{icon_svg}'
+            f'<span class="iw-oauth-panel-title">Continue with {label}</span></div>'
+            f'<p class="iw-oauth-panel-sub">'
+            f'Click the button below to open the {label} sign-in page. '
+            f"After you sign in you'll be returned here automatically.</p>"
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        st.link_button(
+            f"Open {label} sign-in →",
+            url=oauth_url,
+            type="primary",
+            use_container_width=True,
+        )
+        if st.button("← Choose a different method", key="_oauth_back",
+                     use_container_width=True):
+            st.session_state.pop("_oauth_redirect", None)
+            st.rerun()
+        return
+
+    # Normal state: show Google + GitHub buttons side by side
+    col_g, col_h = st.columns(2)
+
+    with col_g:
+        st.markdown(
+            f'<div class="iw-social-icon-row">{_GOOGLE_SVG}'
+            f'<span style="font-size:0.84rem;font-weight:600;color:#071D35">'
+            f'Continue with Google</span></div>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Continue with Google", key="_oauth_google",
+                     use_container_width=True):
+            url = _get_oauth_url("google")
+            if url:
+                st.session_state["_oauth_redirect"] = ("google", url)
+                st.rerun()
+
+    with col_h:
+        st.markdown(
+            f'<div class="iw-social-icon-row">{_GITHUB_SVG}'
+            f'<span style="font-size:0.84rem;font-weight:600;color:#071D35">'
+            f'Continue with GitHub</span></div>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Continue with GitHub", key="_oauth_github",
+                     use_container_width=True):
+            url = _get_oauth_url("github")
+            if url:
+                st.session_state["_oauth_redirect"] = ("github", url)
+                st.rerun()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -293,9 +395,14 @@ def render_auth_page() -> None:
         _render_superadmin_panel()
         return
 
+    # ── Handle OAuth callback (PKCE ?code= redirect from provider) ────────────
+    if _handle_oauth_callback():
+        st.rerun()
+
     # ── Back navigation ───────────────────────────────────────────────────────
     if st.button("← Back", key="_auth_back_btn"):
         st.session_state.pop(_AUTH_PAGE_KEY, None)
+        st.session_state.pop("_oauth_redirect", None)
         st.rerun()
 
     # ── InvestWise branded header ─────────────────────────────────────────────
@@ -322,59 +429,57 @@ def render_auth_page() -> None:
         unsafe_allow_html=True,
     )
 
-    # ── Social buttons (above tabs, shared) ───────────────────────────────────
-    social_provider = _render_social_buttons("shared")
-    if social_provider == "google":
-        mock_login("user@gmail.com", "Google User")
-        st.rerun()
-    elif social_provider == "github":
-        mock_login("user@github.com", "GitHub User")
-        st.rerun()
+    # ── Social OAuth buttons ──────────────────────────────────────────────────
+    _render_social_buttons()
 
-    st.markdown(
-        '<div class="iw-or-divider">or continue with email</div>',
-        unsafe_allow_html=True,
-    )
+    # Hide the email section while a provider redirect is pending
+    if "_oauth_redirect" not in st.session_state:
+        st.markdown(
+            '<div class="iw-or-divider">or continue with email</div>',
+            unsafe_allow_html=True,
+        )
 
-    # ── Sign In / Sign Up tabs ────────────────────────────────────────────────
-    tab_in, tab_up = st.tabs(["Sign In", "Sign Up"])
+        # ── Sign In / Sign Up tabs ────────────────────────────────────────────
+        tab_in, tab_up = st.tabs(["Sign In", "Sign Up"])
 
-    with tab_in:
-        email_in = st.text_input(
-            "Email", placeholder="you@example.com", key="signin_email",
-        )
-        pw_in = st.text_input(
-            "Password", type="password", placeholder="••••••••", key="signin_pw",
-        )
-        if st.button("Sign In", type="primary", use_container_width=True, key="signin_btn"):
-            if email_in and pw_in:
-                mock_login(email_in)
-                st.success("Signed in! Loading your dashboard…")
-                st.rerun()
-            else:
-                st.error("Please enter your email and password.")
+        with tab_in:
+            email_in = st.text_input(
+                "Email", placeholder="you@example.com", key="signin_email",
+            )
+            pw_in = st.text_input(
+                "Password", type="password", placeholder="••••••••", key="signin_pw",
+            )
+            if st.button("Sign In", type="primary", use_container_width=True,
+                         key="signin_btn"):
+                if email_in and pw_in:
+                    mock_login(email_in)
+                    st.success("Signed in! Loading your dashboard…")
+                    st.rerun()
+                else:
+                    st.error("Please enter your email and password.")
 
-    with tab_up:
-        name_up  = st.text_input("Full Name", placeholder="Jane Smith", key="signup_name")
-        email_up = st.text_input("Email", placeholder="you@example.com", key="signup_email")
-        pw_up    = st.text_input(
-            "Password", type="password", placeholder="min. 8 characters", key="signup_pw",
-        )
-        pw_up2   = st.text_input(
-            "Confirm Password", type="password", placeholder="repeat password", key="signup_pw2",
-        )
-        if st.button(
-            "Create Account", type="primary", use_container_width=True, key="signup_btn",
-        ):
-            if not email_up or not pw_up:
-                st.error("Email and password are required.")
-            elif pw_up != pw_up2:
-                st.error("Passwords do not match.")
-            elif len(pw_up) < 8:
-                st.error("Password must be at least 8 characters.")
-            else:
-                mock_login(email_up, name_up or "")
-                st.success("Account created! Welcome to InvestWise.")
-                st.rerun()
+        with tab_up:
+            name_up  = st.text_input("Full Name", placeholder="Jane Smith", key="signup_name")
+            email_up = st.text_input("Email", placeholder="you@example.com", key="signup_email")
+            pw_up    = st.text_input(
+                "Password", type="password", placeholder="min. 8 characters", key="signup_pw",
+            )
+            pw_up2   = st.text_input(
+                "Confirm Password", type="password", placeholder="repeat password",
+                key="signup_pw2",
+            )
+            if st.button(
+                "Create Account", type="primary", use_container_width=True, key="signup_btn",
+            ):
+                if not email_up or not pw_up:
+                    st.error("Email and password are required.")
+                elif pw_up != pw_up2:
+                    st.error("Passwords do not match.")
+                elif len(pw_up) < 8:
+                    st.error("Password must be at least 8 characters.")
+                else:
+                    mock_login(email_up, name_up or "")
+                    st.success("Account created! Welcome to InvestWise.")
+                    st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)  # close iw-auth-wrap
