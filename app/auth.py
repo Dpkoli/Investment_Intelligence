@@ -1,6 +1,7 @@
 """Authentication page and gate logic for InvestWise."""
 from __future__ import annotations
 
+import json
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -33,7 +34,7 @@ def mock_login(email: str, display_name: str = "", role: str = "user") -> None:
 
 def logout() -> None:
     for k in ("is_authenticated", "user_email", "user_name", "user_role",
-              _AUTH_PAGE_KEY, "_oauth_redirect"):
+              _AUTH_PAGE_KEY, "_iw_oauth_nav"):
         st.session_state.pop(k, None)
 
 
@@ -239,7 +240,7 @@ _SOCIAL_STYLE_JS = """<script>
       btn.style.setProperty('padding-left', '44px', 'important');
       btn.style.setProperty('text-align', 'left', 'important');
       btn.style.setProperty('min-height', '42px', 'important');
-      var p = btn.querySelector('p,span'); if (p) p.style.setProperty('color','#3c4043','important');
+      btn.querySelectorAll('p,span,div').forEach(function(el){ el.style.setProperty('color','#3c4043','important'); });
     } else if (txt === 'Continue with GitHub') {
       btn.style.setProperty('background', '#24292e', 'important');
       btn.style.setProperty('border', '1.5px solid #24292e', 'important');
@@ -251,7 +252,7 @@ _SOCIAL_STYLE_JS = """<script>
       btn.style.setProperty('padding-left', '44px', 'important');
       btn.style.setProperty('text-align', 'left', 'important');
       btn.style.setProperty('min-height', '42px', 'important');
-      var p = btn.querySelector('p,span'); if (p) p.style.setProperty('color','#ffffff','important');
+      btn.querySelectorAll('p,span,div').forEach(function(el){ el.style.setProperty('color','#ffffff','important'); });
     }
   }
 
@@ -266,27 +267,20 @@ _SOCIAL_STYLE_JS = """<script>
 
 def _render_social_buttons() -> None:
     """Render Google + GitHub OAuth buttons with branded SVG logos."""
-    # ── Redirect panel: a provider was already chosen ─────────────────────────
-    if "_oauth_redirect" in st.session_state:
-        provider, oauth_url = st.session_state["_oauth_redirect"]
-        icon  = "🌐" if provider == "google" else "💻"
-        label = "Google" if provider == "google" else "GitHub"
-
-        st.info(
-            f"Click the button below to open the {label} sign-in page. "
-            f"You'll be returned here automatically after signing in.",
-            icon=icon,
-        )
-        st.link_button(
-            f"Open {label} sign-in →",
-            url=oauth_url,
-            type="primary",
-            use_container_width=True,
-        )
-        if st.button("← Choose a different method", key="_oauth_back",
-                     use_container_width=True):
-            st.session_state.pop("_oauth_redirect", None)
-            st.rerun()
+    # ── Direct browser navigation when a provider URL is ready ───────────────
+    if "_iw_oauth_nav" in st.session_state:
+        nav_url = st.session_state.pop("_iw_oauth_nav")
+        redirect_js = f"""<script>
+(function(){{
+  var url = {json.dumps(nav_url)};
+  try {{ window.top.location.href = url; }} catch(e) {{ window.open(url, '_self'); }}
+}})();
+</script>
+<p style="font-family:sans-serif;font-size:0.85rem;color:#5A8EBB;margin:0">
+  Redirecting you to the sign-in page…
+  <a href="{nav_url}" style="color:#1AB868">Click here if not redirected</a>
+</p>"""
+        components.html(redirect_js, height=40, scrolling=False)
         return
 
     # ── Native st.buttons — reliable Streamlit click handling ────────────────
@@ -296,14 +290,14 @@ def _render_social_buttons() -> None:
                      use_container_width=True):
             url = _get_oauth_url("google")
             if url:
-                st.session_state["_oauth_redirect"] = ("google", url)
+                st.session_state["_iw_oauth_nav"] = url
                 st.rerun()
     with col_h:
         if st.button("Continue with GitHub", key="_oauth_github",
                      use_container_width=True):
             url = _get_oauth_url("github")
             if url:
-                st.session_state["_oauth_redirect"] = ("github", url)
+                st.session_state["_iw_oauth_nav"] = url
                 st.rerun()
 
     # ── Apply branded visual styles via a zero-height iframe ─────────────────
@@ -402,7 +396,7 @@ def render_auth_page() -> None:
     # ── Back navigation ───────────────────────────────────────────────────────
     if st.button("← Back", key="_auth_back_btn"):
         st.session_state.pop(_AUTH_PAGE_KEY, None)
-        st.session_state.pop("_oauth_redirect", None)
+        st.session_state.pop("_iw_oauth_nav", None)
         st.rerun()
 
     # ── InvestWise branded header ─────────────────────────────────────────────
@@ -432,8 +426,8 @@ def render_auth_page() -> None:
     # ── Social OAuth buttons ──────────────────────────────────────────────────
     _render_social_buttons()
 
-    # Hide the email section while a provider redirect is pending
-    if "_oauth_redirect" not in st.session_state:
+    # Hide the email section while a provider redirect is in progress
+    if "_iw_oauth_nav" not in st.session_state:
         st.markdown(
             '<div class="iw-or-divider">or continue with email</div>',
             unsafe_allow_html=True,
