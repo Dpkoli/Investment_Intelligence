@@ -55,25 +55,50 @@ def wants_auth_page() -> bool:
 
 @st.cache_resource(show_spinner=False)
 def _supabase():
-    """Return a cached Supabase client, or None if unavailable."""
+    """Return a cached Supabase client, or a string error message on failure."""
     try:
-        from supabase import create_client  # lazy import — keeps startup crash-free
+        from supabase import create_client  # lazy — prevents startup crash if not installed
+    except ImportError:
+        return "pkg_missing"
+
+    # Read keys from the root level of st.secrets (not under any [section] header)
+    try:
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
+    except KeyError as exc:
+        return f"secrets_missing:{exc}"
+
+    try:
         return create_client(url, key)
-    except Exception:
-        return None
+    except Exception as exc:
+        return f"client_error:{exc}"
+
+
+def _supabase_client_or_error():
+    """Return (client, None) on success, or (None, error_message) on failure."""
+    result = _supabase()
+    if isinstance(result, str):
+        if result == "pkg_missing":
+            msg = "The `supabase` Python package is not installed."
+        elif result.startswith("secrets_missing:"):
+            missing = result.split(":", 1)[1]
+            msg = (
+                f"Secret {missing} not found. "
+                "Go to Streamlit Cloud → your app → Settings → Secrets and add:\n\n"
+                "```\nSUPABASE_URL = \"https://your-project.supabase.co\"\n"
+                "SUPABASE_KEY = \"your-anon-public-key\"\n```"
+            )
+        else:
+            msg = f"Supabase client error: {result.split(':', 1)[1]}"
+        return None, msg
+    return result, None
 
 
 def _get_oauth_url(provider: str) -> str | None:
     """Ask Supabase for an OAuth redirect URL without auto-opening a browser."""
-    sb = _supabase()
-    if sb is None:
-        st.error(
-            "Supabase is not configured. Add SUPABASE_URL and SUPABASE_KEY "
-            "to your Streamlit secrets.",
-            icon="⚠️",
-        )
+    sb, err = _supabase_client_or_error()
+    if err:
+        st.error(err, icon="⚠️")
         return None
     try:
         resp = sb.auth.sign_in_with_oauth({
@@ -97,7 +122,7 @@ def _handle_oauth_callback() -> bool:
     code = st.query_params.get("code")
     if not code:
         return False
-    sb = _supabase()
+    sb, _ = _supabase_client_or_error()   # silently skip if not configured
     if sb is None:
         return False
     try:
